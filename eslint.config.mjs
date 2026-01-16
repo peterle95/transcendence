@@ -7,7 +7,7 @@ const eslintConfig = defineConfig([
   ...nextVitals, // this is for the nextjs core web vitals
   ...nextTs, // this is for the nextjs typescript
   {
-    files: ["src/app/testeslint.tsx"],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: { // necessary for typescript
       parserOptions: {
         projectService: true, // this is for telling typescript to use the tsconfig.json
