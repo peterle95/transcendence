@@ -14,11 +14,14 @@ datasource db {
 }
 
 // simple schema
-// every time changes are made to the schema --> migrate prisma to the database:
+// --> every time changes are made to the schema, migrate prisma to the database:
 // npx prisma migrate dev (optional with a name like: npx prisma migrate dev --name [name])
 // npx prisma migrate deploy (when ready for deployment)
+// --> then generate the prisma client which is the bridge between the code and the database:
+// npx prisma generate
 
 model User {
+  // id is
   // @id is a field attribute and is the primary key, a primary key is a unique identifier for each user
   // there can only be one primary key per model 
   // @default(autoincrement()) means it will automatically increment the id when a new user is created

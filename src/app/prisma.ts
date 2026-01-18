@@ -19,10 +19,10 @@ async function main() {
             age: 77 // data must be exactly match the exisitng mandatory schema fields
         }
     }) */
-   
+
     /* const user = await prisma.user.create({
         data: {
-            id:1,
+            id:123,
             age: 27,
             email: "peter@test.com",
             name: "Peter",
@@ -31,6 +31,42 @@ async function main() {
             largeNumber: BigInt(123456789),
         }
     }) */
+    
+    const users = await prisma.user.createMany({
+        data: [{
+            id:125,
+            age: 27,
+            email: "test@test.com",
+            name: "Test",
+            data: { hello: "world" },
+            role: "BASIC",
+            largeNumber: BigInt(123456789),
+        },
+        {
+            id:124,
+            age: 28,
+            email: "peter2@test.com",
+            name: "Peter2",
+            data: { hello: "world" },
+            role: "BASIC",
+            largeNumber: BigInt(123456789),
+        }]
+    })
+    
+
+    const game = await prisma.game.create({
+        data: {
+            gameId: 2,
+            playerId:123
+        }
+    })
+
+    /* // create or if present update an user
+    const user = await prisma.user.upsert({}) 
+    
+    // find all users
+    const users = await prisma.user.findMany()
+    */
 
     /* const user = await prisma.user.update({
         where: {
@@ -47,7 +83,8 @@ async function main() {
             id: 1
         }
     }) */
-    console.log(user);
+    console.log(users);
+    console.log(game);
 }
 
 main()
