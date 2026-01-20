@@ -12,7 +12,7 @@ async function main() {
 
     console.log("Prisma running...");
 
-   /*  const missingData = await prisma.user.findMany({
+    /* const missingData = await prisma.user.findMany({
         data: {
             id: 1,
             name: "test",
@@ -20,19 +20,19 @@ async function main() {
         }
     }) */
 
-    /* const user = await prisma.user.create({
+    const user = await prisma.user.create({
         data: {
-            id:123,
-            age: 27,
-            email: "peter@test.com",
-            name: "Peter",
+            id:1230,
+            age: 299,
+            email: "test@test.com",
+            name: "Test",
             data: { hello: "world" },
             role: "BASIC",
             largeNumber: BigInt(123456789),
         }
-    }) */
+    })
     
-    const users = await prisma.user.createMany({
+    /* const users = await prisma.user.createMany({
         data: [{
             id:125,
             age: 27,
@@ -51,15 +51,15 @@ async function main() {
             role: "BASIC",
             largeNumber: BigInt(123456789),
         }]
-    })
+    }) */
     
 
-    const game = await prisma.game.create({
+    /* const game = await prisma.game.create({
         data: {
-            gameId: 2,
-            playerId:123
+            gameId: 1,
+            playerId:12300
         }
-    })
+    }) */
 
     /* // create or if present update an user
     const user = await prisma.user.upsert({}) 
@@ -83,8 +83,8 @@ async function main() {
             id: 1
         }
     }) */
-    console.log(users);
-    console.log(game);
+    //console.log(game);
+    console.log(user);
 }
 
 main()
