@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { JSX } from "react";
 
 export default function home(): JSX.Element {
   return (
