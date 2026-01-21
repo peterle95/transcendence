@@ -19,6 +19,7 @@ datasource db {
 // npx prisma migrate deploy (when ready for deployment)
 // --> then generate the prisma client which is the bridge between the code and the database:
 // npx prisma generate
+// npx prisma studio (for a GUI to view the database)
 
 model User {
   // id is
@@ -32,7 +33,7 @@ model User {
   largeNumber BigInt
   data Json @default("{ \"hello\": \"world\"}")
   role Role @default(BASIC)
-  age Int? // ? means it's optional
+  age Int // ? means it's optional
   Game Game[] // one-to-may relation
   Userpage Userpage? // one-to-one relation (one userpage per user)
 

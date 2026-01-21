@@ -31,6 +31,8 @@ async function main() {
             largeNumber: BigInt(123456789),
         }
     })
+
+    const test = await prisma.user.
     
     /* const users = await prisma.user.createMany({
         data: [{
