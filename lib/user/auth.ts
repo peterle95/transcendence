@@ -16,7 +16,7 @@ export const authOptions: NextAuthOptions = {
 		strategy: "jwt",
 	},
 
-	providers: [
+	providers: [ /* currently it's only with credentials, but we can add Google etc here also later if we want */
 		CredentialsProvider({
 			name: "Credentials",
 
@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
 
 				if (!isValid) return null
 
-				return {
+				return { /* this is was will be in the user object, which we put in the generated token, we can add more things in here as well from the user db, see below */
 					id: user.id.toString(),
 					email: user.email,
 					name: user.username,
@@ -54,7 +54,7 @@ export const authOptions: NextAuthOptions = {
 
 	callbacks: {
 		async jwt({ token, user }) {
-			if (user) {
+			if (user) {  /* if we need more info about the user from the token, we can add it here */
 				token.userId = user.id
 				token.name = user.name
 			}
