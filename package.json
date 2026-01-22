@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --no-turbo",
     "postinstall": "prisma generate",
     "prebuild": "prisma generate",
-    "build": "next build",
+    "build": "next build --no-turbo",
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix"
