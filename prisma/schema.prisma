@@ -7,6 +7,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma" // tells where prisma code will be put
+  runtime  = "nodejs"
 }
 
 datasource db {
@@ -30,17 +31,18 @@ model User {
   // there can only be one primary key per model 
   // @default(autoincrement()) means it will automatically increment the id when a new user is created
   id Int @id @default(autoincrement())
-  name String
-  email String
+  username String
+  email String @unique
+  password String
   isAdmin Boolean @default(false)
-  largeNumber BigInt
+  largeNumber BigInt?
   data Json @default("{ \"hello\": \"world\"}")
   role Role @default(BASIC)
-  age Int // ? means it's optional
+  age Int? // ? means it's optional
   Game Game[] // one-to-may relation
   Userpage Userpage? // one-to-one relation (one userpage per user)
 
-  @@unique([name, email]) 
+  // @@unique([name, email]) 
   // this is called a block attribute and it creates a unique constraint on the name and email fields
   // meaning that no two users can have the same name and email
 }
