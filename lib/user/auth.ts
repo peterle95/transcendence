@@ -1,16 +1,10 @@
 import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
-import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { PrismaClient } from "@/src/generated/prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
-
-const prisma = new PrismaClient({ adapter })
+import { prisma } from "../../src/app/prisma";
 
 export const authOptions: NextAuthOptions = {
-	adapter: PrismaAdapter(prisma),
+	
 
 	session: {
 		strategy: "jwt",

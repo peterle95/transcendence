@@ -1,10 +1,5 @@
 import bcrypt from "bcryptjs"
-import { PrismaClient } from "@/src/generated/prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
-
-const prisma = new PrismaClient({ adapter })
+import { prisma } from "../../src/app/prisma";
 
 interface RegisterInput {
 	email: string

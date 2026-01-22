@@ -8,6 +8,8 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter })
 
+export { prisma };
+
 async function main() {
 
     console.log("Prisma running...");
@@ -87,5 +89,6 @@ async function main() {
     //console.log(game);
     console.log(user);
 }
+
 
 main()

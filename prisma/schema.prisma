@@ -7,6 +7,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma" // tells where prisma code will be put
+  runtime  = "nodejs"
 }
 
 datasource db {
