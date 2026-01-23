@@ -41,6 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 # text files
-*.txt
+/txt
 
+# necessary becaus this contains platform-specific binaries that can cause compatibiliy 
+# issues acress different environments
 /src/generated/prisma
