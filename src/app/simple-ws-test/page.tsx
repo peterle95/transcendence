@@ -16,7 +16,7 @@ export default function SimpleWsTestPage() {
      */
     useEffect(() => {
         /*
-         1. DEFINE LISTENERS
+         DEFINE LISTENERS
          These functions run when the server shouts something at us.
          */
         function onConnect() {
@@ -46,26 +46,26 @@ export default function SimpleWsTestPage() {
             addLog(`Server: ${data}`);
         }
 
-        /**
-         * 2. REGISTER LISTENERS
-         * We tell the socket: "When you hear 'connect', run the onConnect function".
+        /*
+         REGISTER LISTENERS
+      "When you hear 'connect', run the onConnect function"
          */
         socket.on("connect", onConnect);
         socket.on("disconnect", onDisconnect);
         socket.on("pong", onPong);
         socket.on("server-message", onServerMessage);
 
-        /**
-         * 3. INITIATE CONNECTION
-         * Since we set 'autoConnect: false', we must manually call .connect()
+        /*
+         INITIATE CONNECTION
+         Since we set 'autoConnect: false', we must manually call .connect()
          */
         socket.connect();
 
-        /**
-         * 4. CLEANUP (EXTREMELY IMPORTANT)
-         * This function runs when the user leaves the page.
-         * If we don't 'off' these listeners, they will keep running in the 
-         * background, causing memory leaks and bugs!
+        /*
+         CLEANUP (EXTREMELY IMPORTANT)
+         This function runs when the user leaves the page.
+         If we don't 'off' these listeners, they will keep running in the 
+         background, causing memory leaks and bugs!
          */
         return () => {
             socket.off("connect", onConnect);
@@ -81,9 +81,9 @@ export default function SimpleWsTestPage() {
         setLogs((prev) => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev]);
     };
 
-    /**
-     * EVENT HANDLERS
-     * Triggered by button clicks or form submits.
+    /*
+     EVENT HANDLERS
+     Triggered by button clicks or form submits.
      */
     const handlePing = () => {
         addLog("Sending ping...");

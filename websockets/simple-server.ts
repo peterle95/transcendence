@@ -15,8 +15,10 @@ const httpServer = createServer();
  * runs on port 3000 and this server runs on port 4000. Without this, the 
  * browser would block the connection for security reasons.
  */
+// https://socket.io/docs/v3/server-initialization/
 const io = new Server(httpServer, {
-    cors: {
+    cors: { // CORS is Cross-Origin Resource Sharing since our app runs on a different ports
+        // origin: "*" --> autorize all origins
         origin: "http://localhost:3000", // The URL where your Next.js app is hosted
         methods: ["GET", "POST"]
     }
@@ -56,7 +58,7 @@ io.on("connection", (socket) => {
         console.log(`Received message from ${socket.id}:`, data);
 
         // socket.broadcast.emit sends to everyone connected EXCEPT this specific socket.
-        // If you wanted to send to EVERYONE (including sender), you'd use io.emit(...)
+        // If send to EVERYONE (including sender), use io.emit(...)
         socket.broadcast.emit("server-message", `User ${socket.id} says: ${data}`);
     });
 
@@ -66,10 +68,6 @@ io.on("connection", (socket) => {
     });
 });
 
-/**
- * 4. START THE SERVER
- * We listen on port 4000. You'll run this with `npm run ws:test`.
- */
 const PORT = 4000;
 httpServer.listen(PORT, () => {
     console.log(`WebSocket server is running on http://localhost:${PORT}`);
