@@ -1,0 +1,183 @@
+# ============================================================================
+# Docker Compose - Architecture Blueprint
+# ============================================================================
+# This docker-compose only runs FUNCTIONAL services:
+#   ✅ PostgreSQL - Database for Auth & Game services
+#   ✅ MongoDB - Database for Chat service
+#
+# ARCHITECTURE-ONLY services (not started):
+#   📦 Auth Service - Database schema defined, API placeholders only
+#   📦 Frontend - Folder structure only, shows "Coming Soon" page
+#   📦 Game Service - Database schema defined, no implementation
+#   📦 Game Server - Placeholder game engine (currently not included)
+# ============================================================================
+
+services:
+  # ========================================
+  # PostgreSQL Database
+  # Used by: Auth Service (future), Game Service (future)
+  # ========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      # Create multiple databases for different services
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Initialize multiple databases on startup
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # MongoDB Database
+  # Used by: Chat Service (functional)
+  # ========================================
+  mongo:
+    image: mongo:7-jammy
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Chat Service - ✅ FUNCTIONAL
+  # The ONLY fully implemented service
+  # ========================================
+  chat_srvc:
+    build: ./chat_srvc
+    container_name: chat_service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/chat-service
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - NODE_ENV=development
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ========================================
+  # ARCHITECTURE-ONLY SERVICES
+  # These services are NOT started by default
+  # Uncomment to run them (they are placeholders)
+  # ========================================
+
+  # Auth Service - 📦 Architecture Only
+  # Database schema: auth_srvc/prisma/schema.prisma
+  # API routes: Placeholder 501 responses in auth_srvc/src/app/api/
+  # To implement: See API_CONTRACTS.md
+  #
+  # auth_srvc:
+  #   build: ./auth_srvc
+  #   container_name: auth_service
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
+  #     - JWT_SECRET=your-jwt-secret-key-change-in-production
+  #     - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+  #     - NODE_ENV=development
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - app_network
+
+  # Frontend - 📦 Architecture Only
+  # Structure: frontend/app/ folder structure exists
+  # Pages: Simple "Coming Soon - Architecture Blueprint" placeholder
+  # To implement: Build Next.js pages, components, and API proxies
+  #
+  # frontend:
+  #   build: ./frontend
+  #   container_name: frontend_service
+  #   ports:
+  #     - "3003:3003"
+  #   environment:
+  #     - AUTH_SERVICE_URL=http://auth_srvc:3000
+  #     - CHAT_SERVICE_URL=http://chat_srvc:3001
+  #     - NEXT_PUBLIC_CHAT_SERVICE_URL=http://localhost:3001
+  #     - NODE_ENV=development
+  #   depends_on:
+  #     - auth_srvc
+  #     - chat_srvc
+  #   networks:
+  #     - app_network
+
+  # Game Service - 📦 Architecture Only
+  # Database schema: game_srvc/prisma/schema.prisma
+  # No API implementation exists
+  #
+  # game_srvc:
+  #   build: ./game_srvc
+  #   container_name: game_service
+  #   ports:
+  #     - "3002:3002"
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
+  #     - AUTH_SERVICE_URL=http://auth_srvc:3000
+  #     - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+  #     - NODE_ENV=development
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - app_network
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+
+  # Game Server (Cub3D) - 📦 Architecture Only
+  # This is a C-based game executable that would be spawned dynamically
+  # by Game Service in separate containers (not defined here)
+  # See: game_server/README.md for implementation guide
+
+volumes:
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
+
+# ============================================================================
+# Quick Start
+# ============================================================================
+#
+# Access Chat Service:
+#   http://localhost:3001/api/chat/send
+#   http://localhost:3001/api/chat/history
+#
+# Connect to databases:
+#   PostgreSQL: postgresql://postgres:password@localhost:5432/
+#   MongoDB: mongodb://localhost:27017/
+#
+# View logs:
+#   docker-compose logs -f chat_srvc
+#
+# Stop services:
+#   docker-compose down
+# ============================================================================
