@@ -1,0 +1,44 @@
+name: Docker Services Check
+
+on:
+ # pull_request:
+ #   branches: [ "micro_architecture" ]
+ # push:
+ #   branches: [ "micro_architecture" ]
+  workflow_dispatch:
+
+jobs:
+  test-services:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth_srvc, chat_srvc, frontend, game_srvc]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.service }}
+          push: false
+          load: true
+          tags: test/${{ matrix.service }}:latest
+
+      - name: Test Container Startup
+        run: |
+          docker run -d --name ${{ matrix.service }} test/${{ matrix.service }}:latest
+          sleep 10
+          if [ "$(docker inspect -f '{{.State.Running}}' ${{ matrix.service }})" != "true" ]; then
+            echo "Container ${{ matrix.service }} failed to start or exited unexpectedly."
+            docker logs ${{ matrix.service }}
+            exit 1
+          fi
+          echo "Container ${{ matrix.service }} is running."
+          docker stop ${{ matrix.service }}
+    

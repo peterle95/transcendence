@@ -1,0 +1,38 @@
+// Game Service - Prisma Schema
+// Manages game server instances and game history
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GameServer {
+  id          Int          @id @default(autoincrement())
+  containerId String       @unique     // Docker container ID
+  port        Int                      // Port where game is accessible (e.g., 4001)
+  status      ServerStatus @default(WAITING)
+  
+  player1Id   Int?
+  player2Id   Int?
+  winnerId    Int?
+  
+  createdAt   DateTime     @default(now())
+  startedAt   DateTime?                // When second player joined
+  endedAt     DateTime?                // When game finished
+  
+  @@index([status])
+  @@index([port])
+  @@index([player1Id])
+  @@index([player2Id])
+}
+
+enum ServerStatus {
+  WAITING       // Waiting for second player
+  IN_PROGRESS   // Game is running
+  COMPLETED     // Game finished
+  CRASHED       // Server crashed/error
+}

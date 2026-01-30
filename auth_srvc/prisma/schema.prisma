@@ -1,0 +1,73 @@
+// Auth Service - Prisma Schema
+// Manages user authentication, user statistics, and friendships
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String   // bcrypt hashed password
+  role      Role     @default(BASIC)
+  isActive  Boolean  @default(true)
+  
+  // Game Statistics (updated by Game Service)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  draws     Int      @default(0)
+  points    Int      @default(0)
+  
+  // Friendship relations
+  sentFriendRequests     Friendship[] @relation("SentFriendRequests")
+  receivedFriendRequests Friendship[] @relation("ReceivedFriendRequests")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([username])
+  @@index([email])
+}
+
+model Friendship {
+  id          Int              @id @default(autoincrement())
+  
+  // User who sent the friend request
+  requesterId Int
+  requester   User             @relation("SentFriendRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  
+  // User who received the friend request
+  addresseeId Int
+  addressee   User             @relation("ReceivedFriendRequests", fields: [addresseeId], references: [id], onDelete: Cascade)
+  
+  // Status of the friendship
+  status      FriendshipStatus @default(PENDING)
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  // Ensure no duplicate friendships in the same direction
+  @@unique([requesterId, addresseeId])
+  @@index([requesterId])
+  @@index([addresseeId])
+  @@index([status])
+}
+
+enum Role {
+  BASIC
+  ADMIN
+  MODERATOR
+}
+
+enum FriendshipStatus {
+  PENDING   // Friend request sent but not accepted
+  ACCEPTED  // Friend request accepted (active friendship)
+  BLOCKED   // User has blocked this relationship
+  REJECTED  // Friend request was rejected
+}
