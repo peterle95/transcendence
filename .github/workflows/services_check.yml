@@ -2,9 +2,9 @@ name: Docker Services Check
 
 on:
   pull_request:
-    branches: [ "micro_architecture" ]
+    branches: [ "main" ]
   push:
-    branches: [ "micro_architecture" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -32,13 +32,47 @@ jobs:
 
       - name: Test Container Startup
         run: |
-          docker run -d --name ${{ matrix.service }} test/${{ matrix.service }}:latest
+          # Create a dedicated network for communication
+          docker network create test-net
+
+          # Start a Postgres container
+          echo "Starting Postgres..."
+          docker run -d --name db --network test-net \
+            -e POSTGRES_USER=testuser \
+            -e POSTGRES_PASSWORD=testpass \
+            -e POSTGRES_DB=testdb \
+            postgres:15-alpine
+
+          # Wait for Postgres to be ready
+          echo "Waiting for Postgres to be ready..."
           sleep 10
+          
+          # Start the service container with DATABASE_URL
+          echo "Starting ${{ matrix.service }}..."
+          docker run -d --name ${{ matrix.service }} --network test-net \
+            -e DATABASE_URL="postgresql://testuser:testpass@db:5432/testdb?schema=public" \
+            test/${{ matrix.service }}:latest
+
+          # Wait for service to initialize (allow time for migrations)
+          sleep 15
+
+          # Check if the service container is still running
           if [ "$(docker inspect -f '{{.State.Running}}' ${{ matrix.service }})" != "true" ]; then
             echo "Container ${{ matrix.service }} failed to start or exited unexpectedly."
             docker logs ${{ matrix.service }}
+            # Cleanup
+            docker stop db || true
+            docker rm db || true
+            docker network rm test-net || true
             exit 1
           fi
-          echo "Container ${{ matrix.service }} is running."
+
+          echo "Container ${{ matrix.service }} is running successfully."
+          # Optional: Show recent logs to confirm successful start
+          docker logs ${{ matrix.service }} | head -n 20
+          
+          # Cleanup
           docker stop ${{ matrix.service }}
+          docker stop db
+          docker network rm test-net
     
