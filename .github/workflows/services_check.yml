@@ -2,9 +2,9 @@ name: Docker Services Check
 
 on:
   pull_request:
-    branches: [ "micro_architecture" ]
+    branches: [ "main" ]
   push:
-    branches: [ "micro_architecture" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
