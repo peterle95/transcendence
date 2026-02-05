@@ -7,6 +7,7 @@ export default function DashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [activeChatFriend, setActiveChatFriend] = useState<number | null>(null);
+  const [seedStatus, setSeedStatus] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -26,10 +27,41 @@ export default function DashboardPage() {
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
 
+  const seedDatabase = async () => {
+    setSeedStatus(null);
+    try {
+      const res = await fetch('/api/seed', { method: 'POST' });
+      const data = await res.json();
+      if (!data.success) {
+        setSeedStatus(data.error || 'Failed to seed database');
+        return;
+      }
+
+      setSeedStatus('Database seeded');
+      await fetchUsers();
+    } catch (error) {
+      console.error('Error seeding database:', error);
+      setSeedStatus('Error seeding database');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold text-gray-900">Chat Service</h1>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Database</h2>
+          <button
+            onClick={seedDatabase}
+            className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition"
+          >
+            Seed DB (Postgres)
+          </button>
+          {seedStatus && (
+            <p className="mt-3 text-sm text-gray-700">{seedStatus}</p>
+          )}
+        </div>
 
         {/* User Selection */}
         <div className="bg-white rounded-lg shadow p-6">

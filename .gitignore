@@ -9,6 +9,10 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+/auth_srvc/node_modules
+/chat_srvc/node_modules
+/frontend/node_modules
+/game_srvc/node_modules
 
 # testing
 /coverage
@@ -16,6 +20,11 @@
 # next.js
 /.next/
 /out/
+/chat_srvc/.next/
+/auth_srvc/.next/
+/chat_srvc/.next/
+/frontend/.next/
+/game_srvc/.next/
 
 # production
 /build
@@ -43,4 +52,3 @@ next-env.d.ts
 # text files
 *.txt
 
-/src/generated/prisma

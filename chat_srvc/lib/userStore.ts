@@ -10,17 +10,11 @@
 import type { User, UserStore, UserHelpers } from '@/types';
 
 export const userStore: UserStore = {
-  users: [
-    { id: 1, username: "alice", email: "alice@example.com" },
-    { id: 2, username: "bob", email: "bob@example.com" }
-  ],
-  nextUserId: 3,
+  users: [],
+  nextUserId: 1,
   
   // { userId: [friendId1, friendId2, ...] }
-  friendships: {
-    1: [2], 
-    2: [1]  
-  }
+  friendships: {}
 };
 
 export const userHelpers: UserHelpers = {

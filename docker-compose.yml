@@ -58,11 +58,14 @@ services:
       - "3001:3001"
     environment:
       - MONGODB_URI=mongodb://mongo:27017/chat-service
+      - DATABASE_URL=postgresql://transcendence_user:localpassword@postgres:5432/transcendence
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - NODE_ENV=development
     depends_on:
       mongo:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - app_network
