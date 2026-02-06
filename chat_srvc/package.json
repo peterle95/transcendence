@@ -1,15 +1,15 @@
-{
+﻿{
   "name": "chat-microservice",
   "version": "1.0.0",
   "description": "chat Service as microservice built with Next.js and MongoDB",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate --schema ../prisma/schema.prisma",
+    "postinstall": "prisma generate",
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",
-    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma"
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
