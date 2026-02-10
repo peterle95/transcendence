@@ -16,12 +16,14 @@ export async function registerUser({
 		throw new Error("Missing required fields")
 	}
 
-	const existingUser = await prisma.user.findUnique({
-		where: { email },
+	const existingUser = await prisma.user.findFirst({
+		where: {
+			OR: [{ email }, { username }],
+		},
 	})
 
 	if (existingUser) {
-		throw new Error("User already exists")
+		throw new Error("Email or username already exists")
 	}
 
 	const hashedPassword = await bcrypt.hash(password, 10)

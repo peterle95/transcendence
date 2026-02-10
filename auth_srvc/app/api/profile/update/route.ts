@@ -11,10 +11,14 @@ export async function POST(req: NextRequest) {
 			return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
 		}
 
+		let body: any
+		try {
+			body = await req.json()
+		} catch {
+			return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+		}
 
-		const body = await req.json()
 		const { username, email } = body
-
 
 		try {
 			await updateUserProfile(session.user.id, { username, email })

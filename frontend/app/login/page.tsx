@@ -19,12 +19,12 @@ export default function LoginPage() {
 		setIsLoading(true)
 
 		try {
-			const csrfResponse = await fetch('http://localhost:3000/api/auth/csrf', {
+			const csrfResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`, {
 				credentials: 'include',
 			})
 			const { csrfToken } = await csrfResponse.json()
 
-			const response = await fetch('http://localhost:3000/api/auth/callback/credentials', {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/callback/credentials`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/x-www-form-urlencoded',
@@ -34,7 +34,7 @@ export default function LoginPage() {
 					email: formData.email,
 					password: formData.password,
 					csrfToken: csrfToken,
-					callbackUrl: 'http://localhost:3003',
+					callbackUrl: `${process.env.NEXT_PUBLIC_FRONTEND_URL}`,
 					json: 'true',
 				}),
 			})
@@ -47,7 +47,7 @@ export default function LoginPage() {
 				return
 			}
 
-			window.location.href = 'http://localhost:3003'
+			window.location.href = `${process.env.NEXT_PUBLIC_FRONTEND_URL}`
 		} catch (err) {
 			console.error('Login error:', err)
 			setError('An error occurred. Please try again.')

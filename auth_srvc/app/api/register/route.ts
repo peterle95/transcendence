@@ -7,9 +7,13 @@ export async function POST(req: Request) {
 		await registerUser(data)
 		return NextResponse.json({ success: true })
 	} catch (err) {
-		return NextResponse.json(
-			{ error: (err as Error).message },
-			{ status: 400 }
-		)
+		const message = err instanceof Error && err.message === "Missing required fields"
+				? err.message
+				: "Registration failed"
+		const status =
+			err instanceof Error && err.message === "Missing required fields"
+				? 400
+				: 500
+		return NextResponse.json({ error: message }, { status })
 	}
 }
