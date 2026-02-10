@@ -1,6 +1,7 @@
 import { createServer } from 'https';
 import { parse } from 'url';
 import next from 'next';
+import { loadEnvConfig } from '@next/env';
 import { Server as SocketIOServer } from 'socket.io';
 import fs from 'fs';
 import path from 'path';
@@ -10,10 +11,14 @@ const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = 3001;
 
+// Load .env.local before anything else
+const projectDir = process.cwd();
+loadEnvConfig(projectDir);
+
 // Load SSL certificates
 const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'certs/key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem')),
+    key: fs.readFileSync(path.resolve(projectDir, 'certs/key.pem')),
+    cert: fs.readFileSync(path.resolve(projectDir, 'certs/cert.pem')),
 };
 
 const app = next({ dev, hostname, port });
