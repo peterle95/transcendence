@@ -1,54 +1,44 @@
-﻿# WebSocket Implementation for Chat Service
+# WebSocket Implementation Guide
 
-This document describes the WebSocket implementation using Socket.io for the Chat Service.
+## Overview
+The chat service now uses a custom Node.js server to support WebSockets via Socket.IO, running alongside the Next.js application.
 
 ## Architecture
+- **Server**: A custom `server.ts` replaces the standard `next start` command. It initializes an HTTPS server using Node's `https` module and attaches Socket.IO to it.
+- **SSL**: Self-signed certificates are used for development to support HTTPS.
+- **Socket Handler**: Logic for socket events is encapsulated in `socket/socketHandler.ts`.
 
-The Chat Service now includes a dedicated Socket.io server integrated with Next.js.
+## Setup
 
-### Components
+### Prerequisites
+- `openssl` (for generating certificates)
+- `ts-node` (for running the TypeScript server)
 
-1.  **Server (`server.ts`)**: Custom Next.js server entry point that initializes the HTTP server and attaches Socket.io.
-2.  **Socket Module (`socket/socketServer.ts`)**: Contains the core logic for connection handling, authentication, room management, and event listeners.
-3.  **Client (`app/components/ChatInterface.tsx`)**: React component updated to use `socket.io-client` for real-time bidirectional communication.
+### Installation
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Generate SSL certificates (if they don't exist):
+   ```bash
+   mkdir -p certs
+   openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -days 365 -nodes -subj '/CN=localhost'
+   ```
 
-## Features
+### Running the Server
+To start the development server with WebSocket support:
+```bash
+npm run dev
+```
+This command runs `ts-node server.ts`.
 
--   **Authentication**: Uses `x-mock-user-id` header (compatible with future JWT implementation).
--   **Connection**: Persistent WebSocket connection.
--   **Messaging**: Real-time sending and receiving of messages.
--   **Persistence**: Messages are saved to MongoDB via Mongoose before being broadcasted.
--   **Rooms**: Users join a personal room `user_{userId}` to receive private messages.
+## Client Connection
+Clients should connect to the secure WebSocket URL:
+```javascript
+import { io } from "socket.io-client";
 
-## How to Run
-
-1.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
-
-2.  **Start Development Server**:
-    The standard `npm run dev` now uses `ts-node` to run `server.ts`.
-    ```bash
-    npm run dev
-    ```
-
-3.  **Run Tests**:
-    To verify the WebSocket functionality, you can run the standalone test script (requires server to be running):
-    ```bash
-    # Ensure server is running in another terminal
-    npx ts-node tests/socket_test_script.ts
-    ```
-
-## Future Improvements
-
--   **JWT Authentication**: Replace mock ID with real JWT validation in `socketServer.ts`.
--   **Presence**: Implement online/offline status using socket connection events.
--   **Typing Indicators**: Add `typing` and `stop_typing` events (scaffolded in server code).
--   **Read Receipts**: Implement `message_read` events.
-
-## Integration with Other Services
-
--   **Game Service**: Should also implement WebSockets (or reuse this pattern) for real-time game state updates.
--   **Frontend**: The frontend service needs to be updated to connect to the Chat Service's WebSocket port (3001) or via a reverse proxy/gateway if deployed.
-
+const socket = io("https://localhost:3001", {
+  secure: true,
+  rejectUnauthorized: false // Needed for self-signed certs in dev
+});
+```
