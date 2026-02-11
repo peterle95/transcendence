@@ -1,5 +1,15 @@
 import { io } from 'socket.io-client';
 
+// how to use this test file:
+// # Terminal 1: start server
+// npm run dev
+
+// # Terminal 2: run test
+// npx tsx test-websocket.ts
+// Expected output: "Connected to server: <socket-id>"
+
+
+
 const socket = io('https://localhost:3001', {
     rejectUnauthorized: false,
     secure: true,
