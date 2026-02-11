@@ -33,10 +33,13 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
 
     socketRef.current = socket;
 
+    // Rooms are namespaces that allow targeted broadcasting
+    // Room "1_2" contains messages between user 1 and user 2
+    // messages sent to "1_2" olny reach those two users 
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       setIsConnected(true);
-      socket.emit('join_room', roomId);
+      socket.emit('join_room', roomId); // User joins room when opening a chat
     });
 
     socket.on('disconnect', () => {

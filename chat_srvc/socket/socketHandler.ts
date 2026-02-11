@@ -16,7 +16,7 @@ export const socketHandler = (io: SocketIOServer) => {
 
         // Client joins a chat room (e.g. "1_2")
         socket.on('join_room', (roomId: string) => {
-            socket.join(roomId);
+            socket.join(roomId); // Server adds socket to room
             console.log(`Socket ${socket.id} joined room ${roomId}`);
         });
 
