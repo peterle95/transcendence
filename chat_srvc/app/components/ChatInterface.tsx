@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { Message } from '@/types';
 
@@ -24,6 +24,52 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
 
   const roomId = generateRoomId(myId, friendId);
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Fetch chat history via REST API and merge with current state
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/chat/history?friend_id=${friendId}`, {
+        method: 'GET',
+        headers: {
+          'x-mock-user-id': String(myId)
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.messages) {
+          setMessages((prev) => {
+            // Merge existing messages with newly fetched history
+            const combined = [...data.messages, ...prev];
+
+            // Deduplicate by message ID (_id)
+            const uniqueMap = new Map();
+            combined.forEach((msg: Message) => {
+              if (msg._id) {
+                uniqueMap.set(msg._id, msg);
+              }
+            });
+
+            // Re-sort by timestamp to ensure correct order
+            return Array.from(uniqueMap.values()).sort((a: any, b: any) => {
+              const timeA = new Date(a.timestamp).getTime();
+              const timeB = new Date(b.timestamp).getTime();
+              return timeA - timeB;
+            });
+          });
+        }
+      } else {
+        console.error("Failed to fetch history:", await res.text());
+      }
+    } catch (err) {
+      console.error("Fetch history error:", err);
+    }
+  }, [myId, friendId]);
+
   // Socket.IO connection & room management
   useEffect(() => {
     // Connect to the Socket.IO server (same origin, HTTPS)
@@ -36,10 +82,19 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
     // Rooms are namespaces that allow targeted broadcasting
     // Room "1_2" contains messages between user 1 and user 2
     // messages sent to "1_2" olny reach those two users 
+    // Listen for new messages from other users
+    socket.on('receive_message', (message: Message) => {
+      setMessages((prev) => [...prev, message]);
+    });
+
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       setIsConnected(true);
       socket.emit('join_room', roomId); // User joins room when opening a chat
+
+      // Re-fetch and merge history on connection (and reconnection)
+      // to fill any gaps occurred during disconnection.
+      fetchHistory();
     });
 
     socket.on('disconnect', () => {
@@ -47,49 +102,17 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
       setIsConnected(false);
     });
 
-    // Listen for new messages from other users
-    socket.on('receive_message', (message: Message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
     return () => {
       socket.emit('leave_room', roomId);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [roomId]);
+  }, [roomId, fetchHistory]);
 
-  // Scroll to bottom when messages change
+  // Initial history fetch on mount
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Fetch initial chat history via REST API
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await fetch(`/api/chat/history?friend_id=${friendId}`, {
-          method: 'GET',
-          headers: {
-            'x-mock-user-id': String(myId)
-          }
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.messages) {
-            setMessages(data.messages);
-          }
-        } else {
-          console.error("Failed to fetch history:", await res.text());
-        }
-      } catch (err) {
-        console.error("Fetch history error:", err);
-      }
-    };
-
     fetchHistory();
-  }, [myId, friendId]);
+  }, [fetchHistory]);
 
   // Send message: REST API to persist + Socket.IO to broadcast
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -144,8 +167,8 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
           <span>Chatting with User {friendId}</span>
           <div className="flex items-center gap-3">
             <span className={`text-xs px-2 py-1 rounded-full ${isConnected
-                ? 'bg-green-400/30 text-green-100'
-                : 'bg-red-400/30 text-red-100'
+              ? 'bg-green-400/30 text-green-100'
+              : 'bg-red-400/30 text-red-100'
               }`}>
               {isConnected ? '● Live' : '○ Connecting...'}
             </span>
@@ -167,8 +190,8 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
             return (
               <div key={msg._id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[70%] p-3 rounded-xl text-sm shadow-sm ${isMe
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-white border border-gray-200 rounded-bl-none text-gray-800'
+                  ? 'bg-blue-600 text-white rounded-br-none'
+                  : 'bg-white border border-gray-200 rounded-bl-none text-gray-800'
                   }`}>
                   <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   {msg.timestamp && (
