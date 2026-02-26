@@ -1,87 +1,125 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Header from '@/components/Header';
 
 export default function Home() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<{ id: string; username: string } | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/session`,
+          { credentials: 'include' }
+        );
+        const data = await res.json();
+        if (!data?.user?.id) {
+          router.push('/login');
+          return;
+        }
+        setUser({ id: String(data.user.id), username: data.user.username });
+      } catch {
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900" />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
-            Welcome to Antigravity
-          </h1>
-          <p className="text-xl text-purple-300">
-            Connect, Chat, and Play Amazing Games
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900 flex flex-col">
+      <Header username={user.username} userId={user.id} />
 
-        {/* Main Cards Grid */}
-        <div className="grid md:grid-cols-2 gap-8 mx-auto max-w-4xl">
-          {/* Chat Card */}
-          <Link href="http://localhost:3001">
-            <div
-              onMouseEnter={() => setHoveredCard('chat')}
-              onMouseLeave={() => setHoveredCard(null)}
-              className={`cursor-pointer rounded-2xl p-8 transition-all duration-300 transform ${
-                hoveredCard === 'chat'
-                  ? 'scale-105 shadow-2xl shadow-blue-500/50'
-                  : 'shadow-lg'
-              } bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700`}
-            >
-              <div className="text-6xl mb-4">💬</div>
-              <h2 className="text-3xl font-bold text-white mb-2">Chat</h2>
-              <p className="text-blue-100 mb-4">
-                Connect with other players in real-time. Share strategies, make friends, and stay in touch.
-              </p>
-              <div className="inline-block px-6 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition">
-                Enter Chat →
+      <main className="flex-1 flex items-center justify-center p-4">
+        <div className="w-full max-w-6xl">
+          {/* Hero */}
+          <div className="text-center mb-16">
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
+              Welcome to Antigravity
+            </h1>
+            <p className="text-xl text-purple-300">
+              Connect, Chat, and Play Amazing Games
+            </p>
+          </div>
+
+          {/* Main Cards Grid */}
+          <div className="grid md:grid-cols-2 gap-8 mx-auto max-w-4xl">
+            {/* Chat Card */}
+            <Link href="http://localhost:3001">
+              <div
+                onMouseEnter={() => setHoveredCard('chat')}
+                onMouseLeave={() => setHoveredCard(null)}
+                className={`cursor-pointer rounded-2xl p-8 transition-all duration-300 transform ${
+                  hoveredCard === 'chat'
+                    ? 'scale-105 shadow-2xl shadow-blue-500/50'
+                    : 'shadow-lg'
+                } bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700`}
+              >
+                <div className="text-6xl mb-4">💬</div>
+                <h2 className="text-3xl font-bold text-white mb-2">Chat</h2>
+                <p className="text-blue-100 mb-4">
+                  Connect with other players in real-time. Share strategies, make friends, and stay in touch.
+                </p>
+                <div className="inline-block px-6 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition">
+                  Enter Chat →
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* Game Card */}
-          <Link href="http://localhost:3002">
-            <div
-              onMouseEnter={() => setHoveredCard('game')}
-              onMouseLeave={() => setHoveredCard(null)}
-              className={`cursor-pointer rounded-2xl p-8 transition-all duration-300 transform ${
-                hoveredCard === 'game'
-                  ? 'scale-105 shadow-2xl shadow-purple-500/50'
-                  : 'shadow-lg'
-              } bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700`}
-            >
-              <div className="text-6xl mb-4">🕹️</div>
-              <h2 className="text-3xl font-bold text-white mb-2">Play Games</h2>
-              <p className="text-purple-100 mb-4">
-                Experience exciting games including Pop Head Wars. Challenge yourself and climb the leaderboards.
-              </p>
-              <div className="inline-block px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition">
-                Play Now →
+            {/* Game Card */}
+            <Link href="http://localhost:3002">
+              <div
+                onMouseEnter={() => setHoveredCard('game')}
+                onMouseLeave={() => setHoveredCard(null)}
+                className={`cursor-pointer rounded-2xl p-8 transition-all duration-300 transform ${
+                  hoveredCard === 'game'
+                    ? 'scale-105 shadow-2xl shadow-purple-500/50'
+                    : 'shadow-lg'
+                } bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700`}
+              >
+                <div className="text-6xl mb-4">🕹️</div>
+                <h2 className="text-3xl font-bold text-white mb-2">Play Games</h2>
+                <p className="text-purple-100 mb-4">
+                  Experience exciting games including Pop Head Wars. Challenge yourself and climb the leaderboards.
+                </p>
+                <div className="inline-block px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition">
+                  Play Now →
+                </div>
               </div>
-            </div>
-          </Link>
-        </div>
+            </Link>
+          </div>
 
-        {/* Footer Stats */}
-        <div className="mt-16 grid grid-cols-3 gap-4 text-center">
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-            <div className="text-3xl font-bold text-white">1000+</div>
-            <p className="text-gray-300">Active Players</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-            <div className="text-3xl font-bold text-white">5+</div>
-            <p className="text-gray-300">Games Available</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4">
-            <div className="text-3xl font-bold text-white">24/7</div>
-            <p className="text-gray-300">Always Online</p>
+          {/* Footer Stats */}
+          <div className="mt-16 grid grid-cols-3 gap-4 text-center">
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="text-3xl font-bold text-white">1000+</div>
+              <p className="text-gray-300">Active Players</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="text-3xl font-bold text-white">5+</div>
+              <p className="text-gray-300">Games Available</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="text-3xl font-bold text-white">24/7</div>
+              <p className="text-gray-300">Always Online</p>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
