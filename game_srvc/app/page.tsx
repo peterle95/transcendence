@@ -23,7 +23,7 @@ export default function HomePage() {
 
             <div style={{ marginTop: '30px' }}>
                 <a
-                    href="/games/pop-head-wars/index.html"
+                    href="/games/space-domain/index.html"
                     style={{
                         display: 'block',
                         padding: '20px 40px',
