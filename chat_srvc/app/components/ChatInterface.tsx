@@ -84,7 +84,11 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
     // messages sent to "1_2" olny reach those two users 
     // Listen for new messages from other users
     socket.on('receive_message', (message: Message) => {
-      setMessages((prev) => [...prev, message]);
+      setMessages((prev) => {
+        // Deduplicate: if we already added it via REST response, ignore
+        if (prev.some(m => m._id === message._id)) return prev;
+        return [...prev, message];
+      });
     });
 
     socket.on('connect', () => {
@@ -140,12 +144,14 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
         const data = await res.json();
         if (data.success && data.message) {
           // Add to local state immediately
-          setMessages((prev) => [...prev, data.message]);
+          setMessages((prev) => {
+            // Deduplicate just in case socket arrived first
+            if (prev.some(m => m._id === data.message._id)) return prev;
+            return [...prev, data.message];
+          });
 
-          // Broadcast via Socket.IO so other users see it instantly
-          if (socketRef.current?.connected) {
-            socketRef.current.emit('new_message', data.message);
-          }
+          // Note: We no longer emit 'new_message' from the client.
+          // The server authoritatively broadcasts it after a successful DB save.
         }
       } else {
         const error = await res.json();

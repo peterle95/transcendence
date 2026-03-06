@@ -42,18 +42,11 @@ export const socketHandler = (io: SocketIOServer) => {
             console.log(`Socket ${socket.id} left room ${roomId}`);
         });
 
-        // When a message is sent via REST API, the client emits this
-        // to broadcast the saved message to others in the room
-        socket.on('new_message', (message: SocketMessage) => {
-            if (message.room_id) {
-                // Check membership before emitting to prevent unauthorized broadcasts
-                if (socket.rooms.has(message.room_id)) {
-                    // Broadcast to everyone in the room EXCEPT the sender
-                    socket.to(message.room_id).emit('receive_message', message);
-                } else {
-                    console.warn(`Socket ${socket.id} attempted to broadcast to unjoined room ${message.room_id}`);
-                }
-            }
+        // The 'new_message' event has been centralized to the server-side REST API
+        // in chat_srvc/app/api/chat/send/route.ts. The server now emits this authoritatively 
+        // after a successful DB save. We log a warning if clients still try to emit it.
+        socket.on('new_message', () => {
+            console.warn(`Socket ${socket.id} attempted to broadcast 'new_message' via socket, but emission is now server-authoritative.`);
         });
 
         socket.on('disconnect', () => {

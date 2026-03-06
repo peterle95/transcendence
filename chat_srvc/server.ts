@@ -1,4 +1,5 @@
-import { createServer } from 'https';
+import { createServer as createHttpsServer } from 'https';
+import { createServer as createHttpServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
 import { loadEnvConfig } from '@next/env';
@@ -15,17 +16,25 @@ const port = 3001;
 const projectDir = process.cwd();
 loadEnvConfig(projectDir);
 
-// Load SSL certificates
-const httpsOptions = {
-    key: fs.readFileSync(path.resolve(projectDir, 'certs/key.pem')),
-    cert: fs.readFileSync(path.resolve(projectDir, 'certs/cert.pem')),
-};
+// Load SSL certificates (safe lazy-loading/fallback approach)
+let httpsOptions: any = undefined;
+const keyPath = path.resolve(projectDir, 'certs/key.pem');
+const certPath = path.resolve(projectDir, 'certs/cert.pem');
+
+if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    httpsOptions = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+    };
+} else {
+    console.warn(`[WARN] SSL certificates not found at ${keyPath} and ${certPath}. Falling back to HTTP server.`);
+}
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-    const server = createServer(httpsOptions, async (req, res) => {
+    const requestHandler = async (req: any, res: any) => {
         try {
             const parsedUrl = parse(req.url!, true);
             await handle(req, res, parsedUrl);
@@ -34,10 +43,14 @@ app.prepare().then(() => {
             res.statusCode = 500;
             res.end('internal server error');
         }
-    });
+    };
+
+    const server = httpsOptions
+        ? createHttpsServer(httpsOptions, requestHandler)
+        : createHttpServer(requestHandler);
 
     const defaultOrigins = [`http://${hostname}:${port}`, `https://${hostname}:${port}`];
-    const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST 
+    const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
         ? process.env.SOCKET_IO_ALLOWLIST.split(',').map(s => s.trim())
         : defaultOrigins; // if env variable not available it defaults back to localhost
 
@@ -51,9 +64,12 @@ app.prepare().then(() => {
         }
     });
 
+    (global as any).io = io; // Expose io globally for API routes
+
     socketHandler(io);
 
     server.listen(port, () => {
-        console.log(`> Ready on https://${hostname}:${port}`);
+        const protocol = httpsOptions ? 'https' : 'http';
+        console.log(`> Ready on ${protocol}://${hostname}:${port}`);
     });
 });
