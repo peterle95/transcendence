@@ -1,0 +1,31 @@
+name: Docker Build Verification
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '**/Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-compose.dev.yml'
+      - '.github/workflows/docker_build.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '**/Dockerfile'
+      - 'docker-compose.yml'
+      - 'docker-compose.dev.yml'
+      - '.github/workflows/docker_build.yml'
+  workflow_dispatch:
+
+jobs:
+  docker-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Docker Compose Build
+        run: docker compose -f docker-compose.yml build
