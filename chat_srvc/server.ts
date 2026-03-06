@@ -36,10 +36,18 @@ app.prepare().then(() => {
         }
     });
 
+    const defaultOrigins = [`http://${hostname}:${port}`, `https://${hostname}:${port}`];
+    const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST 
+        ? process.env.SOCKET_IO_ALLOWLIST.split(',').map(s => s.trim())
+        : defaultOrigins; // if env variable not available it defaults back to localhost
+
     const io = new SocketIOServer(server, {
         cors: {
-            origin: "*", // Adjust in production
+            origin: allowedOrigins,
             methods: ["GET", "POST"]
+            // By setting cors.origin to a strict array, Socket.IO
+            // automatically validates the origin, rejecting unlisted incoming 
+            // connections while keeping the allowed methods to ["GET", "POST"]
         }
     });
 
