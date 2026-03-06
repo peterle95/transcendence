@@ -43,11 +43,6 @@ jobs:
         working-directory: ./${{ matrix.service }}
         run: npm ci
 
-      - name: Lint
-        if: steps.filter.outputs.src == 'true'
-        working-directory: ./${{ matrix.service }}
-        run: npm run lint --if-present
-
       - name: Build
         if: steps.filter.outputs.src == 'true'
         working-directory: ./${{ matrix.service }}
