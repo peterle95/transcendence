@@ -15,7 +15,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Initialize multiple databases on startup
@@ -69,31 +69,28 @@ services:
     restart: unless-stopped
 
   # ========================================
-  # ARCHITECTURE-ONLY SERVICES
-  # These services are NOT started by default
-  # Uncomment to run them (they are placeholders)
+  # Auth Service - ✅ FUNCTIONAL
+  # Handles authentication, user management, and friendships
   # ========================================
-
-  # Auth Service
-  # Database schema: auth_srvc/prisma/schema.prisma
-  # API routes: Placeholder 501 responses in auth_srvc/src/app/api/
-  # To implement: See API_CONTRACTS.md
-  #
-  # auth_srvc:
-  #   build: ./auth_srvc
-  #   container_name: auth_service
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
-  #     - JWT_SECRET=your-jwt-secret-key-change-in-production
-  #     - SERVICE_SECRET=inter-service-shared-secret-change-in-production
-  #     - NODE_ENV=development
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   networks:
-  #     - app_network
+  auth_srvc:
+    build: ./auth_srvc
+    container_name: auth_service
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
+      - AUTH_SECRET=3f4b9c1c0c6a2f2a8e7d9c4b1a5e6f0c3b7d2a1f9e8c6b5d4a3f2c1e0b9a8d7
+      - NEXTAUTH_URL=http://localhost:3000
+      - FRONTEND_URL=http://localhost:3003
+      - CORS_ALLOWED_ORIGIN=http://localhost:3003
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - NODE_ENV=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
 
   # Frontend
   # 
@@ -105,11 +102,12 @@ services:
       - "3003:3003"
     environment:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
       - CHAT_SERVICE_URL=http://chat_srvc:3001
       - NEXT_PUBLIC_CHAT_SERVICE_URL=http://localhost:3001
       - NODE_ENV=development
     depends_on:
-      #- auth_srvc
+      - auth_srvc
       - chat_srvc
     networks:
       - app_network
@@ -150,7 +148,7 @@ networks:
 #   http://localhost:3001/api/chat/history
 #
 # Connect to databases:
-#   PostgreSQL: postgresql://postgres:password@localhost:5432/
+#   PostgreSQL: postgresql://postgres:password@localhost:5433/
 #   MongoDB: mongodb://localhost:27017/
 #
 # View logs:

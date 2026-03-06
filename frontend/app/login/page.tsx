@@ -41,12 +41,14 @@ export default function LoginPage() {
 
 			const data = await response.json()
 
-			if (data.error || !data.url) {
+			// Check for authentication failure
+			if (!response.ok || response.status === 401 || data.error) {
 				setError('Invalid email or password')
 				setIsLoading(false)
 				return
 			}
 
+			// Successful login
 			window.location.href = `${process.env.NEXT_PUBLIC_FRONTEND_URL}`
 		} catch (err) {
 			console.error('Login error:', err)

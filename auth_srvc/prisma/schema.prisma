@@ -16,8 +16,7 @@ model User {
   email     String   @unique
   password  String   // bcrypt hashed password
   role      Role     @default(BASIC)
-  isActive  Boolean  @default(true)
-  
+
   // Game Statistics (updated by Game Service)
   wins      Int      @default(0)
   losses    Int      @default(0)
@@ -69,5 +68,4 @@ enum FriendshipStatus {
   PENDING   // Friend request sent but not accepted
   ACCEPTED  // Friend request accepted (active friendship)
   BLOCKED   // User has blocked this relationship
-  REJECTED  // Friend request was rejected
 }

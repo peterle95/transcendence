@@ -7,11 +7,7 @@ interface RegisterInput {
 	password: string
 }
 
-export async function registerUser({
-	email,
-	username,
-	password,
-}: RegisterInput) {
+export async function registerUser({email, username, password}: RegisterInput) {
 	if (!email || !username || !password) {
 		throw new Error("Missing required fields")
 	}
@@ -26,6 +22,7 @@ export async function registerUser({
 		throw new Error("Email or username already exists")
 	}
 
+	/* We're using 10 salt rounds (2¹⁰ iterations of hashing) to encrypt the password, we can increase this if we want better security but it gets slower */
 	const hashedPassword = await bcrypt.hash(password, 10)
 
 	return prisma.user.create({
