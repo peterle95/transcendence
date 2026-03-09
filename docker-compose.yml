@@ -81,7 +81,6 @@ services:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
       - AUTH_SECRET=3f4b9c1c0c6a2f2a8e7d9c4b1a5e6f0c3b7d2a1f9e8c6b5d4a3f2c1e0b9a8d7
       - NEXTAUTH_URL=http://localhost:3000
-      - FRONTEND_URL=http://localhost:3003
       - CORS_ALLOWED_ORIGIN=http://localhost:3003
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - NODE_ENV=development
@@ -103,8 +102,6 @@ services:
     environment:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
-      - CHAT_SERVICE_URL=http://chat_srvc:3001
-      - NEXT_PUBLIC_CHAT_SERVICE_URL=http://localhost:3001
       - NODE_ENV=development
     depends_on:
       - auth_srvc

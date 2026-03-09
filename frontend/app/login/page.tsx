@@ -34,7 +34,7 @@ export default function LoginPage() {
 					email: formData.email,
 					password: formData.password,
 					csrfToken: csrfToken,
-					callbackUrl: `${process.env.NEXT_PUBLIC_FRONTEND_URL}`,
+					callbackUrl: '/',
 					json: 'true',
 				}),
 			})
@@ -49,7 +49,7 @@ export default function LoginPage() {
 			}
 
 			// Successful login
-			window.location.href = `${process.env.NEXT_PUBLIC_FRONTEND_URL}`
+			router.push('/')
 		} catch (err) {
 			console.error('Login error:', err)
 			setError('An error occurred. Please try again.')
