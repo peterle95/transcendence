@@ -1,17 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-interface HeaderProps {
-	username: string
-	userId: string
-}
-
-export default function Header({ username, userId }: HeaderProps) {
+export default function Header() {
 	const router = useRouter()
 	const [isOpen, setIsOpen] = useState(false)
+	const [user, setUser] = useState<{ id: string; username: string } | null>(null)
+
+	useEffect(() => {
+		const fetchSession = async () => {
+			try {
+				const res = await fetch(
+					`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/session`,
+					{ credentials: 'include' }
+				)
+				const data = await res.json()
+				if (data?.user?.id) {
+					setUser({ id: String(data.user.id), username: data.user.username })
+				}
+			} catch {
+				// no session
+			}
+		}
+		fetchSession()
+	}, [])
 
 	const handleLogout = async () => {
 		await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
@@ -20,6 +34,8 @@ export default function Header({ username, userId }: HeaderProps) {
 		})
 		router.push('/login')
 	}
+
+	if (!user) return null
 
 	return (
 		<header className="sticky top-0 z-10 bg-black/40 backdrop-blur border-b border-white/10">
@@ -31,7 +47,7 @@ export default function Header({ username, userId }: HeaderProps) {
 						onClick={() => setIsOpen((prev) => !prev)}
 						className="flex items-center gap-2 text-white hover:text-purple-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-white/10"
 					>
-						<span className="font-medium">{username}</span>
+						<span className="font-medium">{user.username}</span>
 						<svg
 							className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
 							fill="none"
@@ -44,14 +60,13 @@ export default function Header({ username, userId }: HeaderProps) {
 
 					{isOpen && (
 						<>
-							{/* Backdrop to close on outside click */}
 							<div
 								className="fixed inset-0 z-10"
 								onClick={() => setIsOpen(false)}
 							/>
 							<div className="absolute right-0 mt-1 w-44 bg-gray-900 border border-white/10 rounded-lg shadow-xl z-20 overflow-hidden">
 								<Link
-									href={`/profile/${userId}`}
+									href={`/profile/${user.id}`}
 									className="block px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 transition-colors"
 									onClick={() => setIsOpen(false)}
 								>
