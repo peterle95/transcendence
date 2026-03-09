@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   try {
 
     const auth = authenticateRequest(request);
-    
+
     if (!auth.authenticated || !auth.userId) {
       return unauthorizedResponse(auth.error);
     }
@@ -106,17 +106,27 @@ export async function POST(request: Request) {
       room_id,
     });
 
+    const payload = {
+      _id: message._id.toString(),
+      sender_id: message.sender_id,
+      receiver_id: message.receiver_id,
+      content: message.content,
+      room_id: message.room_id,
+      timestamp: message.timestamp,
+    };
+
+    // Broadcast authoritatively from the server after successful save
+    if ((global as any).io) {
+      // emit to room (which matches room_id)
+      (global as any).io.to(room_id).emit('receive_message', payload);
+    } else {
+      console.warn('Global Socket.io instance not found, message was not broadcasted.');
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
-        message: {
-          _id: message._id.toString(),
-          sender_id: message.sender_id,
-          receiver_id: message.receiver_id,
-          content: message.content,
-          room_id: message.room_id,
-          timestamp: message.timestamp,
-        },
+        message: payload,
       }),
       {
         status: 201,
@@ -125,9 +135,9 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error('Error in POST /api/chat/send:', error);
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     return new Response(
       JSON.stringify({
         success: false,
