@@ -1,15 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function Home() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/session`,
+          { credentials: 'include' }
+        );
+        const data = await res.json();
+        if (!data?.user?.id) {
+          router.push('/login');
+          return;
+        }
+        setIsAuthenticated(true);
+      } catch {
+        router.push('/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900" />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900 flex items-center justify-center p-4">
+    <main className="flex-1 flex items-center justify-center p-4 min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900">
       <div className="w-full max-w-6xl">
-        {/* Header */}
+        {/* Hero */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
             Welcome to Antigravity
@@ -66,7 +99,7 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Footer Stats */}
+        {/* Stats */}
         <div className="mt-16 grid grid-cols-3 gap-4 text-center">
           <div className="bg-white/10 backdrop-blur rounded-lg p-4">
             <div className="text-3xl font-bold text-white">1000+</div>
@@ -82,6 +115,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

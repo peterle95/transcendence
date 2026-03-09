@@ -1,3 +1,6 @@
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+
 export const metadata = {
   title: 'Pop Head Wars Game Platform',
   description: 'Pop Head Wars Game Platform',
@@ -11,7 +14,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-          {children}
+        <Header />
+        {children}
+        <Footer />
       </body>
     </html>
   )
