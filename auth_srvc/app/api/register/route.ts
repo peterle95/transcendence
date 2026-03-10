@@ -3,17 +3,23 @@ import { registerUser } from "../../../lib/register"
 
 export async function POST(req: Request) {
 	try {
-		const data = await req.json()
+		let data
+		try {
+			data = await req.json()
+		} catch {
+			return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+		}
 		await registerUser(data)
 		return NextResponse.json({ success: true })
 	} catch (err) {
-		const message = err instanceof Error && err.message === "Missing required fields"
-				? err.message
-				: "Registration failed"
-		const status =
-			err instanceof Error && err.message === "Missing required fields"
-				? 400
-				: 500
-		return NextResponse.json({ error: message }, { status })
+		if (err instanceof Error) {
+			if (err.message === "Missing required fields") {
+				return NextResponse.json({ error: err.message }, { status: 400 })
+			}
+			if (err.message === "Email or username already exists") {
+				return NextResponse.json({ error: err.message }, { status: 409 })
+			}
+		}
+		return NextResponse.json({ error: "Registration failed" }, { status: 500 })
 	}
 }

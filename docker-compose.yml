@@ -102,6 +102,10 @@ services:
     environment:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
+      - CHAT_SERVICE_URL=http://localhost:3001
+      - NEXT_PUBLIC_CHAT_SERVICE_URL=http://localhost:3001
+      - GAME_SERVICE_URL=http://localhost:3002
+      - NEXT_PUBLIC_GAME_SERVICE_URL=http://localhost:3002
       - NODE_ENV=development
     depends_on:
       - auth_srvc
@@ -117,10 +121,13 @@ services:
       - "3002:3002"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
       - NODE_ENV=development
     depends_on:
       postgres:
         condition: service_healthy
+      auth_srvc:
+        condition: service_started
     networks:
       - app_network
     restart: unless-stopped

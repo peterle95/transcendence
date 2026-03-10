@@ -34,7 +34,12 @@ export async function PATCH(req: NextRequest) {
 	try {
 		const { session } = await requireAuthWithUserId();
 
-		const body = await req.json();
+		let body;
+		try {
+			body = await req.json();
+		} catch {
+			return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+		}
 		const { username, email } = body;
 
 		await updateUserProfile(session.user.id, { username, email });

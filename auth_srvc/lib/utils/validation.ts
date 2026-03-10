@@ -22,15 +22,17 @@ export function parseIdParam(id: string): number {
 	return parsed;
 }
 
-/* Validates an addressee ID from request body */
+/* Validates an addressee ID from request body (accepts string or number) */
 export function validateAddresseeId(addresseeId: unknown): number {
-	if (!addresseeId) {
+	if (addresseeId === undefined || addresseeId === null || addresseeId === '') {
 		throw new Error('addresseeId is required');
 	}
 
-	if (typeof addresseeId !== 'number') {
-		throw new Error('addresseeId must be a number');
+	const id = typeof addresseeId === 'string' ? parseInt(addresseeId, 10) : Number(addresseeId);
+
+	if (!Number.isFinite(id) || id <= 0) {
+		throw new Error('addresseeId must be a valid positive number');
 	}
 
-	return addresseeId;
+	return id;
 }

@@ -8,7 +8,7 @@ import { authenticateRequest, unauthorizedResponse } from '@/lib/authMiddleware'
  * Retrieves the chat history between the authenticated user and another user.
  * 
  * Headers Required:
- *   - x-mock-user-id: The ID of the current user (e.g., "101")
+ *   - Authorization: Bearer <token> (from auth_srvc /api/auth/token)
  * 
  * Query Parameters:
  *   - friend_id: The ID of the other user in the conversation
@@ -23,7 +23,7 @@ import { authenticateRequest, unauthorizedResponse } from '@/lib/authMiddleware'
  */
 export async function GET(request: Request) {
   try {
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
     
     if (!auth.authenticated || !auth.userId) {
       return unauthorizedResponse(auth.error);

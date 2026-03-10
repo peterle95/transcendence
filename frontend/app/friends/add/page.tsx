@@ -135,7 +135,7 @@ export default function AddFriendPage() {
 			<div className="max-w-md mx-auto">
 				<div className="mb-6">
 					<Link
-						href={currentUserId ? `/profile/${currentUserId}` : '/profile'}
+						href={currentUserId ? `/profile/${currentUserId}` : '/'}
 						className="text-indigo-600 hover:text-indigo-500 flex items-center text-sm"
 					>
 						<svg style={{ width: '16px', height: '16px' }} className="mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

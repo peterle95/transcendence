@@ -22,6 +22,11 @@ export default function LoginPage() {
 			const csrfResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`, {
 				credentials: 'include',
 			})
+			if (!csrfResponse.ok) {
+				setError('Unable to connect to authentication service')
+				setIsLoading(false)
+				return
+			}
 			const { csrfToken } = await csrfResponse.json()
 
 			const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/callback/credentials`, {

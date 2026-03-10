@@ -6,15 +6,15 @@ import type { Message } from '@/types';
 interface ChatInterfaceProps {
   myId: number;
   friendId: number;
+  authToken: string;
 }
 
-// Generate room_id the same way as the server (smaller_larger)
 function generateRoomId(userId1: number, userId2: number): string {
   const [smallerId, largerId] = [userId1, userId2].sort((a, b) => a - b);
   return `${smallerId}_${largerId}`;
 }
 
-export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
+export default function ChatInterface({ myId, friendId, authToken }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -24,41 +24,30 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
 
   const roomId = generateRoomId(myId, friendId);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Fetch chat history via REST API and merge with current state
   const fetchHistory = useCallback(async () => {
     try {
       const res = await fetch(`/api/chat/history?friend_id=${friendId}`, {
         method: 'GET',
         headers: {
-          'x-mock-user-id': String(myId)
-        }
+          'Authorization': `Bearer ${authToken}`,
+        },
       });
 
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.messages) {
           setMessages((prev) => {
-            // Merge existing messages with newly fetched history
             const combined = [...data.messages, ...prev];
-
-            // Deduplicate by message ID (_id)
             const uniqueMap = new Map();
             combined.forEach((msg: Message) => {
-              if (msg._id) {
-                uniqueMap.set(msg._id, msg);
-              }
+              if (msg._id) uniqueMap.set(msg._id, msg);
             });
-
-            // Re-sort by timestamp to ensure correct order
             return Array.from(uniqueMap.values()).sort((a: any, b: any) => {
-              const timeA = new Date(a.timestamp).getTime();
-              const timeB = new Date(b.timestamp).getTime();
-              return timeA - timeB;
+              return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
             });
           });
         }
@@ -68,24 +57,18 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
     } catch (err) {
       console.error("Fetch history error:", err);
     }
-  }, [myId, friendId]);
+  }, [friendId, authToken]);
 
-  // Socket.IO connection & room management
   useEffect(() => {
-    // Connect to the Socket.IO server (same origin, HTTPS)
     const socket = io({
-      rejectUnauthorized: false, // Allow self-signed certs in dev
+      rejectUnauthorized: false,
+      auth: { token: authToken },
     });
 
     socketRef.current = socket;
 
-    // Rooms are namespaces that allow targeted broadcasting
-    // Room "1_2" contains messages between user 1 and user 2
-    // messages sent to "1_2" olny reach those two users 
-    // Listen for new messages from other users
     socket.on('receive_message', (message: Message) => {
       setMessages((prev) => {
-        // Deduplicate: if we already added it via REST response, ignore
         if (prev.some(m => m._id === message._id)) return prev;
         return [...prev, message];
       });
@@ -94,11 +77,13 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       setIsConnected(true);
-      socket.emit('join_room', roomId); // User joins room when opening a chat
-
-      // Re-fetch and merge history on connection (and reconnection)
-      // to fill any gaps occurred during disconnection.
+      socket.emit('join_room', roomId);
       fetchHistory();
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+      setIsConnected(false);
     });
 
     socket.on('disconnect', () => {
@@ -111,14 +96,12 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [roomId, fetchHistory]);
+  }, [roomId, fetchHistory, authToken]);
 
-  // Initial history fetch on mount
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
 
-  // Send message: REST API to persist + Socket.IO to broadcast
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading) return;
@@ -132,26 +115,21 @@ export default function ChatInterface({ myId, friendId }: ChatInterfaceProps) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-mock-user-id': String(myId)
+          'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           receiver_id: friendId,
-          content: messageContent
-        })
+          content: messageContent,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.message) {
-          // Add to local state immediately
           setMessages((prev) => {
-            // Deduplicate just in case socket arrived first
             if (prev.some(m => m._id === data.message._id)) return prev;
             return [...prev, data.message];
           });
-
-          // Note: We no longer emit 'new_message' from the client.
-          // The server authoritatively broadcasts it after a successful DB save.
         }
       } else {
         const error = await res.json();

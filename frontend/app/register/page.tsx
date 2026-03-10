@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function RegisterPage() {
 	const router = useRouter()
@@ -106,6 +107,17 @@ export default function RegisterPage() {
 									setFormData({ ...formData, password: e.target.value })
 								}
 							/>
+						</div>
+					</div>
+
+					<div className="flex items-center justify-between">
+						<div className="text-sm">
+							<Link
+								href="/login"
+								className="font-medium text-indigo-600 hover:text-indigo-500"
+							>
+								Already have an account? Sign in
+							</Link>
 						</div>
 					</div>
 
