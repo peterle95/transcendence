@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuthWithUserId } from '@/lib/proxy/auth';
 import { getUserById, updateUserProfile, deleteUserAccount } from '@/lib/profile';
 import { handleApiError, successResponse, errorResponse } from '@/lib/utils/api-response';
+import { handleOptionsRequest } from '@/lib/cors';
 
 export const dynamic = 'force-dynamic';
+
+export async function OPTIONS(req: Request) {
+	return handleOptionsRequest(req);
+}
 
 export async function GET() {
 	try {

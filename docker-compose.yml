@@ -59,6 +59,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongo:27017/chat-service
       - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - NODE_ENV=development
     depends_on:

@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import jwt from 'jsonwebtoken'
 import { authOptions } from '@/lib/auth-config'
+import { handleOptionsRequest, getCorsHeaders } from '@/lib/cors'
+
+export async function OPTIONS(req: Request) {
+  return handleOptionsRequest(req)
+}
 
 /**
  * GET /api/auth/token
@@ -10,17 +15,20 @@ import { authOptions } from '@/lib/auth-config'
  * Returns a short-lived signed JWT that other services can verify
  * via POST /api/auth/verify.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const origin = req.headers.get('origin')
+  const corsHeaders = getCorsHeaders(origin)
+  
   try {
     const session = await getServerSession(authOptions)
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401, headers: corsHeaders })
     }
 
     const secret = process.env.AUTH_SECRET
     if (!secret) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500, headers: corsHeaders })
     }
 
     const token = jwt.sign(
@@ -32,9 +40,9 @@ export async function GET() {
       { expiresIn: '1h', subject: session.user.id }
     )
 
-    return NextResponse.json({ token })
+    return NextResponse.json({ token }, { headers: corsHeaders })
   } catch (error) {
     console.error('[auth/token] Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders })
   }
 }
