@@ -1,52 +1,59 @@
 /**
  * Authentication middleware for game_srvc
- * Verifies JWT tokens from auth_srvc and syncs user data to game_db
+ * Verifies authenticated session via auth_srvc and syncs user data to game_db
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma/prisma';
 
 export interface AuthToken {
-  sub: string;      // user id
+  sub: string;      // user id (string)
   userId: number;
   username: string;
   email: string;
-  iat: number;
-  exp: number;
+  iat?: number;
+  exp?: number;
 }
 
 /**
- * Verify token with auth_srvc
- * Calls auth service to validate JWT and get user claims
+ * Verify current authenticated session with auth_srvc
+ * Uses existing NextAuth endpoint to avoid auth_srvc changes
  */
-export async function verifyTokenWithAuthService(token: string): Promise<AuthToken | null> {
+export async function verifySessionWithAuthService(request: NextRequest): Promise<AuthToken | null> {
   try {
     const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
-    
-    const response = await fetch(`${authServiceUrl}/api/auth/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
+    const cookieHeader = request.headers.get('cookie') || '';
+
+    const response = await fetch(`${authServiceUrl}/api/auth/session`, {
+      method: 'GET',
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
     });
 
     if (!response.ok) {
-      console.error('[Auth] Token verification failed:', response.status);
+      console.error('[Auth] Session verification failed:', response.status);
       return null;
     }
 
     const data = await response.json();
+    const user = data?.user;
+    const rawUserId = user?.id;
+    const userId = typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : Number(rawUserId);
+
+    if (!user || Number.isNaN(userId)) {
+      return null;
+    }
+
+    const username = user.name || `user_${userId}`;
+    const email = user.email || `user_${userId}@local.invalid`;
+
     return {
-      sub: data.sub || String(data.userId),
-      userId: data.userId || parseInt(data.sub),
-      username: data.username,
-      email: data.email,
-      iat: data.iat,
-      exp: data.exp,
+      sub: String(userId),
+      userId,
+      username,
+      email,
     };
   } catch (error) {
-    console.error('[Auth] Error verifying token with auth_srvc:', error);
+    console.error('[Auth] Error verifying session with auth_srvc:', error);
     return null;
   }
 }
@@ -80,19 +87,10 @@ export async function syncUserToGameDb(authToken: AuthToken): Promise<any> {
  */
 export async function getAuthenticatedUser(request: NextRequest): Promise<AuthToken | null> {
   try {
-    const authHeader = request.headers.get('Authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.warn('[Auth] Missing or invalid Authorization header');
-      return null;
-    }
-
-    const token = authHeader.substring(7); // Remove "Bearer " prefix
-
-    // Verify with auth_srvc
-    const authToken = await verifyTokenWithAuthService(token);
+    // Verify current browser session with auth_srvc
+    const authToken = await verifySessionWithAuthService(request);
     if (!authToken) {
-      console.warn('[Auth] Token verification failed');
+      console.warn('[Auth] Session verification failed');
       return null;
     }
 
@@ -111,12 +109,13 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthTo
  */
 export async function requireAuth(request: NextRequest) {
   const user = await getAuthenticatedUser(request);
-  
+
   if (!user) {
     return {
       authenticated: false,
       error: 'Unauthorized',
       status: 401,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
   }
 

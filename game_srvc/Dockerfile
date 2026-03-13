@@ -11,8 +11,8 @@ RUN npm ci
 # Copy application code
 COPY . .
 
-# Expose port
+# Expose ports
 EXPOSE 3002
 
-# Start the dev server (skip Prisma for now)
-CMD ["npm", "run", "dev"]
+# Start Next.js + Socket.IO together
+CMD ["sh", "/app/docker-start.sh"]
