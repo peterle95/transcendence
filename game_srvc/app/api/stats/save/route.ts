@@ -43,13 +43,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  const authenticatedUserId = user!.userId
+
+  // Never trust arbitrary player identities from client payload.
+  // Keep only the authenticated user id, everything else becomes null.
+  const normalizedPlayers = players.map((p) => ({
+    ...p,
+    playerId: p.userId === authenticatedUserId ? authenticatedUserId : null,
+  }))
+
+  // Fallback for current single-session flow: if client sent no valid owner,
+  // attach the first slot to the authenticated user.
+  if (!normalizedPlayers.some((p) => p.playerId === authenticatedUserId) && normalizedPlayers.length > 0) {
+    normalizedPlayers[0] = {
+      ...normalizedPlayers[0],
+      playerId: authenticatedUserId,
+    }
+  }
+
   const session = await prisma.gameSession.create({
     data: {
       sessionId,
-      creatorId: user!.id,
+      creatorId: user!.userId,
       gameMode,
       duration,
-      winner: players.find(p => p.isWinner)?.userId ?? null,
+      winner: normalizedPlayers.find(p => p.isWinner)?.playerId ?? null,
     },
   })
 
@@ -57,7 +75,7 @@ export async function POST(request: NextRequest) {
   const COLOR_CODES   = ['#4488ff', '#44cc44', '#ff8800', '#ee3333']
 
   const savedStats = await Promise.all(
-    players.map(p => {
+    normalizedPlayers.map(p => {
       const accuracy = p.shotsFired > 0
         ? (p.shotsHit / p.shotsFired) * 100
         : 0
@@ -65,7 +83,7 @@ export async function POST(request: NextRequest) {
       return prisma.playerGameStats.create({
         data: {
           sessionId:      session.id,
-          playerId:       p.userId,
+          playerId:       p.playerId,
           playerName:     COLOR_NAMES[p.slot] ?? 'blue',
           playerColor:    COLOR_CODES[p.slot] ?? '#fff',
           shotsFired:     p.shotsFired,
@@ -112,83 +130,4 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true, gameSessionId: session.id }, { status: 201 })
-}
-
-    // Crea la sessione di gioco
-    const gameSession = await prisma.gameSession.create({
-      data: {
-        sessionId,
-        gameMode,
-        duration,
-        winner: winnerId,
-      },
-    });
-
-    // Salva stats per ogni giocatore
-    const playerStats = await Promise.all(
-      players.map((player: any) => {
-        const accuracy = player.shotsFired > 0
-          ? (player.shotsHit / player.shotsFired) * 100
-          : 0;
-
-        return prisma.playerGameStats.create({
-          data: {
-            sessionId: gameSession.id,
-            playerId: player.userId || null,
-            playerName: player.color,  // "blue", "green", etc.
-            playerColor: player.colorCode,
-            shotsFired: player.shotsFired,
-            shotsHit: player.shotsHit,
-            shipsLost: player.shipsLost,
-            shipsDestroyed: player.shipsDestroyed,
-            accuracy,
-            isWinner: player.id === winnerId,
-            placement: player.placement, // 1, 2, 3, 4
-          },
-        });
-      })
-    );
-
-    // Aggiorna GlobalLeaderboard
-    for (const stat of playerStats) {
-      if (!stat.playerId) continue; // Skip anonymi
-
-      const leaderboard = await prisma.globalLeaderboard.upsert({
-        where: { playerId: stat.playerId },
-        create: {
-          playerId: stat.playerId,
-          playerName: stat.playerName,
-          totalGamesPlayed: 1,
-          totalWins: stat.isWinner ? 1 : 0,
-          totalLosses: stat.isWinner ? 0 : 1,
-          totalShipsDestroyed: stat.shipsDestroyed,
-          totalShipsLost: stat.shipsLost,
-          totalShotsFired: stat.shotsFired,
-          totalShotsHit: stat.shotsHit,
-          accuracy: stat.accuracy,
-          winRate: stat.isWinner ? 100 : 0,
-        },
-        update: {
-          totalGamesPlayed: { increment: 1 },
-          totalWins: stat.isWinner ? { increment: 1 } : undefined,
-          totalLosses: !stat.isWinner ? { increment: 1 } : undefined,
-          totalShipsDestroyed: { increment: stat.shipsDestroyed },
-          totalShipsLost: { increment: stat.shipsLost },
-          totalShotsFired: { increment: stat.shotsFired },
-          totalShotsHit: { increment: stat.shotsHit },
-        },
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      gameSessionId: gameSession.id,
-    });
-  } catch (error) {
-    console.error('Error saving game stats:', error);
-    return NextResponse.json(
-      { error: 'Failed to save game stats' },
-      { status: 500 }
-    );
-  }
 }

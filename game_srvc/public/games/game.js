@@ -698,6 +698,7 @@ const STATE = Object.freeze({
   MENU:      'menu',
   PLAYING:   'playing',
   GAME_OVER: 'gameOver',
+  RANKING: 'ranking',
 });
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -728,6 +729,12 @@ class Game {
 
     // stats collected across games
     this.globalStats = {};
+    this.mainMenu = null;
+    if (typeof window !== 'undefined' && typeof window.MainMenuController === 'function') {
+      this.mainMenu = new window.MainMenuController(this);
+    }
+    this._isPausedByMenu = false;
+    this._teardownInGameMenu = null;
 
     this._rafId = null;
   }
@@ -782,6 +789,12 @@ class Game {
     this.canvas.width  = CFG.WIDTH;
     this.canvas.height = CFG.HEIGHT;
     this.input.attach();
+    if (this.mainMenu) {
+      this.mainMenu.attach();
+    }
+    if (typeof window !== 'undefined' && typeof window.attachInGameMenu === 'function') {
+      this._teardownInGameMenu = window.attachInGameMenu(this);
+    }
     this._registerAssets();
     await this.assets.loadAll();
     this.bgImage = this.assets.get('bg');
@@ -790,7 +803,32 @@ class Game {
 
   destroy() {
     this.input.detach();
+    if (this.mainMenu) {
+      this.mainMenu.detach();
+    }
+    if (typeof this._teardownInGameMenu === 'function') {
+      this._teardownInGameMenu();
+      this._teardownInGameMenu = null;
+    }
+    if (typeof window !== 'undefined' && typeof window.hideGlobalStatsScreen === 'function') {
+      window.hideGlobalStatsScreen();
+    }
     if (this._rafId) cancelAnimationFrame(this._rafId);
+  }
+
+  cancelCurrentSession() {
+    this.players = [];
+    this.lasers = [];
+    this.meteors = [];
+    this.particles = [];
+    this.hud = null;
+    this.winner = null;
+    this.selectedMode = null;
+    this._isPausedByMenu = false;
+    this.state = STATE.MENU;
+    if (this.mainMenu) {
+      this.mainMenu.reset(300);
+    }
   }
 
   /* ─── game modes ─────────────────────────────────────────────── */
@@ -833,6 +871,7 @@ class Game {
       this.players.push(new Player(3, 'ai',    {},          this.assets));
     }
 
+
     // spawn first ships
     this.players.forEach(p => p.spawnCurrent());
 
@@ -850,83 +889,37 @@ class Game {
     this.lastTime = timestamp;
 
     switch (this.state) {
-      case STATE.MENU:      this._updateMenu(dt);  this._drawMenu();  break;
-      case STATE.PLAYING:   this._update(dt);      this._draw();      break;
+      case STATE.MENU:
+        if (this.mainMenu) {
+          this.mainMenu.update(dt);
+          this.mainMenu.draw();
+        }
+        break;
+      case STATE.PLAYING:
+        if (!this._isPausedByMenu) {
+          this._update(dt);
+        }
+        this._draw();
+        break;
       case STATE.GAME_OVER: this._drawGameOver();   break;
+	  case STATE.GAME_OVER: this._drawRanking();   break;
     }
 
     this._rafId = requestAnimationFrame(this._loop);
   };
 
-  /* ═══════════════════  MENU  ══════════════════════════════════ */
-  _menuSelection = 0;
-  _menuOptions = [
-    { label: 'Solo (vs AI)',         mode: 'solo'   },
-    { label: '2 Players (Local)',    mode: 'local2' },
-    { label: '3 Players (2 Local + 1 AI)', mode: 'local3' },
-    { label: '4 Players (2 Local + 2 AI)', mode: 'local4' },
-  ];
-  _menuCooldown = 0;
-
-  _updateMenu(dt) {
-    this._menuCooldown -= dt;
-    if (this._menuCooldown > 0) return;
-
-    if (this.input.isDown('ArrowUp')) {
-      this._menuSelection = (this._menuSelection - 1 + this._menuOptions.length) % this._menuOptions.length;
-      this._menuCooldown = 200;
-    }
-    if (this.input.isDown('ArrowDown')) {
-      this._menuSelection = (this._menuSelection + 1) % this._menuOptions.length;
-      this._menuCooldown = 200;
-    }
-    if (this.input.isDown('Enter') || this.input.isDown('Space')) {
-      this.selectedMode = this._menuOptions[this._menuSelection].mode;
-      this._setupPlayers(this.selectedMode);
-      this.state = STATE.PLAYING;
-      this._menuCooldown = 300;
-    }
-  }
-
-  _drawMenu() {
-    const ctx = this.ctx;
-    this._drawBackground();
-
-    // overlay
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
-    ctx.fillRect(0, 0, CFG.WIDTH, CFG.HEIGHT);
-
-    // title
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 48px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('SPACE FLEET BATTLE', CFG.WIDTH / 2, 180);
-
-    ctx.font = '18px monospace';
-    ctx.fillStyle = '#aaa';
-    ctx.fillText('Dominate space by destroying rival fleets!', CFG.WIDTH / 2, 220);
-
-    // menu items
-    ctx.font = '22px monospace';
-    this._menuOptions.forEach((opt, i) => {
-      const y = 310 + i * 50;
-      const selected = i === this._menuSelection;
-      ctx.fillStyle = selected ? '#ffcc00' : '#ccc';
-      ctx.fillText((selected ? '▸ ' : '  ') + opt.label, CFG.WIDTH / 2, y);
-    });
-
-    // controls hint
-    ctx.font = '14px monospace';
-    ctx.fillStyle = '#666';
-    ctx.fillText('↑↓  Select   •   Enter / Space  Start', CFG.WIDTH / 2, CFG.HEIGHT - 60);
-    ctx.fillText('P1: Arrows + Space   •   P2: WASD + Tab', CFG.WIDTH / 2, CFG.HEIGHT - 35);
-    ctx.textAlign = 'left';
-  }
-
   /* ═══════════════════  GAME OVER  ═════════════════════════════ */
   _gameOverCooldown = 0;
 
   _drawGameOver() {
+    // If the HTML ranking overlay is showing, just keep drawing the background
+    // and let the overlay handle user interaction.
+    if (document.getElementById('ranking-overlay')) {
+      this._drawBackground();
+      this._drawMeteors();
+      return;
+    }
+
     const ctx = this.ctx;
     this._drawBackground();
     this._drawMeteors();
@@ -974,7 +967,73 @@ class Game {
     if (this.input.isDown('Enter') || this.input.isDown('Space')) {
       if (this._gameOverCooldown <= 0) {
         this.state = STATE.MENU;
-        this._menuCooldown = 300;
+        if (this.mainMenu) {
+          this.mainMenu.reset(300);
+        }
+      }
+    }
+    this._gameOverCooldown -= 16;
+  }
+
+  _drawRanking() {
+    // If the HTML ranking overlay is showing, just keep drawing the background
+    // and let the overlay handle user interaction.
+    if (document.getElementById('ranking-overlay')) {
+      this._drawBackground();
+      this._drawMeteors();
+      return;
+    }
+
+    const ctx = this.ctx;
+    this._drawBackground();
+    this._drawMeteors();
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(0, 0, CFG.WIDTH, CFG.HEIGHT);
+
+    ctx.textAlign = 'center';
+
+    if (this.winner != null) {
+      const color = CFG.PLAYER_COLORS[this.winner.idx];
+      const name  = CFG.PLAYER_NAMES[this.winner.idx].toUpperCase();
+
+      ctx.fillStyle = color;
+      ctx.font = 'bold 52px monospace';
+      ctx.fillText(`${name} WINS!`, CFG.WIDTH / 2, CFG.HEIGHT / 2 - 40);
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 44px monospace';
+      ctx.fillText('DRAW!', CFG.WIDTH / 2, CFG.HEIGHT / 2 - 40);
+    }
+
+    // stats
+    ctx.font = '16px monospace';
+    ctx.fillStyle = '#ccc';
+    let sy = CFG.HEIGHT / 2 + 20;
+    this.players.forEach((p) => {
+      const name = CFG.PLAYER_NAMES[p.idx].toUpperCase();
+      const acc  = p.stats.shotsFired > 0
+        ? Math.round((p.stats.shotsHit / p.stats.shotsFired) * 100) + '%'
+        : '--';
+      ctx.fillStyle = CFG.PLAYER_COLORS[p.idx];
+      ctx.fillText(
+        `${name}  Ships lost: ${p.stats.shipsLost}  Destroyed: ${p.stats.shipsDestroyed}  Accuracy: ${acc}`,
+        CFG.WIDTH / 2, sy
+      );
+      sy += 28;
+    });
+
+    ctx.fillStyle = '#888';
+    ctx.font = '14px monospace';
+    ctx.fillText('Press Enter to return to menu', CFG.WIDTH / 2, CFG.HEIGHT - 50);
+    ctx.textAlign = 'left';
+
+    if (this.input.isDown('Enter') || this.input.isDown('Space')) {
+      if (this._gameOverCooldown <= 0) {
+        this.state = STATE.MENU;
+        if (this.mainMenu) {
+          this.mainMenu.reset(300);
+        }
       }
     }
     this._gameOverCooldown -= 16;
@@ -1100,10 +1159,25 @@ class Game {
 
   _checkGameEnd() {
     const alive = this.players.filter(p => p.alive);
+    console.log('[checkGameEnd] alive:', alive.length, '| showRankingScreen:', typeof window.showRankingScreen);
     if (alive.length <= 1) {
       this.winner = alive[0] || null;
       this.state = STATE.GAME_OVER;
       this._gameOverCooldown = 800;
+
+      // Show ranking overlay if available
+      if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
+        const mode = this.selectedMode || ('local' + this.players.length);
+        console.log('[checkGameEnd] calling showRankingScreen, mode:', mode);
+        window.showRankingScreen(this.players, this.winner, mode, () => {
+          this.state = STATE.MENU;
+          if (this.mainMenu) {
+            this.mainMenu.reset(300);
+          }
+        });
+      } else {
+        console.warn('[checkGameEnd] showRankingScreen not found – ranking.js loaded?');
+      }
     }
   }
 

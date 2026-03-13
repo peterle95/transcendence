@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 export default function HomePage() {
-    return <Link href="/games/space-domain/index.html">Game</Link>}
+    return <Link href="/games/space_supremacy/index.html">Game</Link>}
 //         <main style={{
 //             minHeight: '100vh',
 //             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
