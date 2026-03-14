@@ -41,8 +41,10 @@ playerShip3: third ship of the fleat.
 playerShip4: fourth ship of the fleat.
 
 Players (max 4 per game): blue, green, orange, red. 
-Each spaceship name comes with a colour which identifies the player (Example: 1st ship of Player Blue-> playerShip1_blue).
+Each spaceship name comes with a colour which identifies the player(Example: 1st ship of Player Blue-> playerShip1_blue).
 
-- On the screen during game: on top left and top right the 2 damage bars, one for each player, which show the damage of the ship that is being used in that moment. Under each damage bar there is another bar (of the colour of the player) which indicates the blaster energy (the player sees in real time the energy going down when he blasts and up while the weapon recharges).
+- On the screen during game: 
+The name of the User (from login) is also visible, as well as 'AI' if player is AI player.
+On top left and top right the 2 damage bars, one for each player, which show the damage of the ship that is being used in that moment. Under each damage bar there is another bar (of the colour of the player) which indicates the blaster energy (the player sees in real time the energy going down when he blasts and up while the weapon recharges).
 
 
