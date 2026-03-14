@@ -5,6 +5,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Space_Supremacy</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #0b0e2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            display: block;
+            /* Scale canvas CSS size to fill window while preserving 16:9 aspect ratio */
+            width: min(100vw, calc(100vh * 1280 / 720));
+            height: min(100vh, calc(100vw * 720 / 1280));
+        }
+    </style>
+    <script>
+        // Fetch the logged-in user from auth service and expose as window.currentUser
+        (async function () {
+            try {
+                const authUrl = window.location.protocol + '//' + window.location.hostname + ':3000';
+                const res = await fetch(authUrl + '/api/auth/session', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.user && data.user.id) {
+                        window.currentUser = {
+                            id: parseInt(data.user.id, 10),
+                            username: data.user.name || ('user_' + data.user.id),
+                        };
+                    }
+                }
+            } catch (_) { /* not logged in */ }
+        })();
+    </script>
 </head>
 
 <body>
