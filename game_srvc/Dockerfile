@@ -2,6 +2,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Prisma requires OpenSSL on Alpine
+RUN apk add --no-cache openssl
+
 # Copy package files and prisma schema first (needed for prisma generate)
 COPY package*.json ./
 COPY prisma ./prisma
