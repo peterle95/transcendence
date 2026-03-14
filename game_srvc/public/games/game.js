@@ -466,6 +466,8 @@ class Player {
     this.ships = [];
     this.alive = true;
     this.shootCooldown = 0;
+    this.displayName = null;       // set externally (username or 'AI')
+    this.userId = null;            // set externally (from auth service)
 
     // stats (for global rankings)
     this.stats = {
@@ -634,8 +636,9 @@ class HUD {
       // player label
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 12px monospace';
+      const labelName = player.displayName || colorName.toUpperCase();
       ctx.fillText(
-        `${colorName.toUpperCase()}  Fleet: ${CFG.FLEET_SIZE - player.fleetIndex}/${CFG.FLEET_SIZE}`,
+        `${labelName}  Fleet: ${CFG.FLEET_SIZE - player.fleetIndex}/${CFG.FLEET_SIZE}`,
         bx, by - 2
       );
 
@@ -870,6 +873,21 @@ class Game {
       this.players.push(new Player(2, 'ai',    {},          this.assets));
       this.players.push(new Player(3, 'ai',    {},          this.assets));
     }
+
+    // Assign display names and user IDs
+    const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
+    this.players.forEach(p => {
+      if (p.type === 'ai') {
+        p.displayName = 'AI';
+        p.userId = null;
+      } else if (p.idx === 0 && currentUser) {
+        p.displayName = currentUser.username;
+        p.userId = currentUser.id;
+      } else {
+        p.displayName = CFG.PLAYER_NAMES[p.idx].toUpperCase();
+        p.userId = null;
+      }
+    });
 
 
     // spawn first ships
@@ -1272,12 +1290,6 @@ if (typeof document !== 'undefined') {
     if (!canvas) {
       canvas = document.createElement('canvas');
       canvas.id = 'gameCanvas';
-      canvas.style.display = 'block';
-      canvas.style.margin = '0 auto';
-      canvas.style.background = '#000';
-      document.body.style.margin = '0';
-      document.body.style.overflow = 'hidden';
-      document.body.style.background = '#000';
       document.body.appendChild(canvas);
     }
     window.__spaceFleetGame = startGame(canvas);

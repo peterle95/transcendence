@@ -15,6 +15,7 @@
         { label: '3 Players (2 Local + 1 AI)', mode: 'local3' },
         { label: '4 Players (2 Local + 2 AI)', mode: 'local4' },
         { label: 'Multiplayer (coming soon)', mode: 'multiplayer' },
+        { label: '← Back to Home', mode: 'home' },
       ];
 
       this._onMouseMove = this._handleMouseMove.bind(this);
@@ -67,6 +68,12 @@
       const selectedOption = this.options[index];
       if (!selectedOption || selectedOption.mode === 'multiplayer') {
         this.cooldown = 300;
+        return;
+      }
+
+      if (selectedOption.mode === 'home') {
+        const homeUrl = window.location.protocol + '//' + window.location.hostname + ':3003';
+        window.location.href = homeUrl;
         return;
       }
 
