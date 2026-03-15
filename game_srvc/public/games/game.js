@@ -615,6 +615,8 @@ class HUD {
     const pad = CFG.BAR_PADDING;
     const bw  = CFG.BAR_WIDTH;
     const bh  = CFG.BAR_HEIGHT;
+    // Top offset so nothing is cut off at the canvas edge
+    const topOffset = 24;
 
     this.players.forEach((player, i) => {
       if (!player) return;
@@ -623,71 +625,66 @@ class HUD {
       // position: 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
       let bx, by;
       switch (i) {
-        case 0: bx = pad;                       by = pad; break;
-        case 1: bx = CFG.WIDTH - bw - pad;      by = pad; break;
-        case 2: bx = pad;                       by = CFG.HEIGHT - (bh * 2 + pad * 3); break;
-        case 3: bx = CFG.WIDTH - bw - pad;      by = CFG.HEIGHT - (bh * 2 + pad * 3); break;
+        case 0: bx = pad;                       by = topOffset; break;
+        case 1: bx = CFG.WIDTH - bw - pad;      by = topOffset; break;
+        case 2: bx = pad;                       by = CFG.HEIGHT - (bh * 2 + pad * 3 + 14); break;
+        case 3: bx = CFG.WIDTH - bw - pad;      by = CFG.HEIGHT - (bh * 2 + pad * 3 + 14); break;
         default: return;
       }
 
       const color = CFG.PLAYER_COLORS[i];
       const colorName = CFG.PLAYER_NAMES[i];
-
-      // player label
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px monospace';
       const labelName = player.displayName || colorName.toUpperCase();
+
+      // ── player label (name + fleet count) ──
+      ctx.fillStyle = color;
+      ctx.font = 'bold 12px monospace';
       ctx.fillText(
         `${labelName}  Fleet: ${CFG.FLEET_SIZE - player.fleetIndex}/${CFG.FLEET_SIZE}`,
-        bx, by - 2
+        bx, by + 12
       );
 
-      // fleet ship icons
+      // ── fleet ship icons ──
       const lifeSprite = this.players[0]?.assets?.get(`playerLife1_${colorName}`);
       for (let s = player.fleetIndex; s < CFG.FLEET_SIZE; s++) {
-        const ix = bx + bw + 8 + (s - player.fleetIndex) * 24;
+        const ix = bx + (s - player.fleetIndex) * 24;
         if (lifeSprite) {
-          ctx.drawImage(lifeSprite, ix, by - 12, 20, 20);
+          ctx.drawImage(lifeSprite, ix, by + 16, 20, 20);
         } else {
           ctx.fillStyle = color;
-          ctx.fillRect(ix, by, 16, 10);
+          ctx.fillRect(ix, by + 18, 16, 10);
         }
       }
 
       if (!ship || !ship.alive) {
-        // greyed out
         ctx.globalAlpha = 0.3;
       }
 
-      // damage bar background
+      // ── HP bar ──
+      const barY = by + 40;
       ctx.fillStyle = '#333';
-      ctx.fillRect(bx, by + 14, bw, bh);
-      // damage bar fill
+      ctx.fillRect(bx, barY, bw, bh);
       const hpRatio = ship ? ship.hp / CFG.SHIP_MAX_HP : 0;
       ctx.fillStyle = hpRatio > 0.5 ? '#44dd44' : hpRatio > 0.25 ? '#ddaa22' : '#dd3333';
-      ctx.fillRect(bx, by + 14, bw * hpRatio, bh);
-      // border
+      ctx.fillRect(bx, barY, bw * hpRatio, bh);
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 1;
-      ctx.strokeRect(bx, by + 14, bw, bh);
-      // label
+      ctx.strokeRect(bx, barY, bw, bh);
       ctx.fillStyle = '#fff';
       ctx.font = '10px monospace';
-      ctx.fillText('HP', bx + 4, by + 14 + bh - 3);
+      ctx.fillText('HP', bx + 4, barY + bh - 3);
 
-      // energy bar background
+      // ── Energy bar ──
+      const enY = barY + bh + 4;
       ctx.fillStyle = '#222';
-      ctx.fillRect(bx, by + 14 + bh + 4, bw, bh);
-      // energy bar fill
+      ctx.fillRect(bx, enY, bw, bh);
       const enRatio = ship ? ship.energy / CFG.WEAPON_MAX_ENERGY : 0;
       ctx.fillStyle = color;
-      ctx.fillRect(bx, by + 14 + bh + 4, bw * enRatio, bh);
-      // border
+      ctx.fillRect(bx, enY, bw * enRatio, bh);
       ctx.strokeStyle = '#fff';
-      ctx.strokeRect(bx, by + 14 + bh + 4, bw, bh);
-      // label
+      ctx.strokeRect(bx, enY, bw, bh);
       ctx.fillStyle = '#fff';
-      ctx.fillText('EN', bx + 4, by + 14 + bh + 4 + bh - 3);
+      ctx.fillText('EN', bx + 4, enY + bh - 3);
 
       ctx.globalAlpha = 1;
     });
