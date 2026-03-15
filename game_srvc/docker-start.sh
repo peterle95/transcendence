@@ -1,8 +1,9 @@
 #!/bin/sh
 set -e
 
-# Run database migrations / push schema (creates tables if they don't exist)
-npx prisma db push --accept-data-loss
+# Run database migrations / push schema (force-reset to avoid FK constraint
+# violations from stale data in previous schema versions)
+npx prisma db push --force-reset
 
 # Start socket server in background, then run Next.js in foreground.
 npm run dev:socket &
