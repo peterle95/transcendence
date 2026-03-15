@@ -24,17 +24,16 @@
         }
     </style>
     <script>
-        // Fetch the logged-in user from auth service and expose as window.currentUser
+        // Fetch the logged-in user via same-origin proxy (avoids CORS with auth_srvc)
         (async function () {
             try {
-                const authUrl = window.location.protocol + '//' + window.location.hostname + ':3000';
-                const res = await fetch(authUrl + '/api/auth/session', { credentials: 'include' });
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.user && data.user.id) {
                         window.currentUser = {
-                            id: parseInt(data.user.id, 10),
-                            username: data.user.name || ('user_' + data.user.id),
+                            id: data.user.id,
+                            username: data.user.username,
                         };
                     }
                 }
