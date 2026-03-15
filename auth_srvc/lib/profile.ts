@@ -7,7 +7,7 @@ export async function getUserById(userId: string | number) {
 
 	const user = await prisma.user.findUnique({
 		where: { id },
-		select: { username: true, wins: true, losses: true },
+		select: { username: true, wins: true, losses: true, draws: true, points: true },
 	})
 
 	return user

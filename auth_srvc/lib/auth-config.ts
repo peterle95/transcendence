@@ -8,6 +8,7 @@ export const authOptions: NextAuthOptions = {
 	/* the "strategy" (how we handle sessions) - a signed JWT cookie (no db reequired) */
 	session: {
 		strategy: "jwt",
+		maxAge: 24 * 60 * 60, // 1 day
 	},
 
 	/*
