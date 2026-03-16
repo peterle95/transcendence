@@ -14,9 +14,15 @@ const server = http.createServer((req, res) => {
   res.end("game socket server is running");
 });
 
+const defaultOrigins = ["http://localhost:3002", "https://localhost:3002"];
+const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
+  ? process.env.SOCKET_IO_ALLOWLIST.split(",").map(s => s.trim())
+  : defaultOrigins;
+
 const io = new Server(server, {
   cors: {
-    origin: "*"
+    origin: allowedOrigins,
+    methods: ["GET", "POST"]
   }
 });
 
