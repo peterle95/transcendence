@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/prisma/prisma'
 
-const INCLUDE_USER = { user: { select: { username: true } } }
+const INCLUDE_PLAYER = { player: { select: { username: true } } }
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         title   = 'SNIPER – Best Accuracy'
         ranking = await prisma.globalLeaderboard.findMany({
           where:   { totalShotsFired: { gte: 10 } },
-          include: INCLUDE_USER,
+          include: INCLUDE_PLAYER,
           orderBy: { accuracy: 'desc' },
           take:    limit,
         })
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       case 'destroyer':
         title   = 'DESTROYER – Most Ships Destroyed'
         ranking = await prisma.globalLeaderboard.findMany({
-          include: INCLUDE_USER,
+          include: INCLUDE_PLAYER,
           orderBy: { totalShipsDestroyed: 'desc' },
           take:    limit,
         })
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         title   = 'ARMORED – Least Ships Lost'
         ranking = await prisma.globalLeaderboard.findMany({
           where:   { totalGamesPlayed: { gte: 3 } },
-          include: INCLUDE_USER,
+          include: INCLUDE_PLAYER,
           orderBy: { totalShipsLost: 'asc' },
           take:    limit,
         })
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       case 'riddled':
         title   = 'RIDDLED – Most Ships Lost'
         ranking = await prisma.globalLeaderboard.findMany({
-          include: INCLUDE_USER,
+          include: INCLUDE_PLAYER,
           orderBy: { totalShipsLost: 'desc' },
           take:    limit,
         })
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         title   = 'SPENDER – Worst Accuracy'
         ranking = await prisma.globalLeaderboard.findMany({
           where:   { totalShotsFired: { gte: 10 } },
-          include: INCLUDE_USER,
+          include: INCLUDE_PLAYER,
           orderBy: { accuracy: 'asc' },
           take:    limit,
         })
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       default:
         title   = 'GLOBAL RANKING – Most Wins'
         ranking = await prisma.globalLeaderboard.findMany({
-          include: INCLUDE_USER,
+          include: INCLUDE_PLAYER,
           orderBy: { totalWins: 'desc' },
           take:    limit,
         })
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     const data = ranking.map((entry, i) => ({
       rank:     i + 1,
       userId:   entry.playerId,
-      username: entry.user?.username ?? 'Unknown',
+      username: entry.player?.username ?? entry.playerName ?? 'Unknown',
       totalGamesPlayed:    entry.totalGamesPlayed,
       totalWins:           entry.totalWins,
       totalLosses:         entry.totalLosses,

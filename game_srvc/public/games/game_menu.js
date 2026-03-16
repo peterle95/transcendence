@@ -1,3 +1,5 @@
+//THIS IS THE MENU CALLED DURING PLAY GAME WITH 'ESC'
+
 (function () {
   function removeMenuOverlay() {
     const existing = document.getElementById('in-game-menu-overlay');

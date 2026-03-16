@@ -118,6 +118,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
       - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - NODE_ENV=development
     depends_on:
       postgres:

@@ -14,7 +14,7 @@
         { label: '2 Players (Local)', mode: 'local2' },
         { label: '3 Players (2 Local + 1 AI)', mode: 'local3' },
         { label: '4 Players (2 Local + 2 AI)', mode: 'local4' },
-        { label: 'Multiplayer (coming soon)', mode: 'multiplayer' },
+        { label: 'Multiplayer (coming soon)', mode: 'online' },
         { label: '← Back to Home', mode: 'home' },
       ];
 

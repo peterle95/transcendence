@@ -11,9 +11,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Reference to User from auth_srvc
+// Reference to user from auth_srvc
 // In production, use foreign key constraints or federated database
-model User {
+model user {
   id        Int      @id    // Same id as in auth_srvc
   username  String   @unique
   email     String   @unique
@@ -60,16 +60,16 @@ model GameSession {
   id          Int      @id @default(autoincrement())
   sessionId   String   @unique  // UUID generato dal gioco
 
-  // Creator della sessione (relazione verso User)
+  // Creator della sessione (relazione verso user)
   creatorId   Int
-  creator     User             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator     user             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   // Players nella partita
   players     PlayerGameStats[]
 
   winner      Int?     // ID del giocatore vincitore
 
-  gameMode    String   // "solo", "local2", "local3", "local4"
+  gameMode    String   // "solo", "local2", "local3", "local4", "online"
   duration    Int      // millisecondi
 
   createdAt   DateTime @default(now())
@@ -89,7 +89,7 @@ model PlayerGameStats {
   
   // Identificazione giocatore
   playerId          Int?         // ID utente (null se anonymous/AI)
-  player            User?        @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  player            user?       @relation(fields: [playerId], references: [id], onDelete: SetNull)
   playerName        String       // "blue", "green", "orange", "red"
   playerColor       String       // "#4488ff", etc.
   
@@ -113,8 +113,8 @@ model PlayerGameStats {
 
 model GlobalLeaderboard {
   id                    Int      @id @default(autoincrement())
-  playerId              Int?     @unique  // null per anonymi
-  player                User?    @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  playerId              Int     @unique  // null per anonymi
+  player                user    @relation(fields: [playerId], references: [id], onDelete: SetNull)
   playerName            String   @unique
   
   // Cumulative stats

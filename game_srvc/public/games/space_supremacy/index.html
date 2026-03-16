@@ -24,7 +24,7 @@
         }
     </style>
     <script>
-        // Fetch the logged-in user via same-origin proxy (avoids CORS with auth_srvc)
+        // Fetch the logged-in user via same-origin proxy (avoids CORS - Cross Origin Resources Sharing - with auth_srvc)
         (async function () {
             try {
                 const res = await fetch('/api/auth/me', { credentials: 'include' });
@@ -45,10 +45,10 @@
 <body>
 	<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="../main_menu.js"></script>
-    <script src="../global_stats.js"></script>
+    <script src="../gameMenu_stats.js"></script>
     <script src="../game_menu.js"></script>
     <script src="../game.js"></script>
-	<script src="../ranking.js"></script>
+	<script src="../gameOver_stats.js"></script>
 </body>
 
 </html>

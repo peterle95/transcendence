@@ -8,6 +8,11 @@ interface UserProfile {
 	email?: string
 	wins: number
 	losses: number
+	shotsFired: number
+	shotsHit: number
+	shipsLost: number
+	shipsDestroyed: number
+	isWinner: number
 }
 
 export default function UpdateProfilePage() {

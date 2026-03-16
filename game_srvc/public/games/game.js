@@ -35,11 +35,11 @@ const CFG = Object.freeze({
   BG_COLOR: '#0b0e2a',
 
   /* ship */
-  SHIP_SPEED:       3,
+  SHIP_SPEED:       2.5,
   SHIP_ROT_SPEED:   4,          // degrees per frame
   SHIP_MAX_HP:      20,
-  FLEET_SIZE:       4,
-  SHIP_RADIUS:      22,         // collision radius
+  FLEET_SIZE:       1,
+  SHIP_RADIUS:      40,         // collision radius
   SHIP_INVULN_TIME: 2000,       // ms invulnerability on spawn
 
   /* weapon */
@@ -336,6 +336,7 @@ class Ship {
     this.y = 0;
     this.vx = 0;
     this.vy = 0;
+	this.angularVel = 0;
     this.radius = CFG.SHIP_RADIUS;
     this.invulnUntil = 0;
 
@@ -376,25 +377,42 @@ class Ship {
   }
 
   /* movement helpers called by Player */
-  thrustForward(dt) {
-    const rad = degToRad(this.angle);
-    this.x += Math.sin(rad) * CFG.SHIP_SPEED * dt / 16;
-    this.y -= Math.cos(rad) * CFG.SHIP_SPEED * dt / 16;
-  }
 
-  thrustBackward(dt) {
-    const rad = degToRad(this.angle);
-    this.x -= Math.sin(rad) * CFG.SHIP_SPEED * dt / 16;
-    this.y += Math.cos(rad) * CFG.SHIP_SPEED * dt / 16;
-  }
+//   thrustForward(dt) {
+//     const rad = degToRad(this.angle);
+//     this.x += Math.sin(rad) * CFG.SHIP_SPEED * dt / 16;
+//     this.y -= Math.cos(rad) * CFG.SHIP_SPEED * dt / 16;
+//   }
 
-  rotateLeft(dt) {
-    this.angle -= CFG.SHIP_ROT_SPEED * dt / 16;
-  }
+//   thrustBackward(dt) {
+//     const rad = degToRad(this.angle);
+//     this.x -= Math.sin(rad) * CFG.SHIP_SPEED * dt / 16;
+//     this.y += Math.cos(rad) * CFG.SHIP_SPEED * dt / 16;
+//   }
 
-  rotateRight(dt) {
-    this.angle += CFG.SHIP_ROT_SPEED * dt / 16;
-  }
+
+thrustForward(dt) {
+  const rad = degToRad(this.angle);
+  const thrust = CFG.SHIP_SPEED * dt / 16;
+  this.vx += Math.sin(rad) * thrust;
+  this.vy -= Math.cos(rad) * thrust;
+}
+
+thrustBackward(dt) {
+  const rad = degToRad(this.angle);
+  const thrust = CFG.SHIP_SPEED * dt / 16;
+  this.vx -= Math.sin(rad) * thrust;
+  this.vy += Math.cos(rad) * thrust;
+}
+
+
+rotateLeft(dt) {
+  this.angularVel -= 0.4 * dt / 16;
+}
+
+rotateRight(dt) {
+  this.angularVel += 0.4 * dt / 16;
+}
 
   rechargeWeapon(now) {
     if (this.energy < CFG.WEAPON_MAX_ENERGY &&
@@ -412,12 +430,36 @@ class Ship {
     this.energy -= CFG.WEAPON_SHOT_COST;
   }
 
-  update(dt) {
-    // keep ship in arena
-    this.x = clamp(this.x, this.radius, CFG.WIDTH  - this.radius);
-    this.y = clamp(this.y, this.radius, CFG.HEIGHT - this.radius);
-    this.rechargeWeapon(performance.now());
+update(dt) {
+	// Rotational Inertia
+  const MAX_ANGULAR = CFG.SHIP_ROT_SPEED * 0.8;
+  this.angularVel = clamp(this.angularVel, -MAX_ANGULAR, MAX_ANGULAR);
+  this.angle += this.angularVel * dt / 16;
+  this.angularVel *= 0.95; // rotational friction
+  
+  // Apply speed to position
+  this.x += this.vx * dt / 16;
+  this.y += this.vy * dt / 16;
+
+  // Deceleration (light space drag)
+  const DRAG = 0.98; // 1.0 = no friction, 0.95 = fast break
+  this.vx *= DRAG;
+  this.vy *= DRAG;
+
+  // Clamp max speed
+  const MAX_SPEED = CFG.SHIP_SPEED * 2;
+  const speed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
+  if (speed > MAX_SPEED) {
+    this.vx = (this.vx / speed) * MAX_SPEED;
+    this.vy = (this.vy / speed) * MAX_SPEED;
   }
+
+  // Wrap at edges (margin = radius ship icon)
+  wrapPos(this, CFG.WIDTH, CFG.HEIGHT, this.radius);
+
+  // Recharge weapon
+  this.rechargeWeapon(performance.now());
+}
 
   draw(ctx) {
     if (!this.alive) return;
@@ -869,6 +911,11 @@ class Game {
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
       this.players.push(new Player(2, 'ai',    {},          this.assets));
       this.players.push(new Player(3, 'ai',    {},          this.assets));
+    }else if (mode === 'online') {
+      this.players.push(new Player(0, 'local', p1Controls, this.assets));
+      this.players.push(new Player(1, 'local', p2Controls, this.assets));
+      this.players.push(new Player(2, 'ai',    {},          this.assets));
+      this.players.push(new Player(3, 'ai',    {},          this.assets));
     }
 
     // Assign display names and user IDs
@@ -1152,6 +1199,69 @@ class Game {
       });
     });
 
+	// ── collisions: ships ↔ ships ──
+for (let i = 0; i < this.players.length; i++) {
+  for (let j = i + 1; j < this.players.length; j++) {
+    const pa = this.players[i];
+    const pb = this.players[j];
+    if (!pa.alive || !pb.alive) continue;
+    const sa = pa.currentShip;
+    const sb = pb.currentShip;
+    if (!sa || !sa.alive || !sb || !sb.alive) continue;
+    if (sa.isInvulnerable || sb.isInvulnerable) continue;
+
+    const dx = sb.x - sa.x;
+    const dy = sb.y - sa.y;
+    const d  = Math.sqrt(dx * dx + dy * dy);
+    const minDist = sa.radius + sb.radius;
+
+    if (d < minDist && d > 0) {
+      // Normalizza vettore di collisione
+      const nx = dx / d;
+      const ny = dy / d;
+
+      // Separa le navi per evitare overlap
+      const overlap = (minDist - d) / 2;
+      sa.x -= nx * overlap;
+      sa.y -= ny * overlap;
+      sb.x += nx * overlap;
+      sb.y += ny * overlap;
+
+      // Scambia velocità lungo l'asse di collisione (rimbalzo elastico, masse uguali)
+      const dvx = sa.vx - sb.vx;
+      const dvy = sa.vy - sb.vy;
+      const dot = dvx * nx + dvy * ny;
+
+      if (dot > 0) { // si stanno avvicinando
+        const impulse = dot * 0.9; // 0.9 = leggermente anelastico
+        sa.vx -= impulse * nx;
+        sa.vy -= impulse * ny;
+        sb.vx += impulse * nx;
+        sb.vy += impulse * ny;
+
+        // Trasferisci un po' di rotazione dall'impatto
+        sa.angularVel += (dvx * ny - dvy * nx) * 0.05;
+        sb.angularVel -= (dvx * ny - dvy * nx) * 0.05;
+      }
+
+      // Danno reciproco
+      sa.takeDamage(1);
+      sb.takeDamage(1);
+      this._spawnSparks((sa.x + sb.x) / 2, (sa.y + sb.y) / 2, '#ffffff');
+
+      // Controlla se qualcuna è distrutta
+      if (!sa.alive) {
+        this._spawnExplosion(sa.x, sa.y);
+        if (!pa.advanceFleet()) this._checkGameEnd();
+      }
+      if (!sb.alive) {
+        this._spawnExplosion(sb.x, sb.y);
+        if (!pb.advanceFleet()) this._checkGameEnd();
+      }
+    }
+  }
+}
+
     // ── collisions: lasers ↔ meteors ──
     this.lasers.forEach(laser => {
       if (!laser.alive) return;
@@ -1191,7 +1301,7 @@ class Game {
           }
         });
       } else {
-        console.warn('[checkGameEnd] showRankingScreen not found – ranking.js loaded?');
+        console.warn('[checkGameEnd] showRankingScreen not found – gameOver_stats.js loaded?');
       }
     }
   }
