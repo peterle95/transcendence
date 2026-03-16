@@ -45,7 +45,7 @@
       .then(json => {
         const rows = json.data || [];
         if (!rows.length) {
-          tableWrapper.innerHTML = '<div style="padding:32px;color:#666">No stats yet – play more games!</div>';
+          tableWrapper.innerHTML = '<div style="padding:32px;color:#666">No stats yet – NOT LINKED TO BACKEND</div>';
           return;
         }
         const medals = ['🥇', '🥈', '🥉'];

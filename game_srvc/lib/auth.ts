@@ -35,8 +35,8 @@ export async function verifySessionWithAuthService(request: NextRequest): Promis
     }
 
     const data = await response.json();
-    const user = data?.user;
-    const rawUserId = user?.id;
+    const user = data.user;
+    const rawUserId = user.id;
     const userId = typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : Number(rawUserId);
 
     if (!user || Number.isNaN(userId)) {

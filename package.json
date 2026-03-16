@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "openssl": "^2.0.0",
     "socket.io": "^4.8.3"
   }
 }

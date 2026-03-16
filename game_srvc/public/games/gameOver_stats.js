@@ -1,5 +1,5 @@
 /**
- * ranking.js  –  Game Over overlay + global leaderboard
+ * gameOver_stats.js  –  Game Over overlay + global leaderboard
  *
  * Exposed globally:
  *   window.showRankingScreen(players, winner, gameMode, onClose)

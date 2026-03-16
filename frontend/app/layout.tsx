@@ -3,8 +3,8 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 export const metadata = {
-  title: 'Pop Head Wars Game Platform',
-  description: 'Pop Head Wars Game Platform',
+  title: 'Space Supremacy',
+  description: 'Keep the Galaxy under your domain by defeating challengers Space Fleets',
 };
 
 export default function RootLayout({

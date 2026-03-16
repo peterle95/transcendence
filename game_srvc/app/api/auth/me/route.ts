@@ -1,9 +1,20 @@
 /**
  * GET /api/auth/me
  * Server-side proxy to auth_srvc session endpoint.
- * Avoids CORS issues when the browser (on port 3002) would try to fetch
+ * Avoids CORS (Cross Origin Resources Sharing) issues when the browser 
+ * (on port 3002) would try to fetch
  * auth_srvc directly (port 3000) with credentials.
- */
+ * CORS (Cross-Origin Resource Sharing) in Next.js is a security 
+ * mechanism that allows controlled access to resources on a different 
+ * origin (domain, protocol, or port) than the one serving the web 
+ * application.  It prevents malicious websites from making unauthorized 
+ * requests to your server while enabling legitimate cross-origin communication.
+
+ * This route.ts acts as a proxy server-side:
+
+browser -> game_srvc (same origin of frontend game)
+game_srvc -> auth_srvc via fetch backend-to-backend
+*/
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -13,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const res = await fetch(`${authServiceUrl}/api/auth/session`, {
       method: 'GET',
-      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      headers: cookieHeader ? { cookie: cookieHeader } : {},	
     })
 
     if (!res.ok) {
