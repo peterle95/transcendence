@@ -8,7 +8,6 @@ interface UserProfile {
 	username: string
 	wins: number
 	losses: number
-	draws: number
 	points: number
 }
 
@@ -17,7 +16,6 @@ interface Friend {
 	username: string
 	wins: number
 	losses: number
-	draws: number
 	points: number
 }
 
@@ -207,12 +205,6 @@ export default function ProfilePage() {
 									{profile.losses}
 								</dd>
 							</div>
-							<div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-								<dt className="text-sm font-medium text-gray-500">Draws</dt>
-								<dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-									{profile.draws}
-								</dd>
-							</div>
 							<div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
 								<dt className="text-sm font-medium text-gray-500">Points</dt>
 								<dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
@@ -283,7 +275,6 @@ export default function ProfilePage() {
 														<div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
 															<span>Wins: {friend.wins}</span>
 															<span>Losses: {friend.losses}</span>
-															<span>Draws: {friend.draws}</span>
 															<span>Points: {friend.points}</span>
 														</div>
 													</div>
