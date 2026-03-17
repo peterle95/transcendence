@@ -18,6 +18,7 @@ model User {
   role      Role     @default(BASIC)
 
   // Game Statistics (updated by Game Service)
+  wins      		Int      @default(0)
   losses    		Int      @default(0)
   points    		Int      @default(0)
   shotsFired    	Int      @default(0)
