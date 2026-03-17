@@ -18,10 +18,13 @@ model User {
   role      Role     @default(BASIC)
 
   // Game Statistics (updated by Game Service)
-  wins      Int      @default(0)
-  losses    Int      @default(0)
-  draws     Int      @default(0)
-  points    Int      @default(0)
+  wins            Int      @default(0)
+  losses          Int      @default(0)
+  points          Int      @default(0)
+  shotsFired      Int      @default(0)
+  shotsHit        Int      @default(0)
+  shipsLost       Int      @default(0)
+  shipsDestroyed  Int      @default(0)
   
   // Friendship relations
   sentFriendRequests     Friendship[] @relation("SentFriendRequests")

@@ -178,7 +178,6 @@ export async function getFriends(userId: number) {
 						username: true,
 						wins: true,
 						losses: true,
-						draws: true,
 						points: true
 					}
 				},
@@ -188,7 +187,6 @@ export async function getFriends(userId: number) {
 						username: true,
 						wins: true,
 						losses: true,
-						draws: true,
 						points: true
 					}
 				}
