@@ -38,7 +38,7 @@ const CFG = Object.freeze({
   SHIP_SPEED:       2.5,
   SHIP_ROT_SPEED:   4,          // degrees per frame
   SHIP_MAX_HP:      20,
-  FLEET_SIZE:       1,
+  FLEET_SIZE:       4,
   SHIP_RADIUS:      40,         // collision radius
   SHIP_INVULN_TIME: 2000,       // ms invulnerability on spawn
 

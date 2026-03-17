@@ -1,7 +1,8 @@
 const { Server } = require("socket.io");
 const http = require("http");
 
-const PORT = Number(process.env.PORT) || 4000;
+
+const PORT = Number(process.env.SOCKET_PORT) || 4000;
 
 const server = http.createServer((req, res) => {
   if (req.url === "/health") {
