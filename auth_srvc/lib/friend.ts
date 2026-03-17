@@ -22,7 +22,7 @@ The whole function is wrapped in a try/catch to send the client a non-descript e
 
 The P2002 error code below indicates a unique constraint violation. It could happen that user A & B send a friend request to the other at the same time.
 Since that request doesn't exist yet, both flow would try to create a new one, leading to a race condition. One of the two request would succeed, but the other would fail.
-In order to catch the right error reason (instead of the non-descript "internat error"), we look again for the friendship and then log the right error
+In order to catch the right error reason (instead of the non-descript "internal error"), we look again for the friendship and then log the right error
 */
 export async function sendFriendRequest(requesterId: number, addresseeId: number): Promise<FriendRequestResult> {
 	try {
@@ -125,13 +125,23 @@ export async function sendFriendRequest(requesterId: number, addresseeId: number
 	}
 }
 
-/* This function is used on the profile page of a user, to see his current pending requests */
+/* This function is used on the profile page of a user, to see his current pending requests.
+   Requests from users with whom a BLOCKED relationship exists in either direction are excluded
+   as a defensive measure — sendFriendRequest already prevents them, but this guards against
+   any data inconsistency. */
 export async function getPendingRequests(userId: number) {
 	try {
 		const requests = await prisma.friendship.findMany({
 			where: {
 				addresseeId: userId,
-				status: FriendshipStatus.PENDING
+				status: FriendshipStatus.PENDING,
+				// Exclude requests from users involved in any block relationship with this user
+				requester: {
+					AND: [
+						{ sentFriendRequests: { none: { addresseeId: userId, status: FriendshipStatus.BLOCKED } } },
+						{ receivedFriendRequests: { none: { requesterId: userId, status: FriendshipStatus.BLOCKED } } },
+					],
+				},
 			},
 			include: {
 				requester: {
@@ -214,7 +224,7 @@ export async function getFriends(userId: number) {
 }
 
 /*
-Similar to the sendFriendRequest function above, this is wrapped in a try/catch so that the error code is 
+Similar to the sendFriendRequest function above, this is wrapped in a try/catch so that the error code is
 logged in the console but not sent to the client
 */
 export async function acceptFriendRequest(
@@ -245,7 +255,7 @@ export async function acceptFriendRequest(
 		if (friendship.status !== FriendshipStatus.PENDING) {
 			return {
 				success: false,
-				message: `Cannot accept request with status: ${friendship.status}`,
+				message: 'This request cannot be modified',
 				error: 'INVALID_STATUS'
 			};
 		}
@@ -299,7 +309,7 @@ export async function rejectFriendRequest(
 		if (friendship.status !== FriendshipStatus.PENDING) {
 			return {
 				success: false,
-				message: `Cannot reject request with status: ${friendship.status}`,
+				message: 'This request cannot be modified',
 				error: 'INVALID_STATUS'
 			};
 		}
@@ -322,7 +332,12 @@ export async function rejectFriendRequest(
 	}
 }
 
-/* Again same */
+/*
+Block a friendship relationship. Unlike accept/reject (which only work on PENDING
+requests from the addressee's perspective), blocking can be initiated by either
+party at any stage — PENDING or ACCEPTED. This ensures accepted friendships can
+also be blocked, and prevents the blocked party from re-sending requests.
+*/
 export async function blockFriendRequest(
 	friendshipId: number,
 	userId: number
@@ -335,24 +350,25 @@ export async function blockFriendRequest(
 		if (!friendship) {
 			return {
 				success: false,
-				message: 'Friend request not found',
+				message: 'Relationship not found',
 				error: 'REQUEST_NOT_FOUND'
 			};
 		}
 
-		if (friendship.addresseeId !== userId) {
+		// Either party in the relationship may initiate a block
+		if (friendship.requesterId !== userId && friendship.addresseeId !== userId) {
 			return {
 				success: false,
-				message: 'You are not authorized to block this request',
+				message: 'You are not authorized to block this relationship',
 				error: 'UNAUTHORIZED'
 			};
 		}
 
-		if (friendship.status !== FriendshipStatus.PENDING) {
+		if (friendship.status === FriendshipStatus.BLOCKED) {
 			return {
 				success: false,
-				message: `Cannot block request with status: ${friendship.status}`,
-				error: 'INVALID_STATUS'
+				message: 'This relationship is already blocked',
+				error: 'ALREADY_BLOCKED'
 			};
 		}
 
@@ -367,7 +383,7 @@ export async function blockFriendRequest(
 			data: updated
 		};
 	} catch (error) {
-		console.error('Error blocking friend request:', error);
+		console.error('Error blocking relationship:', error);
 		return {
 			success: false,
 			message: 'Failed to block user',
