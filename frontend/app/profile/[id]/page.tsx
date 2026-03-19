@@ -6,6 +6,7 @@ import Link from 'next/link'
 
 interface UserProfile {
 	username: string
+	avatarUrl: string | null
 	wins: number
 	losses: number
 	points: number
@@ -186,6 +187,18 @@ export default function ProfilePage() {
 						)}
 					</div>
 					<div className="border-t border-gray-200">
+						<div className="px-4 py-6 sm:px-6 flex justify-center">
+							<img
+								src={
+									profile.avatarUrl
+										? `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}${profile.avatarUrl}`
+										: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
+								}
+								alt={`${profile.username}'s avatar`}
+								className="rounded-full object-cover border-2 border-gray-200"
+								style={{ width: '100px', height: '100px' }}
+							/>
+						</div>
 						<dl>
 							<div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
 								<dt className="text-sm font-medium text-gray-500">Username</dt>

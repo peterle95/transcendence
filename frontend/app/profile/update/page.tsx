@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 interface UserProfile {
 	username: string
 	email?: string
+	avatarUrl: string | null
 	wins: number
 	losses: number
 }
@@ -21,6 +22,12 @@ export default function UpdateProfilePage() {
 	const [error, setError] = useState('')
 	const [success, setSuccess] = useState(false)
 	const [userId, setUserId] = useState<string | null>(null)
+	const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null)
+	const [avatarFile, setAvatarFile] = useState<File | null>(null)
+	const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+	const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+	const [avatarError, setAvatarError] = useState('')
+	const [avatarSuccess, setAvatarSuccess] = useState(false)
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 	const [deleteInput, setDeleteInput] = useState('')
 	const [isDeleting, setIsDeleting] = useState(false)
@@ -62,6 +69,7 @@ export default function UpdateProfilePage() {
 					username: data.username,
 					email: email
 				})
+				setCurrentAvatarUrl(data.avatarUrl ?? null)
 
 			} catch (err) {
 				setError((err as Error).message)
@@ -72,6 +80,60 @@ export default function UpdateProfilePage() {
 
 		fetchProfile()
 	}, [router])
+
+	const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setAvatarError('')
+		setAvatarSuccess(false)
+		const file = e.target.files?.[0]
+		if (!file) return
+
+		// Client-side UX check only — server enforces both of these too
+		if (!['image/jpeg', 'image/png'].includes(file.type)) {
+			setAvatarError('Only PNG and JPEG images are allowed')
+			return
+		}
+		// Mirrors AVATAR_MAX_SIZE on the server (2 MB)
+		if (file.size > 2 * 1024 * 1024) {
+			setAvatarError('File size must be under 2MB')
+			return
+		}
+
+		setAvatarFile(file)
+		setAvatarPreview(URL.createObjectURL(file))
+	}
+
+	const handleAvatarUpload = async () => {
+		if (!avatarFile) return
+		setAvatarError('')
+		setAvatarSuccess(false)
+		setIsUploadingAvatar(true)
+
+		try {
+			const form = new FormData()
+			form.append('avatar', avatarFile)
+
+			const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/users/me/avatar`, {
+				method: 'POST',
+				credentials: 'include',
+				body: form,
+			})
+
+			if (!response.ok) {
+				const data = await response.json()
+				throw new Error(data.error || data.message || 'Failed to upload avatar')
+			}
+
+			const data = await response.json()
+			setCurrentAvatarUrl(data.avatarUrl)
+			setAvatarFile(null)
+			setAvatarPreview(null)
+			setAvatarSuccess(true)
+		} catch (err) {
+			setAvatarError((err as Error).message)
+		} finally {
+			setIsUploadingAvatar(false)
+		}
+	}
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -93,7 +155,7 @@ export default function UpdateProfilePage() {
 				throw new Error('Failed to update profile')
 			}
 
-			const data = await response.json()
+			await response.json()
 
 			setSuccess(true)
 
@@ -150,6 +212,69 @@ export default function UpdateProfilePage() {
 	return (
 		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
 			<div className="max-w-md mx-auto space-y-6">
+
+				{/* Avatar section */}
+				<div className="bg-white shadow sm:rounded-lg">
+					<div className="px-4 py-5 sm:p-6">
+						<h3 className="text-lg leading-6 font-medium text-gray-900">
+							Profile Picture
+						</h3>
+						<p className="mt-1 text-sm text-gray-500">
+							Upload a PNG or JPEG image (max 2MB)
+						</p>
+
+						<div className="mt-4 flex items-center gap-5">
+							<img
+								src={
+									avatarPreview
+										? avatarPreview
+										: currentAvatarUrl
+											? `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}${currentAvatarUrl}`
+											: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
+								}
+								alt="Avatar preview"
+								className="rounded-full object-cover border-2 border-gray-200"
+								style={{ width: '80px', height: '80px' }}
+							/>
+							<div className="flex-1 space-y-2">
+								<input
+									type="file"
+									accept=".png,.jpg,.jpeg"
+									onChange={handleAvatarChange}
+									className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+								/>
+								{avatarError && (
+									<p className="text-xs text-red-600">{avatarError}</p>
+								)}
+								{avatarSuccess && (
+									<p className="text-xs text-green-600">Avatar updated successfully!</p>
+								)}
+							</div>
+						</div>
+
+						{avatarFile && (
+							<div className="mt-4 flex gap-3">
+								<button
+									type="button"
+									onClick={handleAvatarUpload}
+									disabled={isUploadingAvatar}
+									className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									{isUploadingAvatar ? 'Uploading...' : 'Upload Avatar'}
+								</button>
+								<button
+									type="button"
+									onClick={() => { setAvatarFile(null); setAvatarPreview(null); setAvatarError('') }}
+									className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+								>
+									Cancel
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+
+				{/* Username / email section */}
 				<div className="bg-white shadow sm:rounded-lg">
 					<div className="px-4 py-5 sm:p-6">
 						<h3 className="text-lg leading-6 font-medium text-gray-900">

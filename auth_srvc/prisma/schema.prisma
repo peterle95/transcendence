@@ -16,6 +16,7 @@ model User {
   email     String   @unique
   password  String   // bcrypt hashed password
   role      Role     @default(BASIC)
+  avatarUrl String?  // path to uploaded avatar, null means default
 
   // Game Statistics (updated by Game Service)
   wins            Int      @default(0)
