@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
 		preflight.headers.set('Access-Control-Allow-Origin', origin)
 		preflight.headers.set('Access-Control-Allow-Credentials', 'true')
 		preflight.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-		preflight.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+		preflight.headers.set('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization')
 		return preflight
 	}
 	
@@ -18,7 +18,7 @@ export function proxy(request: NextRequest) {
 	response.headers.set('Access-Control-Allow-Origin', origin)
 	response.headers.set('Access-Control-Allow-Credentials', 'true')
 	response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-	response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+	response.headers.set('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization')
 
 	return response
 }

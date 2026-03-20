@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth-config';
 import { UnauthorizedError } from '../utils/api-response';
+import { prisma } from '../../prisma/prisma';
 
 
 /* THese two functions are authentication guards, basically checking that the user reuqest the resource is authenticated */
@@ -8,6 +9,20 @@ export async function requireAuth() {
 	const session = await getServerSession(authOptions);
 
 	if (!session?.user?.id) {
+		throw new UnauthorizedError();
+	}
+
+	const userId = parseInt(session.user.id);
+	if (isNaN(userId)) {
+		throw new UnauthorizedError();
+	}
+
+	const userExists = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { id: true },
+	});
+
+	if (!userExists) {
 		throw new UnauthorizedError();
 	}
 
@@ -21,10 +36,8 @@ In addition to the one above, this function checks user by ID, which is useful f
 export async function requireAuthWithUserId() {
 	const session = await requireAuth();
 
+	// requireAuth already validates that session.user.id is a valid integer
 	const userId = parseInt(session.user.id);
-	if (isNaN(userId)) {
-		throw new Error('Invalid user ID in session');
-	}
 
 	return { session, userId };
 }

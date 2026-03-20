@@ -80,10 +80,11 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
       - AUTH_SECRET=3f4b9c1c0c6a2f2a8e7d9c4b1a5e6f0c3b7d2a1f9e8c6b5d4a3f2c1e0b9a8d7
-      - NEXTAUTH_URL=http://localhost:3000
       - CORS_ALLOWED_ORIGIN=http://localhost:3003
-      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - INTERNAL_SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - NODE_ENV=development
+    volumes:
+      - avatar_uploads:/app/uploads/avatars
     depends_on:
       postgres:
         condition: service_healthy
@@ -133,6 +134,8 @@ volumes:
   postgres_data:
     driver: local
   mongo_data:
+    driver: local
+  avatar_uploads:
     driver: local
 
 networks:
