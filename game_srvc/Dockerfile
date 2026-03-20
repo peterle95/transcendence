@@ -19,7 +19,7 @@ RUN npx prisma generate
 COPY . .
 
 # Expose ports
-EXPOSE 3002 4000
+EXPOSE 3002 4000 
 
 # Start Next.js + Socket.IO together
 CMD ["sh", "/app/docker-start.sh"]
