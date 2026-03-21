@@ -35,6 +35,7 @@ services:
   mongo:
     image: mongo:7-jammy
     container_name: mongo_db
+    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
     ports:
       - "27017:27017"
     volumes:
@@ -48,27 +49,6 @@ services:
       retries: 5
 
   # ========================================
-  # Chat Service - ✅ FUNCTIONAL
-  # The ONLY fully implemented service
-  # ========================================
-  chat_srvc:
-    build: ./chat_srvc
-    container_name: chat_service
-    ports:
-      - "3001:3001"
-    environment:
-      - MONGODB_URI=mongodb://mongo:27017/chat-service
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
-      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
-      - NODE_ENV=development
-    depends_on:
-      mongo:
-        condition: service_healthy
-    networks:
-      - app_network
-    restart: unless-stopped
-
-  # ========================================
   # Auth Service - ✅ FUNCTIONAL
   # Handles authentication, user management, and friendships
   # ========================================
@@ -80,11 +60,10 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
       - AUTH_SECRET=3f4b9c1c0c6a2f2a8e7d9c4b1a5e6f0c3b7d2a1f9e8c6b5d4a3f2c1e0b9a8d7
-      - CORS_ALLOWED_ORIGIN=http://localhost:3003
-      - INTERNAL_SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - NEXTAUTH_URL=http://localhost:3000
+      - CORS_ALLOWED_ORIGIN=http://localhost:3003,http://localhost:3001
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - NODE_ENV=development
-    volumes:
-      - avatar_uploads:/app/uploads/avatars
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,8 +71,34 @@ services:
       - app_network
     restart: unless-stopped
 
+  # ========================================
+  # Chat Service - ✅ FUNCTIONAL
+  # The ONLY fully implemented service
+  # ========================================
+  chat_srvc:
+    build: ./chat_srvc
+    container_name: chat_service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/chat-service
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
+      - NEXT_PUBLIC_GAME_SERVICE_URL=http://localhost:3002
+      - SOCKET_IO_ALLOWLIST=http://localhost:3001,https://localhost:3001,http://localhost:3003,http://localhost:3002
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - NODE_ENV=development
+    depends_on:
+      mongo:
+        condition: service_healthy
+      auth_srvc:
+        condition: service_started
+    networks:
+      - app_network
+    restart: unless-stopped
+
   # Frontend
-  # 
+  #
   #
   frontend:
     build: ./frontend
@@ -103,6 +108,10 @@ services:
     environment:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
+      - CHAT_SERVICE_URL=http://localhost:3001
+      - NEXT_PUBLIC_CHAT_SERVICE_URL=http://localhost:3001
+      - GAME_SERVICE_URL=http://localhost:3002
+      - NEXT_PUBLIC_GAME_SERVICE_URL=http://localhost:3002
       - NODE_ENV=development
     depends_on:
       - auth_srvc
@@ -118,10 +127,13 @@ services:
       - "3002:3002"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
       - NODE_ENV=development
     depends_on:
       postgres:
         condition: service_healthy
+      auth_srvc:
+        condition: service_started
     networks:
       - app_network
     restart: unless-stopped
@@ -131,8 +143,6 @@ volumes:
   postgres_data:
     driver: local
   mongo_data:
-    driver: local
-  avatar_uploads:
     driver: local
 
 networks:
