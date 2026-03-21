@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/prisma/prisma'
+import { logAuthUsersStatsSummary } from './log'
 
 const INCLUDE_PLAYER = { player: { select: { username: true } } }
 
@@ -90,6 +91,12 @@ export async function GET(request: NextRequest) {
       accuracy:            entry.accuracy != null ? Math.round(entry.accuracy) + '%' : '--',
       winRate:             entry.winRate  != null ? Math.round(entry.winRate)  + '%' : '--',
     }))
+
+    await logAuthUsersStatsSummary({
+      type,
+      title,
+      returned: data.length,
+    })
 
     return NextResponse.json({ success: true, title, type, count: data.length, data })
   } catch (error) {

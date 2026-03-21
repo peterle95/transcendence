@@ -115,7 +115,7 @@ model GlobalLeaderboard {
   id                    Int      @id @default(autoincrement())
   playerId              Int     @unique  // null per anonymi
   player                user    @relation(fields: [playerId], references: [id], onDelete: SetNull)
-  playerName            String   @unique
+  playerName            String   // username del player
   
   // Cumulative stats
   totalGamesPlayed      Int      @default(0)
