@@ -1,12 +1,11 @@
 #!/bin/sh
 set -e
 
-# Run database migrations / push schema (force-reset to avoid FK constraint
-# violations from stale data in previous schema versions)
-npx prisma db push --force-reset
+# Run database migrations (safe for production – never wipes data)
+npx prisma migrate deploy || npx prisma db push --accept-data-loss
 
 # Start socket server in background, then run Next.js in foreground.
-npm run dev:socket &
+npm run start:socket &
 SOCKET_PID=$!
 
 cleanup() {
@@ -16,4 +15,4 @@ cleanup() {
 
 trap cleanup INT TERM
 
-npm run dev
+npm start

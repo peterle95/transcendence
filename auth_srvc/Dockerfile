@@ -13,4 +13,7 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
+RUN npm run build
+
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# npm run build + npm start instead of npm run dev for production

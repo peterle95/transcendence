@@ -14,7 +14,9 @@ const server = http.createServer((req, res) => {
   res.end("game socket server is running");
 });
 
-const defaultOrigins = ["http://localhost:3002", "https://localhost:3002"];
+const defaultOrigins = process.env.NODE_ENV === 'production'
+  ? []
+  : ["http://localhost:3002", "https://localhost:3002"]; // removed hardcoded ports
 const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
   ? process.env.SOCKET_IO_ALLOWLIST.split(",").map(s => s.trim())
   : defaultOrigins;
@@ -61,6 +63,6 @@ io.on("connection", (socket) => {
 
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`socket server running on port ${PORT}`);
 });

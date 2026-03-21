@@ -18,8 +18,12 @@ RUN npx prisma generate
 # Copy remaining application code
 COPY . .
 
+# Build Next.js for production
+RUN npm run build
+
 # Expose ports
-EXPOSE 3002
+# Added port 4000 for socket server
+EXPOSE 3002 4000
 
 # Start Next.js + Socket.IO together
 CMD ["sh", "/app/docker-start.sh"]

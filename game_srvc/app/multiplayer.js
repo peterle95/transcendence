@@ -1,6 +1,9 @@
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:4000");
+const SOCKET_URL = typeof window !== 'undefined'
+  ? (window.__GAME_SOCKET_URL || window.location.origin)
+  : 'http://localhost:4000';
+const socket = io(SOCKET_URL, { path: '/game/socket.io/' });
 
 export function connectMultiplayer(game) {
 

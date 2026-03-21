@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function proxy(request: NextRequest) {
-	const origin = process.env.CORS_ALLOWED_ORIGIN || 'http://localhost:3003'
-	if (request.method === 'OPTIONS') {
+	const origin = process.env.CORS_ALLOWED_ORIGIN || '*' // * allows all origins, TODO: change to the domain name
 		const preflight = new NextResponse(null, { status: 204 })
 		preflight.headers.set('Access-Control-Allow-Origin', origin)
 		preflight.headers.set('Access-Control-Allow-Credentials', 'true')

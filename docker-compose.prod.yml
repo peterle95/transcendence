@@ -1,0 +1,133 @@
+# ============================================================================
+# Docker Compose – PRODUCTION
+# All service ports bound to 127.0.0.1; only Nginx is public.
+# ============================================================================
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── MongoDB ─────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7-jammy
+    container_name: mongo_db
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Auth Service ────────────────────────────────────────────────
+  auth_srvc:
+    build: ./auth_srvc
+    container_name: auth_service
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/auth_db
+      - AUTH_SECRET=${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      - CORS_ALLOWED_ORIGIN=${PUBLIC_URL:-http://localhost:3003}
+      - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in .env}
+      - NODE_ENV=production
+    volumes:
+      - avatar_uploads:/app/uploads/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ── Chat Service ────────────────────────────────────────────────
+  chat_srvc:
+    build: ./chat_srvc
+    container_name: chat_service
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/chat-service
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3001}
+      - NODE_ENV=production
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ── Frontend ────────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: frontend_service
+    ports:
+      - "127.0.0.1:3003:3003"
+    environment:
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+      - NODE_ENV=production
+    depends_on:
+      - auth_srvc
+      - chat_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ── Game Service ────────────────────────────────────────────────
+  game_srvc:
+    build: ./game_srvc
+    container_name: game_service
+    ports:
+      - "127.0.0.1:3002:3002"
+      - "127.0.0.1:4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/game_db
+      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3002}
+      - PORT=4000
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
+  avatar_uploads:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

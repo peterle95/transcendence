@@ -11,18 +11,37 @@ interface SocketMessage {
 }
 
 export const socketHandler = (io: SocketIOServer) => {
-    // Middleware to authenticate connections and populate socket.data.userId
-    io.use((socket, next) => {
-        // TODO: Implement actual connection authentication here.
-        // Extract token from socket.handshake.auth.token or headers,
-        // verify it, and populate socket.data.userId with the authenticated user ID.
-        // const token = socket.handshake.auth.token;
-        // if (!isValid(token)) {
-        //     return next(new Error("unauthorized"));
-        // }
-        // socket.data.userId = decodeUser(token).id;
+    // Middleware to authenticate connections via auth_srvc session
+    io.use(async (socket, next) => {
+        try {
+            const cookie = socket.handshake.headers.cookie || '';
+            if (!cookie) {
+                return next(new Error('unauthorized: no session cookie'));
+            }
 
-        next();
+            const authUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
+            const res = await fetch(`${authUrl}/api/auth/session`, {
+                headers: { cookie },
+            });
+
+            if (!res.ok) {
+                return next(new Error('unauthorized: auth service rejected'));
+            }
+
+            const data = await res.json();
+            if (!data?.user?.id) {
+                return next(new Error('unauthorized: no valid session'));
+            }
+
+            socket.data.userId = typeof data.user.id === 'string'
+                ? parseInt(data.user.id, 10)
+                : data.user.id;
+            socket.data.username = data.user.name || `user_${socket.data.userId}`;
+            next();
+        } catch (err) {
+            console.error('[socketHandler] Auth middleware error:', err);
+            next(new Error('unauthorized: auth check failed'));
+        }
     });
 
     io.on('connection', (socket: Socket) => {

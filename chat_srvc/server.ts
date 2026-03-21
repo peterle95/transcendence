@@ -9,7 +9,7 @@ import path from 'path';
 import { socketHandler } from './socket/socketHandler';
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
+const hostname = '0.0.0.0';
 const port = 3001;
 
 // Load .env.local before anything else
