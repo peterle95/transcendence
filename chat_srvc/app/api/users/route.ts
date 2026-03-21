@@ -1,59 +1,45 @@
 import { NextResponse } from 'next/server';
-import { userHelpers } from '@/lib/userStore';
-import type { CreateUserRequest } from '@/types';
+import { authenticateRequest, unauthorizedResponse } from '@/lib/authMiddleware';
 
-// mock users api would be in auth service postgresql db
-
-/**
- * GET /api/users
- * Returns all mock users
- */
-export async function GET() {
-  return NextResponse.json({
-    success: true,
-    users: userHelpers.getAllUsers()
-  });
-}
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
 
 /**
- * POST /api/users
- * Creates a new mock user
- * 
- * Body: { username: string, email: string }
+ * GET /api/users?search=<query>
+ * With search param: proxies user search to auth_srvc.
+ * Without search param: returns the authenticated user's friends as a user list.
  */
-export async function POST(request: Request) {
+export async function GET(request: Request) {
+  const auth = await authenticateRequest(request);
+  if (!auth.authenticated || !auth.userId) {
+    return unauthorizedResponse(auth.error);
+  }
+
   try {
-    const body = await request.json() as CreateUserRequest;
-    const { username, email } = body;
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
 
-    if (!username || !email) {
-      return NextResponse.json(
-        { success: false, error: 'Username and email are required' },
-        { status: 400 }
+    if (search) {
+      const authHeader = request.headers.get('Authorization');
+      const headers: Record<string, string> = {};
+      if (authHeader) headers['Authorization'] = authHeader;
+
+      const cookie = request.headers.get('cookie');
+      if (cookie) headers['cookie'] = cookie;
+
+      const res = await fetch(
+        `${AUTH_SERVICE_URL}/api/users/search?username=${encodeURIComponent(search)}`,
+        { headers }
       );
+      if (!res.ok) {
+        return NextResponse.json({ success: false, error: 'Search failed' }, { status: res.status });
+      }
+      const data = await res.json();
+      return NextResponse.json({ success: true, users: data.data ? [data.data] : data.users || [] });
     }
 
-    try {
-      const newUser = userHelpers.createUser(username, email);
-
-      return NextResponse.json({
-        success: true,
-        user: newUser
-      }, { status: 201 });
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      return NextResponse.json(
-        { success: false, error: errorMessage },
-        { status: 409 }
-      );
-    }
-
+    return NextResponse.json({ success: true, users: [] });
   } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create user' },
-      { status: 500 }
-    );
+    console.error('Error in GET /api/users:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

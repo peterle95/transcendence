@@ -7,19 +7,27 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        orbitron: ['Orbitron', 'sans-serif'],
+        mono: ['"Share Tech Mono"', 'monospace'],
+      },
       colors: {
-        primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+        cyber: {
+          bg:      '#07070f',
+          surface: '#0d0d1a',
+          border:  '#1a1a35',
+          cyan:    '#00e5ff',
+          pink:    '#ff006e',
+          purple:  '#9d00ff',
+          green:   '#39ff14',
+          red:     '#ff2244',
+          text:    '#c8d0e8',
+          muted:   '#4a5068',
         },
+      },
+      boxShadow: {
+        'neon-cyan': '0 0 8px #00e5ff, 0 0 20px rgba(0,229,255,0.3)',
+        'neon-pink': '0 0 8px #ff006e, 0 0 20px rgba(255,0,110,0.3)',
       },
     },
   },
