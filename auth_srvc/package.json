@@ -27,7 +27,8 @@
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "@types/react": "^18",
-    "prisma": "7.2.0",
+    "dotenv": "^17.3.1",
+    "prisma": "^7.2.0",
     "typescript": "^5"
   }
 }
