@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
     try {
-        const authServiceUrl = ProcessingInstruction.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000'
+        const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000'
         const cookieHeader = request.headers.get('cookie') || ''
 
         const res = await fetch(`${authServiceUrl}/api/auth/token`, {
