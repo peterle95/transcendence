@@ -2,17 +2,24 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Prisma requires OpenSSL on Alpine
+RUN apk add --no-cache openssl
+
+# Copy package files and prisma schema first (needed for prisma generate)
 COPY package*.json ./
-# COPY prisma ./prisma
+COPY prisma ./prisma
+
 # Install dependencies
 RUN npm ci
 
-# Copy application code
+# Generate Prisma client (requires schema to be present)
+RUN npx prisma generate
+
+# Copy remaining application code
 COPY . .
 
-# Expose port
-EXPOSE 3002
+# Expose ports
+EXPOSE 3002 4000 
 
-# Start the dev server (skip Prisma for now)
-CMD ["npm", "run", "dev"]
+# Start Next.js + Socket.IO together
+CMD ["sh", "/app/docker-start.sh"]

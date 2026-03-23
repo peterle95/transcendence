@@ -1,13 +1,32 @@
 // Game Service - Prisma Schema
-// Manages game server instances and game history
+// Manages game server instances, game sessions, and player statistics
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Reference to user from auth_srvc
+// In production, use foreign key constraints or federated database
+model user {
+  id        Int      @id    // Same id as in auth_srvc
+  username  String   @unique
+  email     String   @unique
+  
+  // Relations to game stats
+  gameSessions      GameSession[]
+  playerStats       PlayerGameStats[]
+  leaderboardEntry  GlobalLeaderboard?
+
+  updatedAt DateTime @updatedAt
+
+  @@index([username])
+  @@index([email])
 }
 
 model GameServer {
@@ -35,4 +54,88 @@ enum ServerStatus {
   IN_PROGRESS   // Game is running
   COMPLETED     // Game finished
   CRASHED       // Server crashed/error
+}
+
+model GameSession {
+  id          Int      @id @default(autoincrement())
+  sessionId   String   @unique  // UUID generato dal gioco
+
+  // Creator della sessione (relazione verso user)
+  creatorId   Int
+  creator     user             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // Players nella partita
+  players     PlayerGameStats[]
+
+  winner      Int?     // ID del giocatore vincitore
+
+  gameMode    String   // "solo", "local2", "local3", "local4", "online"
+  duration    Int      // millisecondi
+
+  createdAt   DateTime @default(now())
+  endedAt     DateTime @updatedAt
+
+  @@index([creatorId])
+  @@index([winner])
+  @@index([createdAt])
+}
+
+model PlayerGameStats {
+  id                Int          @id @default(autoincrement())
+  
+  // Relazione con sessione di gioco
+  sessionId         Int
+  gameSession       GameSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // Identificazione giocatore
+  playerId          Int?         // ID utente (null se anonymous/AI)
+  player            user?       @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  playerName        String       // "blue", "green", "orange", "red"
+  playerColor       String       // "#4488ff", etc.
+  
+  // Stats della partita
+  shotsFired        Int
+  shotsHit          Int
+  shipsLost         Int
+  shipsDestroyed    Int
+  accuracy          Float?       // shotsHit / shotsFired (%)
+  
+  // Risultato
+  isWinner          Boolean
+  placement         Int          // 1st, 2nd, 3rd, 4th
+  
+  createdAt         DateTime     @default(now())
+  
+  @@index([sessionId])
+  @@index([playerId])
+  @@index([playerName])
+}
+
+model GlobalLeaderboard {
+  id                    Int      @id @default(autoincrement())
+  playerId              Int     @unique  // null per anonymi
+  player                user    @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  playerName            String   // username del player
+  
+  // Cumulative stats
+  totalGamesPlayed      Int      @default(0)
+  totalWins             Int      @default(0)
+  totalLosses           Int      @default(0)
+  totalDraws            Int      @default(0)
+  
+  // Ranking specializzati
+  totalShipsDestroyed   Int      @default(0)
+  totalShipsLost        Int      @default(0)
+  totalShotsFired       Int      @default(0)
+  totalShotsHit         Int      @default(0)
+  
+  // Computed
+  winRate               Float?   // wins / totalGamesPlayed
+  accuracy              Float?   // totalShotsHit / totalShotsFired
+  
+  updatedAt             DateTime @updatedAt
+  
+  @@index([totalWins])
+  @@index([accuracy])
+  @@index([totalShipsDestroyed])
 }

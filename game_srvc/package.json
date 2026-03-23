@@ -5,24 +5,29 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3002",
+    "dev:socket": "node server.js",
+    "dev:all": "npm run dev:socket & npm run dev",
     "build": "next build",
     "start": "next start -p 3002",
+    "start:socket": "NODE_ENV=production node server.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "^5.8.0",
+    "dockerode": "^4.0.0",
     "next": "^14.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@prisma/client": "^5.8.0",
-    "dockerode": "^4.0.0"
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
+    "@types/dockerode": "^3.3.23",
     "@types/node": "^20",
     "@types/react": "^18",
-    "@types/dockerode": "^3.3.23",
     "prisma": "^5.8.0",
     "typescript": "^5"
   }

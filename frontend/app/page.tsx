@@ -45,11 +45,11 @@ export default function Home() {
         {/* Hero */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
-            Welcome to Antigravity
+            SPACE SUPREMACY
           </h1>
-          <p className="text-xl text-purple-300">
+          {/* <p className="text-xl text-purple-300">
             Connect, Chat, and Play Amazing Games
-          </p>
+          </p> */}
         </div>
 
         {/* Main Cards Grid */}
@@ -88,9 +88,9 @@ export default function Home() {
               } bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700`}
             >
               <div className="text-6xl mb-4">🕹️</div>
-              <h2 className="text-3xl font-bold text-white mb-2">Play Games</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">Play Game</h2>
               <p className="text-purple-100 mb-4">
-                Experience exciting games including Pop Head Wars. Challenge yourself and climb the leaderboards.
+                Keep Control of the Galaxy by annihilating challengers Space Fleets.
               </p>
               <div className="inline-block px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition">
                 Play Now →
