@@ -78,12 +78,15 @@ export async function POST(request: NextRequest) {
   }
 
   const authenticatedUserId = user!.userId
+  const authenticatedUsername = user!.username
 
   // Never trust arbitrary player identities from client payload.
   // Keep only the authenticated user id, everything else becomes null.
+  // Player identity uses username, while color remains tied to slot order.
   const normalizedPlayers = players.map((p) => ({
     ...p,
     playerId: p.userId === authenticatedUserId ? authenticatedUserId : null,
+    playerName: p.userId === authenticatedUserId ? authenticatedUsername : `guest_slot_${p.slot + 1}`,
   }))
 
   // Fallback for current single-session flow: if client sent no valid owner,
@@ -92,6 +95,7 @@ export async function POST(request: NextRequest) {
     normalizedPlayers[0] = {
       ...normalizedPlayers[0],
       playerId: authenticatedUserId,
+      playerName: authenticatedUsername,
     }
   }
 
@@ -118,7 +122,7 @@ export async function POST(request: NextRequest) {
         data: {
           sessionId:      session.id,
           playerId:       p.playerId,
-          playerName:     COLOR_NAMES[p.slot] ?? 'blue',
+          playerName:     p.playerName,
           playerColor:    COLOR_CODES[p.slot] ?? '#fff',
           shotsFired:     p.shotsFired,
           shotsHit:       p.shotsHit,

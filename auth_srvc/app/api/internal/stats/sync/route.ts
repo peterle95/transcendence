@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
             shipsLost: { increment: Math.max(0, Math.trunc(delta.shipsLost)) },
             shipsDestroyed: { increment: Math.max(0, Math.trunc(delta.shipsDestroyed)) },
             losses: delta.isWinner ? undefined : { increment: 1 },
-            isWinner: delta.isWinner ? { increment: 1 } : undefined,
+            wins: delta.isWinner ? { increment: 1 } : undefined,
           },
         })
 

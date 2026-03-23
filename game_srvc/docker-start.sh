@@ -1,18 +1,17 @@
 #!/bin/sh
 set -e
 
-# Run database migrations (safe for production – never wipes data)
-npx prisma migrate deploy || npx prisma db push --accept-data-loss
-
-# Start socket server in background, then run Next.js in foreground.
+#script consider value of NODE_ENV and runs accordingly
+if [ "$NODE_ENV" = "production" ]; then
+npx prisma migrate deploy
 npm run start:socket &
 SOCKET_PID=$!
-
-cleanup() {
-  kill -TERM "$SOCKET_PID" 2>/dev/null || true
-  wait "$SOCKET_PID" 2>/dev/null || true
-}
-
-trap cleanup INT TERM
-
-npm start
+trap 'kill -TERM "$SOCKET_PID" 2>/dev/null || true' INT TERM
+npm run start
+else
+npx prisma db push
+npm run dev:socket &
+SOCKET_PID=$!
+trap 'kill -TERM "$SOCKET_PID" 2>/dev/null || true' INT TERM
+npm run dev
+fi

@@ -116,10 +116,13 @@ services:
     container_name: game_service
     ports:
       - "3002:3002"
+      - "4000:4000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - SOCKET_CORS_ORIGIN=http://localhost:3002
+      - SOCKET_PORT=4000
       - SOCKET_IO_ALLOWLIST=http://localhost:3002,https://localhost:3002
       - NODE_ENV=development
     depends_on:
