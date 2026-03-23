@@ -18,6 +18,8 @@ RUN npx prisma generate
 # Copy remaining application code
 COPY . .
 
+RUN npm run build
+
 # Expose ports
 EXPOSE 3002 4000 
 
