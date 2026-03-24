@@ -1,97 +1,49 @@
 /**
- * 
- * mock for demo data would come from auth_srvc via api calls
- * TODO:
- * (- Replace getUserById(), getAllUsers() with fetch() calls to auth_srvc)
- * (- Replace getFriends() with calls to friendship endpoints)
- * - Remove this file entirely and use real authentication
+ * Auth service proxy helpers for chat_srvc
+ * Replaces the old in-memory mock user store with real auth_srvc API calls.
  */
 
-import type { User, UserStore, UserHelpers } from '@/types';
+import type { User } from '@/types';
 
-export const userStore: UserStore = {
-  users: [
-    { id: 1, username: "alice", email: "alice@example.com" },
-    { id: 2, username: "bob", email: "bob@example.com" },
-    { id: 3, username: "charlie", email: "charlie@example.com" },
-    { id: 4, username: "david", email: "david@example.com" }
-    
-  ],
-  nextUserId: 5,
-  
-  // { userId: [friendId1, friendId2, ...] }
-  friendships: {
-    1: [2], 
-    2: [1],
-    3: [4],
-    4: [3]  
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
+
+export async function getAllUsers(cookie?: string): Promise<User[]> {
+  console.warn('[userStore] getAllUsers is not supported via auth_srvc — return empty');
+  return [];
+}
+
+export async function getUserById(userId: number, cookie?: string): Promise<User | null> {
+  try {
+    const headers: Record<string, string> = {};
+    if (cookie) headers['cookie'] = cookie;
+
+    const res = await fetch(`${AUTH_SERVICE_URL}/api/users/${userId}`, { headers });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return { id: userId, username: data.username, email: '' };
+  } catch (error) {
+    console.error('[userStore] getUserById error:', error);
+    return null;
   }
-};
+}
 
-export const userHelpers: UserHelpers = {
- 
-  getAllUsers(): User[] {
-    return userStore.users;
-  },
+export async function getFriends(cookie: string): Promise<User[]> {
+  try {
+    const res = await fetch(`${AUTH_SERVICE_URL}/api/friends`, {
+      headers: { cookie },
+    });
 
+    if (!res.ok) return [];
 
-  getUserById(userId: number): User | undefined {
-    return userStore.users.find(u => u.id === userId);
-  },
-
-  createUser(username: string, email: string): User {
-    const existingUser = userStore.users.find(
-      u => u.username === username || u.email === email
-    );
-
-    if (existingUser) {
-      throw new Error('Username or email already exists');
-    }
-
-    const newUser: User = {
-      id: userStore.nextUserId++,
-      username,
-      email
-    };
-
-    userStore.users.push(newUser);
-    userStore.friendships[newUser.id] = [];
-
-    return newUser;
-  },
-
-
-  getFriends(userId: number): User[] {
-    const friendIds = userStore.friendships[userId] || [];
-    return friendIds
-      .map(friendId => userStore.users.find(u => u.id === friendId))
-      .filter((user): user is User => user !== undefined);
-  },
-
-
-  addFriendship(senderId: number, receiverId: number): boolean {
-    //validate users exist
-    const senderExists = userStore.users.find(u => u.id === senderId);
-    const receiverExists = userStore.users.find(u => u.id === receiverId);
-
-    if (!senderExists || !receiverExists) {
-      throw new Error('One or both users do not exist');
-    }
-
-    //if no friendship arrays, create them
-    if (!userStore.friendships[senderId]) {
-      userStore.friendships[senderId] = [];
-    }
-    if (!userStore.friendships[receiverId]) {
-      userStore.friendships[receiverId] = [];
-    }
-
-    if (userStore.friendships[senderId].includes(receiverId)) {
-      throw new Error('Already friends');
-    }
-    userStore.friendships[senderId].push(receiverId);
-    userStore.friendships[receiverId].push(senderId);
-
-    return true;
+    const data = await res.json();
+    return (data.data || []).map((f: any) => ({
+      id: f.id,
+      username: f.username,
+      email: '',
+    }));
+  } catch (error) {
+    console.error('[userStore] getFriends error:', error);
+    return [];
   }
-};
+}

@@ -1,8 +1,5 @@
 /**
  * Type Definitions for Chat Service
- * 
- * These types represent the mock user system.
- * When Auth Service is implemented, replace these with types from the Auth Service API.
  */
 
 export interface User {
@@ -76,18 +73,9 @@ export interface AuthResult {
   error?: string;
 }
 
-// User store types
-export interface UserStore {
-  users: User[];
-  nextUserId: number;
-  friendships: FriendshipStore;
-}
-
-export interface UserHelpers {
-  getAllUsers: () => User[];
-  getUserById: (userId: number) => User | undefined;
-  createUser: (username: string, email: string) => User;
-  getFriends: (userId: number) => User[];
-  addFriendship: (senderId: number, receiverId: number) => boolean;
+// Auth service proxy helpers
+export interface UserStoreHelpers {
+  getUserById: (userId: number, cookie?: string) => Promise<User | null>;
+  getFriends: (cookie: string) => Promise<User[]>;
 }
 

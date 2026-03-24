@@ -4,17 +4,7 @@ const path = require('path')
 const nextConfig = {
   reactStrictMode: true,
   env: {
-    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '/auth',
-  },
-  async rewrites() {
-    // In dev (no Nginx), proxy /auth/* to the auth service directly
-    const authUrl = process.env.AUTH_SERVICE_URL;
-    if (authUrl) {
-      return [
-        { source: '/auth/:path*', destination: `${authUrl}/:path*` },
-      ];
-    }
-    return [];
+    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3000',
   },
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname)

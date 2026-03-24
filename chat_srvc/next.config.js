@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable strict mode for better error handling
   reactStrictMode: true,
+  env: {
+    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3000',
+  },
   
   // Optionally suppress hydration warnings in development
   onDemandEntries: {

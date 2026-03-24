@@ -41,8 +41,8 @@ export default function LoginPage() {
 
 			const data = await response.json()
 
-			// Check for authentication failure
-			if (!response.ok || response.status === 401 || data.error) {
+			// NextAuth always returns 200; failure is signalled via an error in the redirect URL
+			if (!response.ok || (data.url && data.url.includes('error='))) {
 				setError('Invalid email or password')
 				setIsLoading(false)
 				return

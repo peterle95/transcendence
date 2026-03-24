@@ -9,7 +9,7 @@ import type { SendMessageRequest } from '@/types';
  * Sends a message from the authenticated user to another user.
  * 
  * Headers Required:
- *   - x-mock-user-id: The ID of the sender (e.g., "101")
+ *   - Authorization: Bearer <token> (from auth_srvc /api/auth/token)
  * 
  * Request Body:
  *   {
@@ -26,7 +26,7 @@ import type { SendMessageRequest } from '@/types';
 export async function POST(request: Request) {
   try {
 
-    const auth = authenticateRequest(request);
+    const auth = await authenticateRequest(request);
 
     if (!auth.authenticated || !auth.userId) {
       return unauthorizedResponse(auth.error);
