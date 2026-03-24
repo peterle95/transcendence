@@ -24,6 +24,12 @@ jobs:
       - run: npm ci
         working-directory: ${{ matrix.service }}
 
+      - name: Generate Prisma client
+        # Only runs for services that have a prisma schema
+        if: ${{ hashFiles(format('{0}/prisma/schema.prisma', matrix.service)) != '' }}
+        run: npx prisma generate
+        working-directory: ${{ matrix.service }}
+
       - run: npx tsc --noEmit
         working-directory: ${{ matrix.service }}
 
