@@ -18,6 +18,12 @@ RUN npx prisma generate
 # Copy remaining application code
 COPY . .
 
+# Accept build-time variables
+ARG NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+ARG NEXT_PUBLIC_GAME_SERVICE_URL=/game
+ENV NEXT_PUBLIC_AUTH_SERVICE_URL=${NEXT_PUBLIC_AUTH_SERVICE_URL}
+ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
+
 RUN npm run build
 
 # Expose ports

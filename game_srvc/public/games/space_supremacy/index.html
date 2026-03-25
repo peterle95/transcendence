@@ -405,8 +405,8 @@
   const joinSlot   = parseInt(urlParams.get('slot') || '1', 10);
   const isJoining  = !!joinRoomId;
 
-  // Socket server: same host, port 4000 (game_srvc/server.js)
-  const SOCKET_URL = window.location.protocol + '//' + window.location.hostname + ':4000';
+  // Socket server: proxied by nginx
+  const SOCKET_URL = window.location.origin;
 
   /* ─────────────────────────────────────────────────────────────────
      STATE
@@ -459,7 +459,7 @@
   ───────────────────────────────────────────────────────────────── */
   async function authenticate() {
     try {
-      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      const meRes = await fetch('/game/api/auth/me', { credentials: 'include' });
       if (!meRes.ok) throw new Error('not authenticated');
       const meData = await meRes.json();
 
@@ -470,7 +470,7 @@
         return;
       }
 
-      const tokenRes  = await fetch('/api/auth/token', { credentials: 'include' });
+      const tokenRes  = await fetch('/game/api/auth/token', { credentials: 'include' });
       const tokenData = tokenRes.ok ? await tokenRes.json() : {};
       authToken = tokenData.token ?? null;
 
@@ -539,7 +539,7 @@
     if (!myRoomId) myRoomId = Math.random().toString(36).substring(2, 10).toUpperCase();
 
     try {
-      const res = await fetch(`/api/users/lookup?username=${encodeURIComponent(username)}`, {
+      const res = await fetch(`/game/api/users/lookup?username=${encodeURIComponent(username)}`, {
         headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {},
         credentials: 'include',
       });
@@ -661,6 +661,7 @@
     if (gameSocket) { gameSocket.disconnect(); gameSocket = null; }
 
     gameSocket = io(SOCKET_URL, {
+      path: '/game/socket.io/',
       auth: { token: authToken },
       transports: ['websocket', 'polling'],
     });
@@ -789,7 +790,7 @@
     setSaveStatus('info', '<span class="spinner"></span> SAVING_STATS...');
 
     try {
-      const res = await fetch('/api/stats/save', {
+      const res = await fetch('/game/api/stats/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
