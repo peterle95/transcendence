@@ -53,7 +53,7 @@ services:
       - AUTH_SECRET=${AUTH_SECRET:?Set AUTH_SECRET in .env}
       - CORS_ALLOWED_ORIGIN=${PUBLIC_URL:-http://localhost:3003}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in .env}
-      - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003}/auth
+      - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003}
       - NODE_ENV=production
     volumes:
       - avatar_uploads:/app/uploads/avatars
