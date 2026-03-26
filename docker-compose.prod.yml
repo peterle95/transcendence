@@ -51,9 +51,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/auth_db
       - AUTH_SECRET=${AUTH_SECRET:?Set AUTH_SECRET in .env}
-      - CORS_ALLOWED_ORIGIN=${PUBLIC_URL:-http://localhost:3003}
+      - CORS_ALLOWED_ORIGIN=${PUBLIC_URL:-http://localhost:3003} # TODO: Change this to the public URL
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in .env}
-      - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003}
+      - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003} # TODO: Change this to the public URL
       - NODE_ENV=production
     volumes:
       - avatar_uploads:/app/uploads/avatars
