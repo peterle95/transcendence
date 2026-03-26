@@ -66,6 +66,10 @@ jobs:
         
       - name: Validate Docker Compose configuration
         run: docker compose -f docker-compose.prod.yml config -q
+        env:
+          POSTGRES_PASSWORD: dummy
+          AUTH_SECRET: dummy
+          INTERNAL_SERVICE_SECRET: dummy
         
       - name: Validate Nginx configuration
         run: |
