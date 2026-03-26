@@ -74,4 +74,4 @@ jobs:
       - name: Validate Nginx configuration
         run: |
           docker run --rm -v $(pwd)/nginx:/etc/nginx/conf.d \
-            nginx:alpine nginx -t -c /etc/nginx/conf.d/transcendance.conf
+            nginx:alpine nginx -t
