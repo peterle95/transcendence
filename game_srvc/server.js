@@ -1,16 +1,15 @@
 const { Server } = require("socket.io");
 const http = require("http");
 
-
 const PORT = Number(process.env.SOCKET_PORT) || 4000;
+const MAX_SLOTS = 4;
 
 const server = http.createServer((req, res) => {
   if (req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok" }));
+    res.end(JSON.stringify({ status: "ok", players: slots.filter(Boolean).length }));
     return;
   }
-
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("game socket server is running");
 });
@@ -27,39 +26,52 @@ const io = new Server(server, {
   }
 });
 
-let players = [];
+// Player slot tracking: index 0-3 → socket.id or null
+const slots = new Array(MAX_SLOTS).fill(null);
+
+function freeSlot(socketId) {
+  const idx = slots.indexOf(socketId);
+  if (idx !== -1) slots[idx] = null;
+  return idx;
+}
 
 io.on("connection", (socket) => {
+  // Assign the first available player slot
+  const playerIdx = slots.indexOf(null);
+  if (playerIdx === -1) {
+    socket.emit("room_full");
+    socket.disconnect(true);
+    console.log("connection rejected – room full");
+    return;
+  }
 
-  console.log("player connected:", socket.id);
+  slots[playerIdx] = socket.id;
+  console.log(`player connected: ${socket.id} → slot ${playerIdx}`);
 
-  players.push(socket.id);
-
-  // send current player list
-  io.emit("players", players);
-
-  socket.on("move", (data) => {
-
-    console.log("move from", socket.id, data);
-
-    // broadcast to everyone except sender
-    socket.broadcast.emit("move", {
-      player: socket.id,
-      move: data
-    });
-
+  // Tell the new client their slot and who is already present
+  socket.emit("init", {
+    playerIdx,
+    existing: slots.map((id, i) => ({ idx: i, connected: id !== null })),
   });
 
+  // Tell everyone else a new player joined
+  socket.broadcast.emit("player_joined", { playerIdx });
+
+  // ── game state relay ────────────────────────────────────────────────
+  socket.on("move", (state) => {
+    socket.broadcast.emit("move", { playerIdx, state });
+  });
+
+  socket.on("laser", (laserData) => {
+    socket.broadcast.emit("laser", { playerIdx, laserData });
+  });
+
+  // ── disconnection ───────────────────────────────────────────────────
   socket.on("disconnect", () => {
-
-    console.log("player disconnected:", socket.id);
-
-    players = players.filter(id => id !== socket.id);
-
-    io.emit("players", players);
-
+    const idx = freeSlot(socket.id);
+    console.log(`player disconnected: ${socket.id} (slot ${idx})`);
+    io.emit("player_left", { playerIdx: idx });
   });
-
 });
 
 server.listen(PORT, () => {

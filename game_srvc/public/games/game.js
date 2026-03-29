@@ -89,6 +89,108 @@ function wrapPos(obj, w, h, margin = 40) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   SOCKET MANAGER  (online multiplayer)
+   ═══════════════════════════════════════════════════════════════════════ */
+class SocketManager {
+  /**
+   * @param {string} url  e.g. "http://localhost:4000"
+   */
+  constructor(url) {
+    this.playerIdx     = null;   // slot assigned by server (0-3)
+    this.remoteStates  = {};     // playerIdx → latest ship state snapshot
+    this.pendingLasers = [];     // { playerIdx, laserData } queued for next frame
+    this.connected     = false;
+    this._lastEmit     = 0;
+
+    if (typeof io === 'undefined') {
+      console.warn('[SocketManager] socket.io client not loaded – online mode unavailable');
+      this.socket = null;
+      return;
+    }
+
+    this.socket = io(url, { transports: ['websocket'] });
+
+    this.socket.on('connect', () => {
+      this.connected = true;
+      console.log('[SocketManager] connected as', this.socket.id);
+    });
+
+    this.socket.on('disconnect', () => {
+      this.connected = false;
+      console.log('[SocketManager] disconnected');
+    });
+
+    this.socket.on('init', ({ playerIdx, existing }) => {
+      this.playerIdx = playerIdx;
+      console.log('[SocketManager] assigned slot', playerIdx, '| existing:', existing);
+    });
+
+    this.socket.on('player_joined', ({ playerIdx }) => {
+      console.log('[SocketManager] player joined slot', playerIdx);
+    });
+
+    this.socket.on('player_left', ({ playerIdx }) => {
+      delete this.remoteStates[playerIdx];
+      console.log('[SocketManager] player left slot', playerIdx);
+    });
+
+    this.socket.on('move', ({ playerIdx, state }) => {
+      this.remoteStates[playerIdx] = state;
+    });
+
+    this.socket.on('laser', ({ playerIdx, laserData }) => {
+      this.pendingLasers.push({ playerIdx, laserData });
+    });
+
+    this.socket.on('room_full', () => {
+      console.warn('[SocketManager] room is full – cannot join');
+    });
+  }
+
+  /**
+   * Emit local player ship state to the server (throttled to ~20 Hz).
+   * @param {Player} player
+   * @param {Ship}   ship
+   */
+  emitState(player, ship) {
+    if (!this.socket || !this.connected || this.playerIdx === null) return;
+    const now = performance.now();
+    if (now - this._lastEmit < 50) return;   // 20 Hz cap
+    this._lastEmit = now;
+    this.socket.emit('move', {
+      x:          ship.x,
+      y:          ship.y,
+      vx:         ship.vx,
+      vy:         ship.vy,
+      angle:      ship.angle,
+      angularVel: ship.angularVel,
+      hp:         ship.hp,
+      energy:     ship.energy,
+      fleetIndex: player.fleetIndex,
+      alive:      player.alive,
+    });
+  }
+
+  /**
+   * Emit a discrete laser-fired event.
+   * @param {{ x: number, y: number, angle: number }} laserData
+   */
+  emitLaser(laserData) {
+    if (!this.socket || !this.connected) return;
+    this.socket.emit('laser', laserData);
+  }
+
+  /** Drain and return all pending remote laser events. */
+  drainPendingLasers() {
+    return this.pendingLasers.splice(0);
+  }
+
+  disconnect() {
+    if (this.socket) this.socket.disconnect();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    ASSET LOADER
    ═══════════════════════════════════════════════════════════════════════ */
 class AssetLoader {
@@ -639,6 +741,32 @@ class Player {
     if (ship && ship.alive) ship.update(dt);
   }
 
+  /**
+   * Apply a state snapshot received from the socket server.
+   * Used by 'remote' type players to mirror the authoritative client.
+   * @param {{ x,y,vx,vy,angle,angularVel,hp,energy,fleetIndex,alive }} state
+   */
+  applyRemoteState(state) {
+    // Advance fleet index to match remote (ship was lost on their end)
+    while (this.fleetIndex < state.fleetIndex && this.fleetIndex < CFG.FLEET_SIZE) {
+      this.fleetIndex++;
+      this.stats.shipsLost++;
+    }
+    this.alive = state.alive;
+
+    const ship = this.currentShip;
+    if (!ship) return;
+    ship.x          = state.x;
+    ship.y          = state.y;
+    ship.vx         = state.vx;
+    ship.vy         = state.vy;
+    ship.angle      = state.angle;
+    ship.angularVel = state.angularVel;
+    ship.hp         = state.hp;
+    ship.energy     = state.energy;
+    ship.alive      = state.alive;
+  }
+
   draw(ctx) {
     const ship = this.currentShip;
     if (ship && ship.alive) ship.draw(ctx);
@@ -779,6 +907,9 @@ class Game {
     this._teardownInGameMenu = null;
 
     this._rafId = null;
+
+    /** @type {SocketManager|null} Active in 'online' mode only. */
+    this.socketMgr = null;
   }
 
   /* ─── asset registration ─────────────────────────────────────── */
@@ -856,6 +987,10 @@ class Game {
       window.hideGlobalStatsScreen();
     }
     if (this._rafId) cancelAnimationFrame(this._rafId);
+    if (this.socketMgr) {
+      this.socketMgr.disconnect();
+      this.socketMgr = null;
+    }
   }
 
   cancelCurrentSession() {
@@ -867,6 +1002,10 @@ class Game {
     this.winner = null;
     this.selectedMode = null;
     this._isPausedByMenu = false;
+    if (this.socketMgr) {
+      this.socketMgr.disconnect();
+      this.socketMgr = null;
+    }
     this.state = STATE.MENU;
     if (this.mainMenu) {
       this.mainMenu.reset(300);
@@ -911,11 +1050,36 @@ class Game {
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
       this.players.push(new Player(2, 'ai',    {},          this.assets));
       this.players.push(new Player(3, 'ai',    {},          this.assets));
-    }else if (mode === 'online') {
-      this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai',    {},          this.assets));
-      this.players.push(new Player(3, 'ai',    {},          this.assets));
+    } else if (mode === 'online') {
+      // Create all four slots as remote; the server 'init' event will flip
+      // our assigned slot to 'local' once the handshake completes.
+      for (let i = 0; i < 4; i++) {
+        this.players.push(new Player(i, 'remote', {}, this.assets));
+      }
+
+      const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
+        ? window.GAME_SOCKET_PORT
+        : 4000;
+      const socketUrl = typeof window !== 'undefined'
+        ? `${window.location.protocol}//${window.location.hostname}:${socketPort}`
+        : `http://localhost:${socketPort}`;
+
+      this.socketMgr = new SocketManager(socketUrl);
+
+      if (this.socketMgr.socket) {
+        this.socketMgr.socket.once('init', ({ playerIdx }) => {
+          const p = this.players[playerIdx];
+          if (!p) return;
+          p.type     = 'local';
+          p.controls = p1Controls;
+          // Apply logged-in user info to the local slot
+          const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
+          if (currentUser) {
+            p.displayName = currentUser.username;
+            p.userId      = currentUser.id;
+          }
+        });
+      }
     }
 
     // Assign display names and user IDs
@@ -923,6 +1087,9 @@ class Game {
     this.players.forEach(p => {
       if (p.type === 'ai') {
         p.displayName = 'AI';
+        p.userId = null;
+      } else if (p.type === 'remote') {
+        p.displayName = CFG.PLAYER_NAMES[p.idx].toUpperCase();
         p.userId = null;
       } else if (p.idx === 0 && currentUser) {
         p.displayName = currentUser.username;
@@ -963,8 +1130,8 @@ class Game {
         }
         this._draw();
         break;
-      case STATE.GAME_OVER: this._drawGameOver();   break;
-	  case STATE.GAME_OVER: this._drawRanking();   break;
+      case STATE.GAME_OVER: this._drawGameOver(); break;
+      case STATE.RANKING:   this._drawRanking();  break;
     }
 
     this._rafId = requestAnimationFrame(this._loop);
@@ -1128,9 +1295,18 @@ class Game {
     this.players.forEach(p => {
       if (!p.alive) return;
       const laser = p.handleInput(this.input, dt);
-      if (laser) this.lasers.push(laser);
+      if (laser) {
+        this.lasers.push(laser);
+        // Relay locally-fired lasers to all other clients
+        if (this.socketMgr && p.type === 'local') {
+          this.socketMgr.emitLaser({ x: laser.x, y: laser.y, angle: laser.angle });
+        }
+      }
       p.update(dt);
     });
+
+    // ── socket: emit local state + apply remote states ──
+    this._processSocket();
 
     // ── update lasers ──
     this.lasers.forEach(l => l.update(dt));
@@ -1304,6 +1480,44 @@ for (let i = 0; i < this.players.length; i++) {
         console.warn('[checkGameEnd] showRankingScreen not found – gameOver_stats.js loaded?');
       }
     }
+  }
+
+  /* ══════════════════  SOCKET SYNC  ════════════════════════════ */
+  /**
+   * Called once per update tick.
+   * – Emits the local player's ship state to the server.
+   * – Applies incoming remote player states.
+   * – Spawns lasers that arrived from remote clients.
+   */
+  _processSocket() {
+    if (!this.socketMgr) return;
+
+    const mgr      = this.socketMgr;
+    const localIdx = mgr.playerIdx;
+
+    // Emit local player state
+    if (localIdx !== null) {
+      const local = this.players[localIdx];
+      if (local && local.alive) {
+        const ship = local.currentShip;
+        if (ship && ship.alive) mgr.emitState(local, ship);
+      }
+    }
+
+    // Apply remote player states
+    Object.entries(mgr.remoteStates).forEach(([idxStr, state]) => {
+      const idx = Number(idxStr);
+      if (idx === localIdx) return;
+      const player = this.players[idx];
+      if (player) player.applyRemoteState(state);
+    });
+
+    // Spawn lasers fired by remote clients
+    mgr.drainPendingLasers().forEach(({ playerIdx, laserData }) => {
+      this.lasers.push(
+        new Laser(laserData.x, laserData.y, laserData.angle, playerIdx, this.assets)
+      );
+    });
   }
 
   _spawnSparks(x, y, color) {
