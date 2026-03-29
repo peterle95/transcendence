@@ -80,6 +80,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const MAX_MESSAGE_LENGTH = 2000;
+    if (content.trim().length > MAX_MESSAGE_LENGTH) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters`,
+      }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
     //to not query self
     if (sender_id === receiver_id) {
       return new Response(
