@@ -89,18 +89,21 @@ function wrapPos(obj, w, h, margin = 40) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SOCKET MANAGER  (online multiplayer)
+   SOCKET MANAGER  (server-authoritative online multiplayer)
    ═══════════════════════════════════════════════════════════════════════ */
 class SocketManager {
   /**
    * @param {string} url  e.g. "http://localhost:4000"
    */
   constructor(url) {
-    this.playerIdx     = null;   // slot assigned by server (0-3)
-    this.remoteStates  = {};     // playerIdx → latest ship state snapshot
-    this.pendingLasers = [];     // { playerIdx, laserData } queued for next frame
-    this.connected     = false;
-    this._lastEmit     = 0;
+    this.playerIdx        = null;   // slot assigned by server (0-3)
+    this.connected        = false;
+    this.serverGameState  = 'lobby'; // 'lobby'|'countdown'|'playing'|'gameOver'
+    this.countdown        = null;   // seconds remaining, or null
+    this.pendingWorld     = null;   // latest world snapshot waiting to be applied
+    this.pendingGameOver  = null;   // latest game_over payload
+    this.gameRestarted    = false;  // flipped true when server sends game_start
+    this._lastInputEmit   = 0;
 
     if (typeof io === 'undefined') {
       console.warn('[SocketManager] socket.io client not loaded – online mode unavailable');
@@ -120,9 +123,31 @@ class SocketManager {
       console.log('[SocketManager] disconnected');
     });
 
-    this.socket.on('init', ({ playerIdx, existing }) => {
-      this.playerIdx = playerIdx;
-      console.log('[SocketManager] assigned slot', playerIdx, '| existing:', existing);
+    this.socket.on('init', ({ playerIdx, gameState }) => {
+      this.playerIdx       = playerIdx;
+      this.serverGameState = gameState || 'lobby';
+      console.log('[SocketManager] assigned slot', playerIdx, '| serverState:', gameState);
+    });
+
+    this.socket.on('countdown', ({ seconds }) => {
+      this.serverGameState = 'countdown';
+      this.countdown       = seconds;
+    });
+
+    this.socket.on('game_start', () => {
+      this.serverGameState = 'playing';
+      this.countdown       = null;
+      this.gameRestarted   = true;
+    });
+
+    this.socket.on('world', (world) => {
+      this.pendingWorld    = world;
+      this.serverGameState = world.state;
+    });
+
+    this.socket.on('game_over', (data) => {
+      this.pendingGameOver = data;
+      this.serverGameState = 'gameOver';
     });
 
     this.socket.on('player_joined', ({ playerIdx }) => {
@@ -130,16 +155,7 @@ class SocketManager {
     });
 
     this.socket.on('player_left', ({ playerIdx }) => {
-      delete this.remoteStates[playerIdx];
       console.log('[SocketManager] player left slot', playerIdx);
-    });
-
-    this.socket.on('move', ({ playerIdx, state }) => {
-      this.remoteStates[playerIdx] = state;
-    });
-
-    this.socket.on('laser', ({ playerIdx, laserData }) => {
-      this.pendingLasers.push({ playerIdx, laserData });
     });
 
     this.socket.on('room_full', () => {
@@ -148,41 +164,15 @@ class SocketManager {
   }
 
   /**
-   * Emit local player ship state to the server (throttled to ~20 Hz).
-   * @param {Player} player
-   * @param {Ship}   ship
+   * Send raw key-press state to the server (~60 Hz, de-duped).
+   * @param {{ forward, backward, left, right, shoot }} inputs
    */
-  emitState(player, ship) {
+  emitInput(inputs) {
     if (!this.socket || !this.connected || this.playerIdx === null) return;
     const now = performance.now();
-    if (now - this._lastEmit < 50) return;   // 20 Hz cap
-    this._lastEmit = now;
-    this.socket.emit('move', {
-      x:          ship.x,
-      y:          ship.y,
-      vx:         ship.vx,
-      vy:         ship.vy,
-      angle:      ship.angle,
-      angularVel: ship.angularVel,
-      hp:         ship.hp,
-      energy:     ship.energy,
-      fleetIndex: player.fleetIndex,
-      alive:      player.alive,
-    });
-  }
-
-  /**
-   * Emit a discrete laser-fired event.
-   * @param {{ x: number, y: number, angle: number }} laserData
-   */
-  emitLaser(laserData) {
-    if (!this.socket || !this.connected) return;
-    this.socket.emit('laser', laserData);
-  }
-
-  /** Drain and return all pending remote laser events. */
-  drainPendingLasers() {
-    return this.pendingLasers.splice(0);
+    if (now - this._lastInputEmit < 16) return;  // ~60 Hz cap
+    this._lastInputEmit = now;
+    this.socket.emit('input', inputs);
   }
 
   disconnect() {
@@ -1051,8 +1041,8 @@ class Game {
       this.players.push(new Player(2, 'ai',    {},          this.assets));
       this.players.push(new Player(3, 'ai',    {},          this.assets));
     } else if (mode === 'online') {
-      // Create all four slots as remote; the server 'init' event will flip
-      // our assigned slot to 'local' once the handshake completes.
+      // All 4 slots are view-only; the server owns all physics.
+      // We identify ourselves by playerIdx from 'init' and send key inputs.
       for (let i = 0; i < 4; i++) {
         this.players.push(new Player(i, 'remote', {}, this.assets));
       }
@@ -1068,16 +1058,15 @@ class Game {
 
       if (this.socketMgr.socket) {
         this.socketMgr.socket.once('init', ({ playerIdx }) => {
-          const p = this.players[playerIdx];
-          if (!p) return;
-          p.type     = 'local';
-          p.controls = p1Controls;
-          // Apply logged-in user info to the local slot
+          // Tell server our display name
           const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
-          if (currentUser) {
-            p.displayName = currentUser.username;
-            p.userId      = currentUser.id;
-          }
+          const name = (currentUser && currentUser.username)
+            ? currentUser.username
+            : CFG.PLAYER_NAMES[playerIdx].toUpperCase();
+          this.socketMgr.socket.emit('display_name', name);
+          // Update local view
+          const p = this.players[playerIdx];
+          if (p) { p.displayName = name; p.userId = currentUser ? currentUser.id : null; }
         });
       }
     }
@@ -1270,6 +1259,13 @@ class Game {
 
   /* ═══════════════════  UPDATE  ════════════════════════════════ */
   _update(dt) {
+    // Online mode: server owns all physics.  Client only sends inputs and
+    // renders the world state it receives.  Skip local simulation entirely.
+    if (this.socketMgr) {
+      this._handleOnlineUpdate(dt);
+      return;
+    }
+
     const now = performance.now();
 
     // ── AI target assignment ──
@@ -1295,18 +1291,9 @@ class Game {
     this.players.forEach(p => {
       if (!p.alive) return;
       const laser = p.handleInput(this.input, dt);
-      if (laser) {
-        this.lasers.push(laser);
-        // Relay locally-fired lasers to all other clients
-        if (this.socketMgr && p.type === 'local') {
-          this.socketMgr.emitLaser({ x: laser.x, y: laser.y, angle: laser.angle });
-        }
-      }
+      if (laser) this.lasers.push(laser);
       p.update(dt);
     });
-
-    // ── socket: emit local state + apply remote states ──
-    this._processSocket();
 
     // ── update lasers ──
     this.lasers.forEach(l => l.update(dt));
@@ -1482,42 +1469,150 @@ for (let i = 0; i < this.players.length; i++) {
     }
   }
 
-  /* ══════════════════  SOCKET SYNC  ════════════════════════════ */
+  /* ══════════════════  ONLINE MODE (server-authoritative)  ═════ */
+
   /**
-   * Called once per update tick.
-   * – Emits the local player's ship state to the server.
-   * – Applies incoming remote player states.
-   * – Spawns lasers that arrived from remote clients.
+   * Called by _update() instead of the local physics block when in online mode.
+   * Sends raw inputs to server; applies pending world snapshots; handles events.
    */
-  _processSocket() {
-    if (!this.socketMgr) return;
+  _handleOnlineUpdate(dt) {
+    const mgr = this.socketMgr;
+    if (!mgr) return;
 
-    const mgr      = this.socketMgr;
-    const localIdx = mgr.playerIdx;
+    // Send our key state to the server
+    if (mgr.playerIdx !== null && mgr.connected) {
+      mgr.emitInput({
+        forward:  this.input.isDown('ArrowUp'),
+        backward: this.input.isDown('ArrowDown'),
+        left:     this.input.isDown('ArrowLeft'),
+        right:    this.input.isDown('ArrowRight'),
+        shoot:    this.input.isDown('Space'),
+      });
+    }
 
-    // Emit local player state
-    if (localIdx !== null) {
-      const local = this.players[localIdx];
-      if (local && local.alive) {
-        const ship = local.currentShip;
-        if (ship && ship.alive) mgr.emitState(local, ship);
+    // Apply latest world snapshot from server
+    if (mgr.pendingWorld) {
+      this._applyWorldSnapshot(mgr.pendingWorld);
+      mgr.pendingWorld = null;
+    }
+
+    // Server-initiated game-over
+    if (mgr.pendingGameOver && this.state !== STATE.GAME_OVER) {
+      const data = mgr.pendingGameOver;
+      mgr.pendingGameOver = null;
+      this.winner = (data.winner !== null && data.winner !== undefined)
+        ? (this.players[data.winner] || null)
+        : null;
+      this.state = STATE.GAME_OVER;
+      this._gameOverCooldown = 800;
+      if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
+        window.showRankingScreen(this.players, this.winner, 'online', () => {
+          // Server will auto-restart; just flip back to PLAYING so we render the
+          // world snapshots when the new game arrives.
+          this.state = STATE.PLAYING;
+        });
       }
     }
 
-    // Apply remote player states
-    Object.entries(mgr.remoteStates).forEach(([idxStr, state]) => {
-      const idx = Number(idxStr);
-      if (idx === localIdx) return;
-      const player = this.players[idx];
-      if (player) player.applyRemoteState(state);
+    // Server started a new game (auto-restart after game-over)
+    if (mgr.gameRestarted) {
+      mgr.gameRestarted = false;
+      this._resetOnlineGame();
+    }
+
+    // Particles are purely visual — update client-side only
+    this.particles.forEach(p => p.update(dt));
+    this.particles = this.particles.filter(p => p.alive);
+  }
+
+  /** Reset local view state between online rounds. */
+  _resetOnlineGame() {
+    this.winner      = null;
+    this.lasers      = [];
+    this.particles   = [];
+    // fleetIndex / ship positions will be corrected by the next world snapshot
+    this.players.forEach(p => { p.fleetIndex = 0; p.alive = true; });
+    if (this.state === STATE.GAME_OVER) this.state = STATE.PLAYING;
+  }
+
+  /**
+   * Apply a world snapshot sent by the server.
+   * Sets positions, HP, fleet state, lasers, and meteor positions.
+   * Spawns client-side particles for visual events in the snapshot.
+   */
+  _applyWorldSnapshot(world) {
+    // Sync every player slot
+    world.players.forEach((ps, i) => {
+      if (!ps) return;
+      const player = this.players[i];
+      if (!player) return;
+
+      player.fleetIndex  = ps.fleetIndex;
+      player.alive       = ps.alive;
+      player.displayName = ps.displayName;
+      if (ps.stats) player.stats = ps.stats;
+
+      const ship = player.currentShip;
+      if (ship && ps.ship) {
+        ship.x          = ps.ship.x;
+        ship.y          = ps.ship.y;
+        ship.vx         = ps.ship.vx;
+        ship.vy         = ps.ship.vy;
+        ship.angle      = ps.ship.angle;
+        ship.angularVel = ps.ship.angularVel;
+        ship.hp         = ps.ship.hp;
+        ship.energy     = ps.ship.energy;
+        ship.alive      = ps.ship.alive;
+        // Keep invuln blink alive for a brief window
+        if (ps.ship.isInvulnerable) ship.invulnUntil = performance.now() + 200;
+      }
     });
 
-    // Spawn lasers fired by remote clients
-    mgr.drainPendingLasers().forEach(({ playerIdx, laserData }) => {
-      this.lasers.push(
-        new Laser(laserData.x, laserData.y, laserData.angle, playerIdx, this.assets)
-      );
+    // Replace laser list with server's authoritative list
+    this.lasers = world.lasers.map(l =>
+      new Laser(l.x, l.y, l.angle, l.ownerIdx, this.assets)
+    );
+
+    // Sync meteor positions/state (meteors already exist from _setupPlayers)
+    world.meteors.forEach((ms, i) => {
+      const m = this.meteors[i];
+      if (!m) return;
+      m.x        = ms.x;
+      m.y        = ms.y;
+      m.rot      = ms.rot;
+      m.alive    = ms.alive;
+      m.spriteKey = ms.spriteKey;
+      m.radius   = ms.radius;
     });
+
+    // Visual events (sparks / explosions) determined by the server
+    (world.events || []).forEach(ev => {
+      if (ev.type === 'spark')     this._spawnSparks(ev.x, ev.y, ev.color);
+      if (ev.type === 'explosion') this._spawnExplosion(ev.x, ev.y);
+    });
+  }
+
+  /** Overlay drawn on top of the game canvas while waiting for the server. */
+  _drawOnlineOverlay() {
+    const mgr = this.socketMgr;
+    if (!mgr) return;
+    if (!mgr.connected)                        return this._drawWaitMessage('Connecting to server…');
+    if (mgr.serverGameState === 'countdown' && mgr.countdown !== null)
+                                               return this._drawWaitMessage(`Game starts in  ${mgr.countdown}s`);
+    if (mgr.serverGameState === 'lobby')       return this._drawWaitMessage('Waiting for players…');
+  }
+
+  _drawWaitMessage(msg) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(0, 0, CFG.WIDTH, CFG.HEIGHT);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.font      = 'bold 34px monospace';
+    ctx.fillText(msg, CFG.WIDTH / 2, CFG.HEIGHT / 2);
+    ctx.textAlign = 'left';
+    ctx.restore();
   }
 
   _spawnSparks(x, y, color) {
@@ -1575,6 +1670,14 @@ for (let i = 0; i < this.players.length; i++) {
 
   _draw() {
     const ctx = this.ctx;
+
+    // In online mode, show a waiting overlay until the server game is running
+    if (this.socketMgr && this.socketMgr.serverGameState !== 'playing') {
+      this._drawBackground();
+      this._drawOnlineOverlay();
+      return;
+    }
+
     this._drawBackground();
 
     // meteors
@@ -1591,6 +1694,9 @@ for (let i = 0; i < this.players.length; i++) {
 
     // HUD
     if (this.hud) this.hud.draw(ctx);
+
+    // Countdown / connecting overlay (drawn over the live game if needed)
+    if (this.socketMgr) this._drawOnlineOverlay();
   }
 }
 
