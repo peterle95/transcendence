@@ -49,7 +49,7 @@ export const socketHandler = (io: SocketIOServer) => {
             return next(new Error('Invalid or expired token'));
         }
 
-        socket.data.userId = user.userId;
+        socket.data.userId = Number(user.userId);
         socket.data.username = user.username;
         next();
     });
