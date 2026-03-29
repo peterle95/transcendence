@@ -11,11 +11,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/authMiddleware';
 
-const ALLOWED_ORIGINS = [
-  'http://localhost:3001',
-  'http://localhost:3002',
-  'http://localhost:3003',
-];
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || 'http://localhost:3001,http://localhost:3002,http://localhost:3003'
+).split(',').map(s => s.trim());
 
 function corsHeaders(origin: string | null): Record<string, string> {
   if (origin && ALLOWED_ORIGINS.includes(origin)) {
