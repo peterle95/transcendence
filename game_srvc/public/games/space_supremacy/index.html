@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -253,6 +253,9 @@
       <div class="mode-grid">
         <button class="mode-btn" data-mode="solo">
           <span class="mode-name">1P vs AI</span>Solo vs AI
+        </button>
+        <button class="mode-btn" data-mode="vs_ai_ml">
+          <span class="mode-name">1P vs AI (ML)</span>Live ML AI opponent
         </button>
         <button class="mode-btn" data-mode="local2">
           <span class="mode-name">LOCAL 2P</span>2 players, one screen
@@ -697,6 +700,10 @@
 
     gameSocket.on('game_state', (state) => {
       if (game) game.onPeerState(state);
+    });
+
+    gameSocket.on('ai_command', (state) => {
+      if (game) game.onAICommand(state);
     });
 
     gameSocket.on('game_peer_left', () => {

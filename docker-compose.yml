@@ -143,11 +143,40 @@ services:
       - app_network
     restart: unless-stopped
 
+# ============================================================================
+# Aggiungi questo blocco al docker-compose.yml esistente, nella sezione services:
+# ============================================================================
+
+  # ========================================
+  # AI Service - DQN Player
+  # Socket.IO client: riceve ai_game_state e invia ai_command
+  # ========================================
+  ai_srvc:
+    build: ./AI_srvc
+    container_name: ai_service
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - MODEL_PATH=/app/models/dqn_latest.pt
+      - TRAINING_MODE=false   # true = training contro bot, false = inference live
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models  # persistenza dei modelli addestrati
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
     driver: local
   mongo_data:
+    driver: local
+  ai_models:
+    driver: local
+  ai_logs:
     driver: local
 
 networks:

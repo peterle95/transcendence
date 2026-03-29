@@ -3,7 +3,7 @@
  *  SPACE FLEET BATTLE – Canvas-based space shooter (1-4 players)
  * ===================================================================
  *
- *  Controls
+ *  Controls 
  *  --------
  *  Player 1 (Blue)  – Arrows + Space
  *  Player 2 (Green) – W A S D  + Tab
@@ -577,11 +577,31 @@ class Player {
     } else if (this.type === 'remote') {
       const s = this._networkState;
       if (!s) return null;
-      ship.x     = s.x;
-      ship.y     = s.y;
-      ship.angle = s.angle;
+
+      // AI remote commands are incremental controls like local input.
+      const hasIncremental =
+        Number.isFinite(Number(s.movimento)) ||
+        Number.isFinite(Number(s.rotazione)) ||
+        Number.isFinite(Number(s.sparo));
+
+      if (hasIncremental) {
+        const movimento = Number(s.movimento) || 0;
+        const rotazione = Number(s.rotazione) || 0;
+
+        if (movimento === 1) ship.thrustForward(dt);
+        else if (movimento === 2) ship.thrustBackward(dt);
+
+        if (rotazione === 1) ship.rotateLeft(dt);
+        else if (rotazione === 2) ship.rotateRight(dt);
+      } else {
+        // Fallback for legacy remote peers sending absolute transforms.
+        ship.x     = s.x;
+        ship.y     = s.y;
+        ship.angle = s.angle;
+      }
+
       this.shootCooldown -= dt;
-      if (s.shoot && this.shootCooldown <= 0 && ship.canShoot()) {
+      if ((s.shoot || Number(s.sparo) === 1) && this.shootCooldown <= 0 && ship.canShoot()) {
         ship.consumeShot();
         this.stats.shotsFired++;
         this.shootCooldown = 180;
@@ -950,12 +970,17 @@ class Game {
         else
           this.players.push(new Player(i, 'remote', {}, this.assets));
       }
-    }
+	} else if (mode === 'vs_ai_ml') {
+		this.players.push(new Player(0, 'local',  p1Controls, this.assets));
+		const aiPlayer = new Player(1, 'remote', {}, this.assets);
+		aiPlayer.isAI = true;
+		this.players.push(aiPlayer);
+	}
 
     // Assign display names and user IDs
     const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
     this.players.forEach(p => {
-      if (p.type === 'ai') {
+      if (p.type === 'ai' || (p.type === 'remote' && p.isAI)) {
         p.displayName = 'AI';
         p.userId = null;
       } else if (p.idx === 0 && currentUser) {
@@ -1143,6 +1168,11 @@ class Game {
     if (remote) remote.applyNetworkState(state);
   }
 
+  onAICommand(state) {
+    const aiRemote = this.players.find(p => p.type === 'remote' && p.isAI && p.idx === state.slot);
+    if (aiRemote) aiRemote.applyNetworkState(state);
+  }
+
   /* ═══════════════════  UPDATE  ════════════════════════════════ */
   _update(dt) {
     const now = performance.now();
@@ -1202,6 +1232,53 @@ class Game {
     // ── update particles ──
     this.particles.forEach(p => p.update(dt));
     this.particles = this.particles.filter(p => p.alive);
+
+    // ── send AI state snapshots to ai_srvc through Socket.IO bridge ──
+    if (this.networkSocket && this.networkRoomId && now - this._lastInputSend > 33) {
+      this.players.forEach(p => {
+        if (!(p.type === 'remote' && p.isAI) || !p.alive) return;
+        const ship = p.currentShip;
+        if (!ship || !ship.alive) return;
+
+        this.networkSocket.emit('ai_game_state', {
+          roomId: this.networkRoomId,
+          slot: p.idx,
+          dt_ms: dt,
+          my_ship: {
+            x: ship.x,
+            y: ship.y,
+            angle: ship.angle,
+            vx: ship.vx,
+            vy: ship.vy,
+            energy: ship.energy,
+            hp: ship.hp,
+            alive: ship.alive,
+            radius: ship.radius,
+          },
+          enemies: this.players
+            .filter(other => other !== p && other.alive)
+            .map(other => {
+              const os = other.currentShip;
+              return os ? {
+                x: os.x,
+                y: os.y,
+                angle: os.angle,
+                hp: os.hp,
+                alive: os.alive,
+              } : null;
+            })
+            .filter(Boolean),
+          lasers: this.lasers.map(l => ({
+            x: l.x,
+            y: l.y,
+            is_enemy: l.ownerIdx !== p.idx,
+          })),
+          meteors: this.meteors
+            .filter(m => m.alive)
+            .map(m => ({ x: m.x, y: m.y, radius: m.radius, alive: m.alive })),
+        });
+      });
+    }
 
     // ── collisions: lasers ↔ ships ──
     this.lasers.forEach(laser => {
@@ -1340,6 +1417,7 @@ for (let i = 0; i < this.players.length; i++) {
         }
       });
     });
+
   }
 
   _checkGameEnd() {

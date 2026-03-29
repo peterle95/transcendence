@@ -4,6 +4,7 @@ const http = require("http");
 
 const PORT = Number(process.env.SOCKET_PORT) || 4000;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://auth_srvc:3000";
+const SERVICE_SECRET = process.env.SERVICE_SECRET || "inter-service-shared-secret-change-in-production";
 
 
 const server = http.createServer((req, res) => {
@@ -29,6 +30,11 @@ const io = new Server(server, {
   }
 });
 const gameRooms = new Map();
+const aiSockets = new Map(); // key: `${roomId}:${slot}` -> socket.id
+
+function aiKey(roomId, slot) {
+  return `${roomId}:${slot}`;
+}
 
 async function verifyToken(token) {
   try {
@@ -48,6 +54,15 @@ async function verifyToken(token) {
 }
 
 io.use(async (socket, next) => {
+  const serviceSecret = socket.handshake.auth?.service_secret;
+  if (serviceSecret && serviceSecret === SERVICE_SECRET) {
+    socket.data.isService = true;
+    socket.data.username = "ai_service";
+    socket.data.aiSlot = Number(socket.handshake.auth?.ai_slot);
+    socket.data.roomId = socket.handshake.auth?.room_id;
+    return next();
+  }
+
   const token = socket.handshake.auth?.token;
   if (!token) return next(new Error("Authentication token required"));
   const user = await verifyToken(token);
@@ -59,6 +74,42 @@ io.use(async (socket, next) => {
 
 io.on("connection", (socket) => {
   console.log(`connected: ${socket.id} (${socket.data.username})`);
+
+  if (socket.data.isService) {
+    if (socket.data.roomId != null && Number.isFinite(socket.data.aiSlot)) {
+      const key = aiKey(socket.data.roomId, socket.data.aiSlot);
+      aiSockets.set(key, socket.id);
+      console.log(`[AI] registered socket=${socket.id} room=${socket.data.roomId} slot=${socket.data.aiSlot}`);
+    }
+
+    socket.on("ai_command", (payload = {}) => {
+      const roomId = payload.roomId;
+      const slot = Number(payload.slot);
+      if (roomId == null || !Number.isFinite(slot)) return;
+
+      console.log(`[AI] command room=${roomId} slot=${slot} movimento=${payload.movimento} rotazione=${payload.rotazione} sparo=${payload.sparo}`);
+      io.to(`game_${roomId}`).emit("ai_command", payload);
+    });
+
+    socket.on("ai_game_state", (payload = {}) => {
+      const roomId = payload.roomId;
+      const slot = Number(payload.slot);
+      if (roomId == null || !Number.isFinite(slot)) return;
+
+      const targetSocketId = aiSockets.get(aiKey(roomId, slot));
+      if (!targetSocketId) return;
+
+      io.to(targetSocketId).emit("ai_game_state", payload);
+    });
+
+    socket.on("disconnect", () => {
+      if (socket.data.roomId != null && Number.isFinite(socket.data.aiSlot)) {
+        aiSockets.delete(aiKey(socket.data.roomId, socket.data.aiSlot));
+      }
+    });
+
+    return;
+  }
 
   // Personal room for directed events (game invites, etc.)
   socket.join(`user_${socket.data.userId}`);
@@ -86,6 +137,17 @@ io.on("connection", (socket) => {
 
   socket.on("game_state", ({ roomId, ...state }) => {
     socket.to(`game_${roomId}`).emit("game_state", state);
+  });
+
+  socket.on("ai_game_state", (payload = {}) => {
+    const roomId = payload.roomId;
+    const slot = Number(payload.slot);
+    if (roomId == null || !Number.isFinite(slot)) return;
+
+    const targetSocketId = aiSockets.get(aiKey(roomId, slot));
+    if (!targetSocketId) return;
+
+    io.to(targetSocketId).emit("ai_game_state", payload);
   });
 
   socket.on("game_room_leave", ({ roomId }) => {
