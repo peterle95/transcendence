@@ -7,9 +7,8 @@ import type { User } from '@/types';
 
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
 
-export async function getAllUsers(cookie?: string): Promise<User[]> {
-  console.warn('[userStore] getAllUsers is not supported via auth_srvc — return empty');
-  return [];
+export async function getAllUsers(): Promise<never> {
+  throw new Error('[userStore] getAllUsers is not supported — use auth_srvc /api/users/search');
 }
 
 export async function getUserById(userId: number, cookie?: string): Promise<User | null> {
