@@ -28,11 +28,11 @@ export async function getUserById(userId: number, cookie?: string): Promise<User
   }
 }
 
-export async function getFriends(cookie: string): Promise<User[]> {
+export async function getFriends(cookie: string, authorization?: string): Promise<User[]> {
   try {
-    const res = await fetch(`${AUTH_SERVICE_URL}/api/friends`, {
-      headers: { cookie },
-    });
+    const headers: Record<string, string> = { cookie };
+    if (authorization) headers['Authorization'] = authorization;
+    const res = await fetch(`${AUTH_SERVICE_URL}/api/friends`, { headers });
 
     if (!res.ok) return [];
 
