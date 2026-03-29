@@ -28,6 +28,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+// roomId → { host: socketId, players: Map<socketId, { userId, username, slot }> }
 const gameRooms = new Map();
 
 async function verifyToken(token) {
@@ -64,14 +65,28 @@ io.on("connection", (socket) => {
   socket.join(`user_${socket.data.userId}`);
 
   socket.on("game_room_join", ({ roomId, slot }) => {
+    // Issue #6: track first joiner as host
+    if (!gameRooms.has(roomId)) {
+      gameRooms.set(roomId, { host: socket.id, players: new Map() });
+    }
+
+    const room = gameRooms.get(roomId);
+
+    // Issue #7: reject duplicate slot numbers
+    const existingPlayers = Array.from(room.players.values());
+    if (existingPlayers.some(p => p.slot === slot)) {
+      socket.emit("error", { message: `Slot ${slot} is already taken` });
+      return;
+    }
+
     socket.join(`game_${roomId}`);
-    if (!gameRooms.has(roomId)) gameRooms.set(roomId, new Map());
-    gameRooms.get(roomId).set(socket.id, {
+    room.players.set(socket.id, {
       userId:   socket.data.userId,
       username: socket.data.username,
       slot,
     });
-    const players = Array.from(gameRooms.get(roomId).values());
+
+    const players = Array.from(room.players.values());
     console.log(`[Room] ${socket.data.username} joined ${roomId} slot ${slot} — ${players.length} players`);
     io.to(`game_${roomId}`).emit("game_room_update", { players });
   });
@@ -79,12 +94,32 @@ io.on("connection", (socket) => {
   socket.on("game_room_start", ({ roomId }) => {
     const room = gameRooms.get(roomId);
     if (!room) return;
-    const totalPlayers = room.size;
+
+    // Issue #6: only the host can start the game
+    if (room.host !== socket.id) {
+      socket.emit("error", { message: "Only the host can start the game" });
+      return;
+    }
+
+    const totalPlayers = room.players.size;
     console.log(`[Room] Host started ${roomId} with ${totalPlayers} players`);
     io.to(`game_${roomId}`).emit("game_room_ready", { totalPlayers });
   });
 
+  // Issue #8: guard against oversized payloads and rate-limit to 50ms per socket
+  const lastGameState = new Map();
   socket.on("game_state", ({ roomId, ...state }) => {
+    const now = Date.now();
+    const last = lastGameState.get(socket.id) || 0;
+    if (now - last < 50) return;
+    lastGameState.set(socket.id, now);
+
+    const payloadSize = JSON.stringify(state).length;
+    if (payloadSize > 4096) {
+      console.warn(`[Room] Oversized game_state from ${socket.id} (${payloadSize} bytes)`);
+      return;
+    }
+
     socket.to(`game_${roomId}`).emit("game_state", state);
   });
 
@@ -92,12 +127,13 @@ io.on("connection", (socket) => {
     socket.leave(`game_${roomId}`);
     cleanupRoom(roomId, socket.id);
     io.to(`game_${roomId}`).emit("game_peer_left");
+    lastGameState.delete(socket.id);
   });
 
   socket.on("disconnect", () => {
     console.log(`disconnected: ${socket.id}`);
-    gameRooms.forEach((_players, roomId) => {
-      if (gameRooms.get(roomId)?.has(socket.id)) {
+    gameRooms.forEach((_room, roomId) => {
+      if (gameRooms.get(roomId)?.players.has(socket.id)) {
         cleanupRoom(roomId, socket.id);
         io.to(`game_${roomId}`).emit("game_peer_left");
       }
@@ -108,8 +144,8 @@ io.on("connection", (socket) => {
 function cleanupRoom(roomId, socketId) {
   const room = gameRooms.get(roomId);
   if (!room) return;
-  room.delete(socketId);
-  if (room.size === 0) gameRooms.delete(roomId);
+  room.players.delete(socketId);
+  if (room.players.size === 0) gameRooms.delete(roomId);
 }
 
 server.listen(PORT, () => {
