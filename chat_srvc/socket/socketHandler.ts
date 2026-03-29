@@ -64,7 +64,7 @@ export const socketHandler = (io: SocketIOServer) => {
         socket.on('join_room', (roomId: string) => {
             const userId = socket.data.userId;
             const ids = roomId.split('_').map(Number);
-            if (!ids.includes(userId)) {
+            if (ids.length !== 2 || ids.some(isNaN) || !ids.includes(userId)) {
                 console.warn(`[Socket] User ${userId} attempted to join unauthorized room ${roomId}`);
                 socket.emit('error', { message: 'Not authorized to join this room' });
                 return;
