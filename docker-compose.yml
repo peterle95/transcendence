@@ -267,7 +267,7 @@ services:
       - app_network
     restart: unless-stopped
 
-  # One-shot training worker, launched on demand: docker compose up ai_train
+  # Continuous training worker, launched on demand with training profile
   ai_train:
     build: ./AI_srvc
     container_name: ai_train_service
@@ -277,6 +277,7 @@ services:
       - ROOM_ID=training-room
       - AI_SLOT=1
       - TRAIN_AI_SLOTS=1,2
+      - TRAIN_STEPS=0
       - MODEL_PATH=/app/models/train/dqn_latest.pt
       - TRAIN_CHECKPOINT_PATH=/app/models/train/dqn_training_checkpoint.pt
       - TRAINING_MODE=true
@@ -291,7 +292,7 @@ services:
       - training
     networks:
       - app_network
-    restart: "no"
+    restart: unless-stopped
 
   # Promote trained model to live path atomically
   ai_promote:

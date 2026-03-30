@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import tempfile
 from datetime import datetime
+
+CURRENT_DIR = os.path.dirname(__file__)
+APP_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
+if APP_ROOT not in sys.path:
+    sys.path.insert(0, APP_ROOT)
 
 from model import load_model
 

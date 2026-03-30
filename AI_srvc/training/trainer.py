@@ -37,6 +37,7 @@ class Trainer:
 
     def __init__(self) -> None:
         self.agent = DQNAgent()
+        self._target_steps: Optional[int] = TRAIN_STEPS if TRAIN_STEPS > 0 else None
         self._recent_losses: list[float] = []
         self._recent_rewards: list[float] = []
         self._session_transitions = 0
@@ -49,7 +50,22 @@ class Trainer:
         self._got_first_state = asyncio.Event()
         self._finished = asyncio.Event()
 
+        self._ensure_artifact_dirs()
+
         self._resume_if_available()
+
+    def _should_finish_session(self) -> bool:
+        return self._target_steps is not None and self._session_transitions >= self._target_steps
+
+    @staticmethod
+    def _ensure_parent_dir(file_path: str) -> None:
+        parent = os.path.dirname(file_path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+
+    def _ensure_artifact_dirs(self) -> None:
+        self._ensure_parent_dir(MODEL_PATH)
+        self._ensure_parent_dir(TRAIN_CHECKPOINT_PATH)
 
     def _resume_if_available(self) -> None:
         if not TRAIN_RESUME:
@@ -83,7 +99,7 @@ class Trainer:
                 log.exception("failed to load existing model, starting from fresh weights")
 
     def _save_checkpoint(self) -> None:
-        os.makedirs(os.path.dirname(TRAIN_CHECKPOINT_PATH), exist_ok=True)
+        self._ensure_artifact_dirs()
         checkpoint = {
             "agent": self.agent.checkpoint_state(),
             "trainer": {
@@ -181,7 +197,7 @@ class Trainer:
 
                 await self._emit_command(sio, {"movimento": 0, "rotazione": 0, "sparo": 0})
 
-                if self._session_transitions >= TRAIN_STEPS:
+                if self._should_finish_session():
                     self._finished.set()
                 return
 
@@ -208,6 +224,7 @@ class Trainer:
             )
 
         if self._session_transitions % SAVE_EVERY == 0 and self._session_transitions > 0:
+            self._ensure_artifact_dirs()
             save_model(self.agent.online, MODEL_PATH)
             self._save_checkpoint()
             log.info(
@@ -218,16 +235,23 @@ class Trainer:
                 TRAIN_CHECKPOINT_PATH,
             )
 
-        if self._session_transitions >= TRAIN_STEPS:
+        if self._should_finish_session():
             self._finished.set()
 
     async def run(self) -> None:
-        log.info(
-            "live training started: target_transitions=%d room=%s slot=%d",
-            TRAIN_STEPS,
-            ROOM_ID,
-            AI_SLOT,
-        )
+        if self._target_steps is None:
+            log.info(
+                "live training started: continuous mode room=%s slot=%d",
+                ROOM_ID,
+                AI_SLOT,
+            )
+        else:
+            log.info(
+                "live training started: target_transitions=%d room=%s slot=%d",
+                self._target_steps,
+                ROOM_ID,
+                AI_SLOT,
+            )
 
         sio = socketio.AsyncClient(reconnection=True, reconnection_attempts=0)
 
@@ -281,6 +305,7 @@ class Trainer:
         while not self._finished.is_set():
             await asyncio.sleep(0.1)
 
+        self._ensure_artifact_dirs()
         save_model(self.agent.online, MODEL_PATH)
         self._save_checkpoint()
         log.info(
