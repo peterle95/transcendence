@@ -21,6 +21,7 @@ GAME_SVC_URL = os.getenv("GAME_SVC_URL", "http://game_srvc:4000")
 SERVICE_SECRET = os.getenv("SERVICE_SECRET", "inter-service-shared-secret-change-in-production")
 ROOM_ID = os.getenv("ROOM_ID", "local")
 AI_SLOT = int(os.getenv("AI_SLOT", "1"))
+TRAIN_AI_SLOTS = os.getenv("TRAIN_AI_SLOTS", "1,2")
 STATE_TIMEOUT_S = float(os.getenv("TRAIN_STATE_TIMEOUT_S", "15"))
 TRAIN_RESUME = os.getenv("TRAIN_RESUME", "true").lower() == "true"
 TRAIN_CHECKPOINT_PATH = os.getenv("TRAIN_CHECKPOINT_PATH", "/app/models/dqn_training_checkpoint.pt")
@@ -255,12 +256,26 @@ class Trainer:
             transports=["websocket"],
         )
 
+        # Ask training-enabled game_srvc instance to bootstrap an AI-only room.
+        ai_slots = [int(s.strip()) for s in TRAIN_AI_SLOTS.split(',') if s.strip().isdigit()]
+        if not ai_slots:
+            ai_slots = [AI_SLOT, (AI_SLOT + 1) % 4]
+        ack = await sio.call(
+            "training_start",
+            {"roomId": ROOM_ID, "aiSlots": ai_slots},
+            timeout=10,
+        )
+        if not ack or not ack.get("ok"):
+            await sio.disconnect()
+            raise RuntimeError(f"Training session bootstrap failed: {ack}")
+        log.info("training room bootstrap acknowledged: room=%s slots=%s", ROOM_ID, ai_slots)
+
         try:
             await asyncio.wait_for(self._got_first_state.wait(), timeout=STATE_TIMEOUT_S)
         except TimeoutError as exc:
             await sio.disconnect()
             raise RuntimeError(
-                "No ai_game_state received. Start a match in vs_ai_ml with matching ROOM_ID/AI_SLOT."
+                "No ai_game_state received. Verify ai_train_bot is running and training_start bootstrap succeeded for the configured ROOM_ID/AI_SLOT."
             ) from exc
 
         while not self._finished.is_set():

@@ -602,6 +602,8 @@ class Player {
     this.shootCooldown = 0;
     this.displayName = null;       // set externally (username or 'AI')
     this.userId = null;            // set externally (from auth service)
+    this.isAI = false;
+    this._networkState = null;
 
     // stats (for global rankings)
     this.stats = {
@@ -616,6 +618,10 @@ class Player {
     for (let i = 1; i <= CFG.FLEET_SIZE; i++) {
       this.ships.push(new Ship(idx, i, assets));
     }
+  }
+
+  applyNetworkState(state) {
+    this._networkState = state || null;
   }
 
   get currentShip() {
@@ -933,6 +939,43 @@ class Game {
 
     /** @type {SocketManager|null} Active in 'online' mode only. */
     this.socketMgr = null;
+
+    // Local AI bridge (client local physics + ai_srvc commands over socket relay)
+    this.networkSocket = null;
+    this.networkRoomId = (typeof window !== 'undefined' && window.GAME_ROOM_ID)
+      ? window.GAME_ROOM_ID
+      : 'gameplay-room';
+    this._lastInputSend = 0;
+  }
+
+  _disconnectAIBridge() {
+    if (this.networkSocket) {
+      this.networkSocket.disconnect();
+      this.networkSocket = null;
+    }
+  }
+
+  _connectAIBridge() {
+    if (this.networkSocket || typeof io === 'undefined') return;
+
+    const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
+      ? window.GAME_SOCKET_PORT
+      : 4000;
+    const socketUrl = typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:${socketPort}`
+      : `http://localhost:${socketPort}`;
+
+    this.networkSocket = io(socketUrl, { transports: ['websocket'] });
+    this.networkSocket.on('connect', () => {
+      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId);
+    });
+    this.networkSocket.on('disconnect', () => {
+      console.log('[AIBridge] disconnected');
+    });
+    this.networkSocket.on('ai_command', (payload) => {
+      if (!payload || payload.roomId !== this.networkRoomId) return;
+      this.onAICommand(payload);
+    });
   }
 
   /* ─── asset registration ─────────────────────────────────────── */
@@ -1014,6 +1057,7 @@ class Game {
       this.socketMgr.disconnect();
       this.socketMgr = null;
     }
+    this._disconnectAIBridge();
   }
 
   cancelCurrentSession() {
@@ -1029,6 +1073,7 @@ class Game {
       this.socketMgr.disconnect();
       this.socketMgr = null;
     }
+    this._disconnectAIBridge();
     this.state = STATE.MENU;
     if (this.mainMenu) {
       this.mainMenu.reset(300);
@@ -1042,6 +1087,7 @@ class Game {
     this.meteors = [];
     this.particles = [];
     this.winner  = null;
+    this._disconnectAIBridge();
 
     const p1Controls = {
       forward:  'ArrowUp',
@@ -1060,19 +1106,30 @@ class Game {
 
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      this.players.push(new Player(1, 'ai',    {},          this.assets));
+      const aiP = new Player(1, 'remote', {}, this.assets);
+      aiP.isAI = true;
+      this.players.push(aiP);
+      this._connectAIBridge();
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai',    {},          this.assets));
+      const aiP = new Player(2, 'remote', {}, this.assets);
+      aiP.isAI = true;
+      this.players.push(aiP);
+      this._connectAIBridge();
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai',    {},          this.assets));
-      this.players.push(new Player(3, 'ai',    {},          this.assets));
+      const aiP2 = new Player(2, 'remote', {}, this.assets);
+      const aiP3 = new Player(3, 'remote', {}, this.assets);
+      aiP2.isAI = true;
+      aiP3.isAI = true;
+      this.players.push(aiP2);
+      this.players.push(aiP3);
+      this._connectAIBridge();
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1351,7 +1408,7 @@ class Game {
     this.particles = this.particles.filter(p => p.alive);
 
     // ── send AI state snapshots to ai_srvc through Socket.IO bridge ──
-    if (this.networkSocket && this.networkRoomId && now - this._lastInputSend > 33) {
+    if (this.networkSocket && this.networkSocket.connected && this.networkRoomId && now - this._lastInputSend > 33) {
       this.players.forEach(p => {
         if (!(p.type === 'remote' && p.isAI) || !p.alive) return;
         const ship = p.currentShip;
@@ -1395,6 +1452,7 @@ class Game {
             .map(m => ({ x: m.x, y: m.y, radius: m.radius, alive: m.alive })),
         });
       });
+      this._lastInputSend = now;
     }
 
     // ── collisions: lasers ↔ ships ──

@@ -36,6 +36,8 @@ SERVICE_SECRET  = os.getenv("SERVICE_SECRET",  "inter-service-shared-secret-chan
 MODEL_PATH      = os.getenv("MODEL_PATH",      "/app/models/dqn_latest.pt")
 AI_SLOT         = int(os.getenv("AI_SLOT",     "1"))
 ROOM_ID         = os.getenv("ROOM_ID",         "local")
+MODEL_AUTO_RELOAD = os.getenv("MODEL_AUTO_RELOAD", "true").lower() == "true"
+MODEL_RELOAD_INTERVAL_S = float(os.getenv("MODEL_RELOAD_INTERVAL_S", "5"))
 
 CANVAS_W  = 1280
 CANVAS_H  = 720
@@ -317,6 +319,15 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
     sio = socketio.AsyncClient(reconnection=True, reconnection_attempts=0)
     ship_state = ShipState()
     last_tick_ms: Optional[float] = None
+    active_model = model
+    last_reload_check_s = 0.0
+    last_model_mtime: Optional[float] = None
+
+    if os.path.exists(MODEL_PATH):
+      try:
+          last_model_mtime = os.path.getmtime(MODEL_PATH)
+      except OSError:
+          last_model_mtime = None
 
     @sio.event
     async def connect():
@@ -336,10 +347,26 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
         Riceve lo stato del gioco da game_srvc e risponde con il comando AI.
         Chiamato ~30 volte al secondo (throttling lato JS).
         """
-        nonlocal last_tick_ms
+        nonlocal last_tick_ms, active_model, last_reload_check_s, last_model_mtime
         now_ms = time.monotonic() * 1000.0
         dt_ms = _extract_dt_ms(data, now_ms, last_tick_ms)
         last_tick_ms = now_ms
+
+        # Hot-reload promoted model in live inference mode.
+        now_s = now_ms / 1000.0
+        if MODEL_AUTO_RELOAD and now_s - last_reload_check_s >= MODEL_RELOAD_INTERVAL_S:
+            last_reload_check_s = now_s
+            if os.path.exists(MODEL_PATH):
+                try:
+                    current_mtime = os.path.getmtime(MODEL_PATH)
+                    if last_model_mtime is None or current_mtime > last_model_mtime:
+                        reloaded = load_model(MODEL_PATH)
+                        reloaded.eval()
+                        active_model = reloaded
+                        last_model_mtime = current_mtime
+                        log.info("live model hot-reloaded from %s", MODEL_PATH)
+                except Exception as e:
+                    log.warning("model hot-reload skipped: %s", e)
 
         # Aggiorna lo stato locale con l'ultima snapshot autorevole.
         my_ship = data.get("my_ship") or {}
@@ -359,7 +386,7 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
         try:
             # Usa lo stato locale predetto come input della rete.
             state = build_state_vector(data, my_ship_override=ship_state.as_dict())
-            action  = model.get_action(state)
+            action  = active_model.get_action(state)
 
             # Replica del tick JS: applica comando e integra fisica localmente.
             ship_state.apply_command(action, dt_ms)
