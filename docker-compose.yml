@@ -21,7 +21,7 @@ services:
       # Initialize multiple databases on startup
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     networks:
-      - app_network
+      - transcendence_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -44,7 +44,7 @@ services:
     volumes:
       - mongo_data:/data/db
     networks:
-      - app_network
+      - transcendence_net
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -76,7 +76,7 @@ services:
       vault_srvc:
         condition: service_healthy
     networks:
-      - app_network
+      - transcendence_net
     restart: unless-stopped
 
   # ========================================
@@ -104,7 +104,7 @@ services:
       vault_srvc:
         condition: service_healthy
     networks:
-      - app_network
+      - transcendence_net
     restart: unless-stopped
 
   # Frontend
@@ -131,7 +131,7 @@ services:
       vault_srvc:
         condition: service_healthy
     networks:
-      - app_network
+      - transcendence_net
 
   # Game Service - Serves games from public/games/
   game_srvc:
@@ -156,7 +156,7 @@ services:
       vault_srvc:
         condition: service_healthy
     networks:
-      - app_network
+      - transcendence_net
     restart: unless-stopped
 
   # Vault Service - Secret management
@@ -185,7 +185,7 @@ services:
       - "vault_secret:/vault/secret/"
       - "vault_logs:/vault/logs/"
     networks:
-      - app_network
+      - transcendence_net
 #   restart: no
     cap_add:
       - IPC_LOCK
@@ -204,7 +204,7 @@ volumes:
     driver: local
 
 networks:
-  app_network:
+  transcendence_net:
     driver: bridge
 
 # ============================================================================
