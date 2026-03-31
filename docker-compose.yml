@@ -27,6 +27,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      vault_srvc:
+        condition: service_healthy
 
   # ========================================
   # MongoDB Database
@@ -47,6 +50,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      vault_srvc:
+        condition: service_healthy
 
   # ========================================
   # Auth Service - ✅ FUNCTIONAL
@@ -66,6 +72,8 @@ services:
       - NODE_ENV=development
     depends_on:
       postgres:
+        condition: service_healthy
+      vault_srvc:
         condition: service_healthy
     networks:
       - app_network
@@ -93,6 +101,8 @@ services:
         condition: service_healthy
       auth_srvc:
         condition: service_started
+      vault_srvc:
+        condition: service_healthy
     networks:
       - app_network
     restart: unless-stopped
@@ -114,8 +124,12 @@ services:
       - NEXT_PUBLIC_GAME_SERVICE_URL=http://localhost:3002
       - NODE_ENV=development
     depends_on:
-      - auth_srvc
-      - chat_srvc
+      auth_srvc:
+        condition: service_started
+      chat_srvc:
+        condition: service_started
+      vault_srvc:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -139,15 +153,54 @@ services:
         condition: service_healthy
       auth_srvc:
         condition: service_started
+      vault_srvc:
+        condition: service_healthy
     networks:
       - app_network
     restart: unless-stopped
+
+  # Vault Service - Secret management
+  vault_srvc:
+    build:
+      context: "./vault_srvc"
+      args:
+        VAULT_API_PORT: 8200
+    container_name: vault_service
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_ADDR=http://127.0.0.1:8200
+      - VAULT_API_PORT=8200
+      - SAVE_UNSEAL_KEYS=1
+      - SAVE_ROOT_TOKEN=1
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      start_period:   120s
+      start_interval: 2s
+      interval:       20s
+      timeout:        3s
+      retries:        3
+    volumes:
+      - "vault_storage:/vault/file/"
+      - "vault_secret:/vault/secret/"
+      - "vault_logs:/vault/logs/"
+    networks:
+      - app_network
+#   restart: no
+    cap_add:
+      - IPC_LOCK
 
 
 volumes:
   postgres_data:
     driver: local
   mongo_data:
+    driver: local
+  vault_storage:
+    driver: local
+  vault_secret:
+    driver: local
+  vault_logs:
     driver: local
 
 networks:
