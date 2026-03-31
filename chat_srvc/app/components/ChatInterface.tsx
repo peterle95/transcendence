@@ -19,6 +19,7 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
   const [inputText, setInputText] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
@@ -53,8 +54,19 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     }
   }, [friendId, authToken]);
 
+  // Keep refs so the socket lifecycle effect can always call the latest versions
+  // without needing to recreate the socket when friendId/fetchHistory changes.
+  const roomIdRef = useRef(roomId);
+  const fetchHistoryRef = useRef(fetchHistory);
+  useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
+  useEffect(() => { fetchHistoryRef.current = fetchHistory; }, [fetchHistory]);
+
+  // Socket lifecycle — only recreated when authToken changes, not on every friend switch.
   useEffect(() => {
-    const socket = io({ rejectUnauthorized: false, auth: { token: authToken } });
+    const socket = io({
+      auth: { token: authToken },
+      ...(process.env.NODE_ENV === 'development' ? { rejectUnauthorized: false } : {}),
+    });
     socketRef.current = socket;
 
     socket.on('receive_message', (message: Message) => {
@@ -66,21 +78,35 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
 
     socket.on('connect', () => {
       setIsConnected(true);
-      socket.emit('join_room', roomId);
-      fetchHistory();
+      socket.emit('join_room', roomIdRef.current);
+      fetchHistoryRef.current();
     });
 
     socket.on('connect_error', () => setIsConnected(false));
     socket.on('disconnect', () => setIsConnected(false));
 
     return () => {
-      socket.emit('leave_room', roomId);
+      socket.emit('leave_room', roomIdRef.current);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [roomId, fetchHistory, authToken]);
+  }, [authToken]);
 
-  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+  // Room switching — leave old room, join new one, reload history.
+  // Runs when the user selects a different friend without recreating the socket.
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket?.connected) return;
+
+    socket.emit('join_room', roomId);
+    setMessages([]);
+    fetchHistoryRef.current();
+
+    return () => {
+      socket.emit('leave_room', roomId);
+    };
+  }, [roomId]);
+
 
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -107,11 +133,11 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
         }
       } else {
         const error = await res.json();
-        alert(`TRANSMISSION_FAILED: ${error.error || 'Unknown error'}`);
+        setSendError(error.error || 'Transmission failed');
       }
     } catch (err) {
       console.error("Send error:", err);
-      alert("TRANSMISSION_FAILED — check console for details.");
+      setSendError('Transmission failed — check console for details.');
     } finally {
       setIsLoading(false);
     }
@@ -203,8 +229,8 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
 
       {/* Input */}
       <form
-        onSubmit={handleSend}
-        className="flex-shrink-0 flex gap-3 p-4 border-t"
+        onSubmit={(e) => { setSendError(null); handleSend(e); }}
+        className="flex-shrink-0 flex flex-col gap-2 p-4 border-t"
         style={{ borderColor: 'var(--cyber-border)', background: 'rgba(13,13,26,0.9)' }}
       >
         <input
@@ -237,6 +263,11 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
         >
           {isLoading ? 'TX...' : 'SEND'}
         </button>
+        {sendError && (
+          <p className="text-xs" style={{ color: 'var(--cyber-red)', fontFamily: 'Share Tech Mono, monospace' }}>
+            ! {sendError}
+          </p>
+        )}
       </form>
     </div>
   );

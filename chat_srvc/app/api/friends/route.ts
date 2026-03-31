@@ -14,7 +14,8 @@ export async function GET(request: Request) {
 
   try {
     const cookie = request.headers.get('cookie') || '';
-    const friends = await getFriends(cookie);
+    const authorization = request.headers.get('authorization') || undefined;
+    const friends = await getFriends(cookie, authorization);
 
     return NextResponse.json({
       success: true,

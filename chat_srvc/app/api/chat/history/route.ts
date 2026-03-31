@@ -12,6 +12,8 @@ import { authenticateRequest, unauthorizedResponse } from '@/lib/authMiddleware'
  * 
  * Query Parameters:
  *   - friend_id: The ID of the other user in the conversation
+ *   - limit: Number of messages to return (default 50, max 100)
+ *   - before: Cursor — only return messages with _id less than this value
  * 
  * Response:
  *   {
@@ -81,9 +83,15 @@ export async function GET(request: Request) {
     //room_id
     const room_id = Message.generateRoomId(user_id, friend_id);
 
-    // messages sorted by timestamp
-    const messages = await Message.find({ room_id })
-      .sort({ timestamp: 1 })
+    const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100);
+    const before = searchParams.get('before');
+
+    const messages = await Message.find({
+      room_id,
+      ...(before ? { _id: { $lt: before } } : {}),
+    })
+      .sort({ timestamp: -1 })
+      .limit(limit)
       .select('_id sender_id receiver_id content room_id timestamp')
       .lean();
 
