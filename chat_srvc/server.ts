@@ -9,8 +9,8 @@ import path from 'path';
 import { socketHandler } from './socket/socketHandler';
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = '0.0.0.0';
-const port = 3001;
+const port = parseInt(process.env.PORT ?? '3001', 10);
+const hostname = process.env.HOSTNAME ?? 'localhost';
 
 // Load .env.local before anything else
 const projectDir = process.cwd();
