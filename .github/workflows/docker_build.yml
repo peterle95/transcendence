@@ -77,9 +77,10 @@ jobs:
           AUTH_SECRET: dummy
           INTERNAL_SERVICE_SECRET: dummy
 
-      - name: Validate Nginx configuration
+      - name: Validate Nginx production configuration
         run: |
-          docker run --rm -v $(pwd)/nginx:/etc/nginx/conf.d \
+          docker run --rm \
+            -v $(pwd)/nginx/transcendance.conf:/etc/nginx/conf.d/transcendance.conf:ro \
             nginx:alpine nginx -t
 
   # ════════════════════════════════════════════════════════════════
