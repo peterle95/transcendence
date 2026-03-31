@@ -55,7 +55,7 @@ export default function Home() {
         {/* Main Cards Grid */}
         <div className="grid md:grid-cols-2 gap-8 mx-auto max-w-4xl">
           {/* Chat Card */}
-          <Link href="http://localhost:3001">
+          <Link href="/chat/"> {/* this will point to the right port via nginx */}
             <div
               onMouseEnter={() => setHoveredCard('chat')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -77,7 +77,7 @@ export default function Home() {
           </Link>
 
           {/* Game Card */}
-          <Link href="http://localhost:3002">
+          <Link href="/game/">
             <div
               onMouseEnter={() => setHoveredCard('game')}
               onMouseLeave={() => setHoveredCard(null)}
