@@ -7,6 +7,9 @@ on:
     branches: [main]
 
 jobs:
+  # ════════════════════════════════════════════════════════════════
+  # Stage 1: Typecheck — catch compile errors in every service
+  # ════════════════════════════════════════════════════════════════
   typecheck:
     name: Typecheck (${{ matrix.service }})
     runs-on: ubuntu-latest
@@ -25,7 +28,6 @@ jobs:
         working-directory: ${{ matrix.service }}
 
       - name: Generate Prisma client
-        # Only runs for services that have a prisma schema
         if: ${{ hashFiles(format('{0}/prisma/schema.prisma', matrix.service)) != '' }}
         run: npx prisma generate
         working-directory: ${{ matrix.service }}
@@ -33,6 +35,9 @@ jobs:
       - run: npx tsc --noEmit
         working-directory: ${{ matrix.service }}
 
+  # ════════════════════════════════════════════════════════════════
+  # Stage 2: Docker build — verify all images build successfully
+  # ════════════════════════════════════════════════════════════════
   build:
     name: Docker build (${{ matrix.service }})
     runs-on: ubuntu-latest
@@ -52,26 +57,341 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-
-
+  # ════════════════════════════════════════════════════════════════
+  # Stage 3: Validate deployment manifests
+  # ════════════════════════════════════════════════════════════════
   validate_manifests:
     name: Validate deployment manifests
     runs-on: ubuntu-latest
     needs: build
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Compose
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Validate Docker Compose configuration
         run: docker compose -f docker-compose.prod.yml config -q
         env:
           POSTGRES_PASSWORD: dummy
           AUTH_SECRET: dummy
           INTERNAL_SERVICE_SECRET: dummy
-        
+
       - name: Validate Nginx configuration
         run: |
           docker run --rm -v $(pwd)/nginx:/etc/nginx/conf.d \
             nginx:alpine nginx -t
+
+  # ════════════════════════════════════════════════════════════════
+  # Stage 4: Localhost URL guard — block hardcoded localhost in
+  #          browser-facing code (bug that broke prod)
+  # ════════════════════════════════════════════════════════════════
+  localhost_guard:
+    name: Block hardcoded localhost URLs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for hardcoded localhost in browser-facing code
+        run: |
+          echo "═══════════════════════════════════════════════════"
+          echo " Scanning for hardcoded localhost URLs..."
+          echo " (excluding comments, example files, dev configs)"
+          echo "═══════════════════════════════════════════════════"
+
+          FAILED=0
+
+          # Pattern: http://localhost:<port> in non-comment, non-example code
+          # We scan frontend/, chat_srvc/, game_srvc/, auth_srvc/ source files
+          # Exclude: node_modules, .next, example.env, test files, docker-compose.yml (dev)
+          MATCHES=$(grep -rn \
+            --include="*.ts" \
+            --include="*.tsx" \
+            --include="*.js" \
+            --include="*.jsx" \
+            --exclude-dir="node_modules" \
+            --exclude-dir=".next" \
+            --exclude="*.test.*" \
+            --exclude="*.spec.*" \
+            -E "http://localhost:[0-9]+" \
+            frontend/ chat_srvc/app/ chat_srvc/server.ts game_srvc/ auth_srvc/ \
+            2>/dev/null || true)
+
+          if [ -n "$MATCHES" ]; then
+            # Filter out lines that are purely comments (// or /* or * at start)
+            REAL_MATCHES=$(echo "$MATCHES" | grep -vE "^\s*//" | grep -vE "^\s*\*" | grep -vE "^\s*/\*" || true)
+
+            # Also filter out lines where localhost is in the fallback of an env var
+            # (e.g. process.env.X || 'http://localhost:...' is OK in server-side-only code)
+            # But catch it in next.config.js env blocks and client components
+            DANGEROUS=$(echo "$REAL_MATCHES" | grep -vE "^\s*#" || true)
+
+            if [ -n "$DANGEROUS" ]; then
+              echo ""
+              echo "❌ FAILED: Found hardcoded localhost URLs in production code!"
+              echo "   These will break when deployed behind Nginx."
+              echo ""
+              echo "$DANGEROUS"
+              echo ""
+              echo "Fix: Replace with relative paths (/auth, /chat, /game)"
+              echo "     or use environment variables."
+              FAILED=1
+            fi
+          fi
+
+          # Also check next.config.js files for localhost fallbacks
+          CONFIG_MATCHES=$(grep -rn \
+            --include="next.config.js" \
+            --exclude-dir="node_modules" \
+            -E "localhost:[0-9]+" \
+            frontend/ chat_srvc/ game_srvc/ auth_srvc/ \
+            2>/dev/null || true)
+
+          # Filter out commented-out lines (starting with //)
+          CONFIG_ACTIVE=$(echo "$CONFIG_MATCHES" | grep -v "^\s*//" | grep -vE "^[^:]+:[0-9]+:\s*//" || true)
+
+          if [ -n "$CONFIG_ACTIVE" ]; then
+            echo ""
+            echo "❌ FAILED: Found localhost fallback in next.config.js!"
+            echo "   These get baked into the JS bundle at build time."
+            echo ""
+            echo "$CONFIG_ACTIVE"
+            echo ""
+            echo "Fix: Use '/auth', '/chat', '/game' as defaults instead."
+            FAILED=1
+          fi
+
+          if [ "$FAILED" -eq 0 ]; then
+            echo "✅ No hardcoded localhost URLs found in production code."
+          else
+            exit 1
+          fi
+
+  # ════════════════════════════════════════════════════════════════
+  # Stage 5: Full-stack integration smoke test
+  #          Boots all containers + Nginx, verifies routes work
+  # ════════════════════════════════════════════════════════════════
+  integration_test:
+    name: Integration smoke test
+    runs-on: ubuntu-latest
+    needs: [build, validate_manifests, localhost_guard]
+    env:
+      POSTGRES_PASSWORD: ci_test_password_123
+      AUTH_SECRET: ci_test_auth_secret_0123456789abcdef0123456789abcdef
+      INTERNAL_SERVICE_SECRET: ci_test_service_secret_0123456789abcdef0123456789ab
+      PUBLIC_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build all service images
+        run: |
+          docker compose -f docker-compose.prod.yml build
+
+      - name: Start the full stack (services + Nginx)
+        run: |
+          docker compose \
+            -f docker-compose.prod.yml \
+            -f docker-compose.ci.yml \
+            up -d
+          echo "Waiting for services to become healthy..."
+
+      - name: Wait for databases to be healthy
+        run: |
+          echo "Waiting for PostgreSQL..."
+          for i in $(seq 1 30); do
+            if docker exec postgres_db pg_isready -U postgres > /dev/null 2>&1; then
+              echo "  PostgreSQL ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          echo "Waiting for MongoDB..."
+          for i in $(seq 1 30); do
+            if docker exec mongo_db mongosh --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+              echo "  MongoDB ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Wait for application services to start
+        run: |
+          echo "Waiting for services to be ready..."
+          sleep 15
+
+          echo "=== Container status ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml ps
+
+          echo ""
+          echo "=== Auth service logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs auth_srvc --tail=15
+
+          echo ""
+          echo "=== Frontend logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs frontend --tail=10
+
+      - name: Smoke test — Auth CSRF endpoint
+        run: |
+          echo "Testing: GET /auth/api/auth/csrf (through Nginx)"
+          RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:8080/auth/api/auth/csrf)
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "  HTTP $HTTP_CODE"
+          echo "  Body: $BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ FAILED: Auth CSRF endpoint returned HTTP $HTTP_CODE (expected 200)"
+            exit 1
+          fi
+
+          if ! echo "$BODY" | grep -q "csrfToken"; then
+            echo "❌ FAILED: Response does not contain csrfToken"
+            exit 1
+          fi
+
+          echo "✅ Auth CSRF endpoint works"
+
+      - name: Smoke test — Frontend serves HTML
+        run: |
+          echo "Testing: GET / (frontend through Nginx)"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
+
+          echo "  HTTP $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ FAILED: Frontend returned HTTP $HTTP_CODE (expected 200)"
+            exit 1
+          fi
+
+          # Verify the served bundle does NOT contain localhost:3000
+          BUNDLE=$(curl -s http://localhost:8080/)
+          if echo "$BUNDLE" | grep -q "localhost:3000"; then
+            echo "❌ FAILED: Frontend HTML contains hardcoded localhost:3000!"
+            exit 1
+          fi
+
+          echo "✅ Frontend serves correctly"
+
+      - name: Smoke test — Chat service reachable
+        run: |
+          echo "Testing: GET /chat (through Nginx)"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/chat)
+
+          echo "  HTTP $HTTP_CODE"
+
+          # Chat may return 200 or 307 (redirect to login) — both are valid
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 400 ]; then
+            echo "❌ FAILED: Chat service returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Chat service reachable"
+
+      - name: Smoke test — Game service reachable
+        run: |
+          echo "Testing: GET /game (through Nginx)"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/game)
+
+          echo "  HTTP $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 400 ]; then
+            echo "❌ FAILED: Game service returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Game service reachable"
+
+      - name: Smoke test — Auth session endpoint
+        run: |
+          echo "Testing: GET /auth/api/auth/session"
+          RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:8080/auth/api/auth/session)
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+
+          echo "  HTTP $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ FAILED: Auth session endpoint returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Auth session endpoint works"
+
+      - name: Smoke test — Verify frontend JS bundle uses /auth (not localhost)
+        run: |
+          echo "Testing: Frontend JS bundles for hardcoded localhost"
+
+          # Fetch the main page and extract JS chunk URLs
+          HTML=$(curl -s http://localhost:8080/)
+          JS_URLS=$(echo "$HTML" | grep -oE '/_next/static/[^"]+\.js' | head -10)
+
+          FAILED=0
+          for js_path in $JS_URLS; do
+            CONTENT=$(curl -s "http://localhost:8080${js_path}" 2>/dev/null || true)
+            if echo "$CONTENT" | grep -q "localhost:3000"; then
+              echo "❌ Found localhost:3000 in bundle: $js_path"
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "❌ FAILED: Frontend JS bundles contain hardcoded localhost URLs."
+            echo "   This means NEXT_PUBLIC_AUTH_SERVICE_URL was not correctly set at build time."
+            exit 1
+          fi
+
+          echo "✅ No localhost URLs found in frontend bundles"
+
+      - name: Smoke test — Cross-service auth verification
+        run: |
+          echo "Testing: Auth service can verify tokens (internal endpoint)"
+
+          # Hit the verify endpoint — should return 401 (no token) not 502 (service down)
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            http://localhost:8080/auth/api/auth/verify)
+
+          echo "  HTTP $HTTP_CODE"
+
+          # 401 or 405 = service is up and responding (just no valid token)
+          # 502/503 = service is down = FAIL
+          if [ "$HTTP_CODE" -ge 500 ]; then
+            echo "❌ FAILED: Auth verify endpoint returned HTTP $HTTP_CODE (service error)"
+            exit 1
+          fi
+
+          echo "✅ Auth verify endpoint is responsive"
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "════════════════════════════════════════"
+          echo " FAILURE DIAGNOSTICS"
+          echo "════════════════════════════════════════"
+          echo ""
+          echo "=== Container status ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml ps -a
+          echo ""
+          echo "=== Auth service logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs auth_srvc --tail=50
+          echo ""
+          echo "=== Frontend logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs frontend --tail=30
+          echo ""
+          echo "=== Chat service logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs chat_srvc --tail=30
+          echo ""
+          echo "=== Game service logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs game_srvc --tail=30
+          echo ""
+          echo "=== Nginx logs ==="
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs nginx --tail=30
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose \
+            -f docker-compose.prod.yml \
+            -f docker-compose.ci.yml \
+            down -v --remove-orphans
