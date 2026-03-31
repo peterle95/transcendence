@@ -55,6 +55,8 @@ app.prepare().then(() => {
         : defaultOrigins; // if env variable not available it defaults back to localhost
 
     const io = new SocketIOServer(server, {
+        // Custom path injected via docker-compose to align with Nginx's path-routing
+        path: process.env.SOCKET_PATH || '/socket.io',
         cors: {
             origin: allowedOrigins,
             methods: ["GET", "POST"]
