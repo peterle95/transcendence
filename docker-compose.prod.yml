@@ -38,8 +38,9 @@ services:
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 30s        # was 5s — mongosh is slow on low RAM on VPS
+      retries: 3
+      start_period: 60s   # give it time on container start
     restart: unless-stopped
 
   # ── Auth Service ────────────────────────────────────────────────
@@ -84,7 +85,7 @@ services:
       - NODE_ENV=production
     depends_on:
       mongo:
-        condition: service_healthy
+        condition: service_started   # was service_healthy
     networks:
       - app_network
     restart: unless-stopped
