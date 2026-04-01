@@ -4,6 +4,6 @@ RUN apk add --no-cache jq curl ca-certificates
 
 COPY			./conf		 	/vault/config
 COPY			./policies 		/vault/policies
-COPY	--chmod=555	./tools/entrypoint.sh 	/entrypoint.sh
+COPY	--chmod=500	./tools/entrypoint.sh 	/entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

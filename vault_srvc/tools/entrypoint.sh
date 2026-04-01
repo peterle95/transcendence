@@ -3,7 +3,7 @@
 set -xveu
 
 check_vault_seal ()	{
-	if [ $(vault status | grep "Sealed" | cut -b 21-) = "false" ]; then
+	if vault status &>/dev/null; then
 		echo "Vault unsealed!"
 		return 1
 	else
@@ -72,7 +72,7 @@ start_and_unseal_vault ()	{
 
 		server_pid=$!
 
-		while vault status -non-interactive &>/dev/null -eq 1; do
+		while vault &>/dev/null -eq 1; do
 			echo "Waiting for startup..."
 			sleep .42
 		done
