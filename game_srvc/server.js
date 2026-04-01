@@ -11,6 +11,9 @@ const { Server } = require("socket.io");
 const http       = require("http");
 
 const PORT              = Number(process.env.SOCKET_PORT) || 4000;
+const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
+const GAME_ROOM_ID      = process.env.GAME_ROOM_ID || 'gameplay-room';
+const ENABLE_TRAINING_ROOM = process.env.ENABLE_TRAINING_ROOM === 'true';
 const MAX_SLOTS         = 4;
 const PHYSICS_HZ        = 60;
 const BROADCAST_EVERY   = 3;           // broadcast every N ticks  → 20 Hz
@@ -244,8 +247,174 @@ const ROOM = {
 };
 
 const displayNames = {};   // playerIdx → string set by client
+const aiServiceSockets = new Map(); // socket.id -> { slot, roomId }
+const virtualSlots = new Set(); // slot indexes reserved for AI-only training sessions
 
-function connectedCount() { return ROOM.slots.filter(Boolean).length; }
+function isSlotActive(slotIdx) {
+  return ROOM.slots[slotIdx] !== null || virtualSlots.has(slotIdx);
+}
+
+function findFreeSlot() {
+  for (let i = 0; i < MAX_SLOTS; i++) {
+    if (!isSlotActive(i)) return i;
+  }
+  return -1;
+}
+
+function connectedCount() { return ROOM.slots.filter(Boolean).length + virtualSlots.size; }
+function humanCount() { return ROOM.slots.filter(Boolean).length; }
+
+function parseAIInput(payload = {}) {
+  const move = Number(payload.movimento || 0);
+  const rotate = Number(payload.rotazione || 0);
+  const shoot = Number(payload.sparo || 0);
+  return {
+    forward: move === 1,
+    backward: move === 2,
+    left: rotate === 1,
+    right: rotate === 2,
+    shoot: shoot === 1,
+  };
+}
+
+function buildAIStateForSlot(slot, dt) {
+  const me = ROOM.players[slot];
+  const myShip = me && me.currentShip ? me.currentShip : null;
+  return {
+    roomId: GAME_ROOM_ID,
+    slot,
+    dt_ms: dt,
+    my_ship: myShip ? {
+      x: myShip.x,
+      y: myShip.y,
+      angle: myShip.angle,
+      vx: myShip.vx,
+      vy: myShip.vy,
+      energy: myShip.energy,
+      hp: myShip.hp,
+      alive: myShip.alive,
+      radius: myShip.radius,
+    } : { alive: false, hp: 0, energy: 0 },
+    enemies: ROOM.players
+      .filter((p, idx) => idx !== slot && p && p.alive && p.currentShip)
+      .map((p) => ({
+        x: p.currentShip.x,
+        y: p.currentShip.y,
+        angle: p.currentShip.angle,
+        hp: p.currentShip.hp,
+        alive: p.currentShip.alive,
+      })),
+    lasers: ROOM.lasers
+      .filter((l) => l.alive)
+      .map((l) => ({
+        x: l.x,
+        y: l.y,
+        is_enemy: l.ownerIdx !== slot,
+      })),
+    meteors: ROOM.meteors
+      .filter((m) => m.alive)
+      .map((m) => ({ x: m.x, y: m.y, radius: m.radius, alive: m.alive })),
+  };
+}
+
+function startTrainingSession(aiSlots = [1, 2]) {
+  const uniqueSlots = [...new Set(aiSlots.filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < MAX_SLOTS))];
+  if (uniqueSlots.length === 0) return { ok: false, error: 'No valid AI slots provided' };
+
+  // Training instance is isolated; disconnect any human sockets before bootstrapping AI-only room.
+  ROOM.slots.forEach((socketId) => {
+    if (!socketId) return;
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket) socket.disconnect(true);
+  });
+
+  ROOM.slots = new Array(MAX_SLOTS).fill(null);
+  Object.keys(displayNames).forEach((key) => delete displayNames[key]);
+  virtualSlots.clear();
+  uniqueSlots.forEach((slot) => {
+    virtualSlots.add(slot);
+    displayNames[slot] = `AI_${slot}`;
+  });
+
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+
+  resetGame();
+  io.emit('training_started', { roomId: GAME_ROOM_ID, aiSlots: uniqueSlots });
+  console.log(`training session started in room ${GAME_ROOM_ID} with AI slots: ${uniqueSlots.join(',')}`);
+  return { ok: true, aiSlots: uniqueSlots };
+}
+
+function handleAIServiceConnection(socket, auth = {}) {
+  const roomId = typeof auth.room_id === 'string' ? auth.room_id : GAME_ROOM_ID;
+  const aiSlot = Number(auth.ai_slot);
+
+  if (roomId !== GAME_ROOM_ID) {
+    socket.emit('service_rejected', { reason: 'room_mismatch', expectedRoomId: GAME_ROOM_ID, receivedRoomId: roomId });
+    socket.disconnect(true);
+    return;
+  }
+  if (!Number.isInteger(aiSlot) || aiSlot < 0 || aiSlot >= MAX_SLOTS) {
+    socket.emit('service_rejected', { reason: 'invalid_ai_slot', aiSlot });
+    socket.disconnect(true);
+    return;
+  }
+
+  aiServiceSockets.set(socket.id, { slot: aiSlot, roomId });
+  virtualSlots.add(aiSlot);
+  if (!displayNames[aiSlot]) displayNames[aiSlot] = `AI_${aiSlot}`;
+  if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = {};
+  socket.emit('ai_service_connected', { roomId, aiSlot });
+  console.log(`ai service connected: ${socket.id} room=${roomId} slot=${aiSlot}`);
+
+  socket.on('ai_command', (payload = {}) => {
+    const targetRoomId = typeof payload.roomId === 'string' ? payload.roomId : roomId;
+    if (targetRoomId !== GAME_ROOM_ID) return;
+    if (ROOM.state !== 'playing') return;
+    ROOM.inputBuffer[aiSlot] = parseAIInput(payload);
+    io.emit('ai_command', {
+      roomId: targetRoomId,
+      slot: aiSlot,
+      movimento: Number(payload.movimento || 0),
+      rotazione: Number(payload.rotazione || 0),
+      sparo: Number(payload.sparo || 0),
+      shoot: Number(payload.sparo || 0) === 1,
+    });
+  });
+
+  socket.on('training_start', (payload = {}, ack) => {
+    if (!ENABLE_TRAINING_ROOM) {
+      const denied = { ok: false, error: 'training_room_disabled' };
+      if (typeof ack === 'function') ack(denied);
+      socket.emit('training_start_ack', denied);
+      return;
+    }
+
+    const rawSlots = Array.isArray(payload.aiSlots)
+      ? payload.aiSlots.map((v) => Number(v))
+      : [aiSlot, (aiSlot + 1) % MAX_SLOTS];
+
+    const result = startTrainingSession(rawSlots);
+    if (typeof ack === 'function') ack(result);
+    socket.emit('training_start_ack', result);
+  });
+
+  socket.on('disconnect', () => {
+    aiServiceSockets.delete(socket.id);
+    const hasSameSlotAgent = [...aiServiceSockets.values()].some((meta) => meta.slot === aiSlot && meta.roomId === roomId);
+    if (!hasSameSlotAgent) {
+      virtualSlots.delete(aiSlot);
+      ROOM.players[aiSlot] = null;
+      delete ROOM.inputBuffer[aiSlot];
+      io.emit('player_left', { playerIdx: aiSlot });
+    }
+    console.log(`ai service disconnected: ${socket.id} slot=${aiSlot}`);
+  });
+
+  if (ROOM.state === 'lobby' && humanCount() > 0 && connectedCount() >= 2) startCountdown();
+}
 
 function resetGame() {
   ROOM.lasers    = [];
@@ -257,7 +426,7 @@ function resetGame() {
   ROOM.tickNum   = 0;
 
   for (let i = 0; i < MAX_SLOTS; i++) {
-    if (ROOM.slots[i] !== null) {
+    if (isSlotActive(i)) {
       ROOM.players[i] = new ServerPlayer(i, displayNames[i] || '');
       ROOM.players[i].spawnCurrent();
       ROOM.inputBuffer[i] = {};
@@ -274,9 +443,23 @@ function resetGame() {
    HTTP + SOCKET.IO
    ═══════════════════════════════════════════════════════════════════════ */
 const httpServer = http.createServer((req, res) => {
+  const requestUrl = new URL(req.url, 'http://localhost');
+
+  if (ENABLE_TRAINING_ROOM && requestUrl.pathname === '/training/start') {
+    const aiSlots = (requestUrl.searchParams.get('slots') || '1,2')
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter((n) => Number.isInteger(n));
+
+    const result = startTrainingSession(aiSlots);
+    res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ roomId: GAME_ROOM_ID, ...result }));
+    return;
+  }
+
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', players: connectedCount(), state: ROOM.state }));
+    res.end(JSON.stringify({ status: 'ok', roomId: GAME_ROOM_ID, players: connectedCount(), state: ROOM.state }));
     return;
   }
   res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -316,7 +499,14 @@ function startCountdown() {
 }
 
 io.on('connection', (socket) => {
-  const playerIdx = ROOM.slots.indexOf(null);
+  const auth = socket.handshake && socket.handshake.auth ? socket.handshake.auth : {};
+  const isTrustedAIService = typeof auth.service_secret === 'string' && auth.service_secret === SERVICE_SECRET;
+  if (isTrustedAIService) {
+    handleAIServiceConnection(socket, auth);
+    return;
+  }
+
+  const playerIdx = findFreeSlot();
   if (playerIdx === -1) {
     socket.emit('room_full');
     socket.disconnect(true);
@@ -330,7 +520,8 @@ io.on('connection', (socket) => {
   // Tell this client their slot and current server state
   socket.emit('init', {
     playerIdx,
-    existing:  ROOM.slots.map((id, i) => ({ idx: i, connected: id !== null })),
+    roomId: GAME_ROOM_ID,
+    existing:  ROOM.slots.map((id, i) => ({ idx: i, connected: isSlotActive(i) })),
     gameState: ROOM.state,
   });
 
@@ -344,11 +535,24 @@ io.on('connection', (socket) => {
   socket.broadcast.emit('player_joined', { playerIdx });
 
   // Kick off countdown after first connection
-  if (connectedCount() === 1 && ROOM.state === 'lobby') startCountdown();
+  if (ROOM.state === 'lobby' && connectedCount() >= 2) startCountdown();
 
   // ── events from client ──────────────────────────────────────────────
   socket.on('input', (inp) => {
     if (ROOM.state === 'playing') ROOM.inputBuffer[playerIdx] = inp;
+  });
+
+  socket.on('ai_game_state', (payload = {}) => {
+    const payloadRoomId = typeof payload.roomId === 'string' ? payload.roomId : GAME_ROOM_ID;
+    const aiSlot = Number(payload.slot);
+    if (payloadRoomId !== GAME_ROOM_ID) return;
+    if (!Number.isInteger(aiSlot) || aiSlot < 0 || aiSlot >= MAX_SLOTS) return;
+
+    aiServiceSockets.forEach((meta, socketId) => {
+      if (meta.roomId !== payloadRoomId || meta.slot !== aiSlot) return;
+      const aiSocket = io.sockets.sockets.get(socketId);
+      if (aiSocket) aiSocket.emit('ai_game_state', payload);
+    });
   });
 
   socket.on('display_name', (name) => {
@@ -379,6 +583,7 @@ io.on('connection', (socket) => {
 function serializeWorld() {
   return {
     tick:    ROOM.tickNum,
+    roomId:  GAME_ROOM_ID,
     state:   ROOM.state,
     winner:  ROOM.winner,
     players: ROOM.players.map(p => p ? {
@@ -550,7 +755,17 @@ function gameTick() {
   }
 
   // Broadcast world snapshot at 20 Hz
-  if (ROOM.tickNum % BROADCAST_EVERY === 0) io.emit('world', serializeWorld());
+  if (ROOM.tickNum % BROADCAST_EVERY === 0) {
+    io.emit('world', serializeWorld());
+
+    // Feed registered AI service clients with room-scoped state snapshots.
+    aiServiceSockets.forEach((meta, socketId) => {
+      if (meta.roomId !== GAME_ROOM_ID) return;
+      const aiSocket = io.sockets.sockets.get(socketId);
+      if (!aiSocket) return;
+      aiSocket.emit('ai_game_state', buildAIStateForSlot(meta.slot, dt));
+    });
+  }
 }
 
 setInterval(gameTick, TICK_MS);

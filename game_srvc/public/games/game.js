@@ -3,7 +3,7 @@
  *  SPACE FLEET BATTLE – Canvas-based space shooter (1-4 players)
  * ===================================================================
  *
- *  Controls
+ *  Controls 
  *  --------
  *  Player 1 (Blue)  – Arrows + Space
  *  Player 2 (Green) – W A S D  + Tab
@@ -606,6 +606,8 @@ class Player {
     this.shootCooldown = 0;
     this.displayName = null;       // set externally (username or 'AI')
     this.userId = null;            // set externally (from auth service)
+    this.isAI = false;
+    this._networkState = null;
 
     // stats (for global rankings)
     this.stats = {
@@ -620,6 +622,10 @@ class Player {
     for (let i = 1; i <= CFG.FLEET_SIZE; i++) {
       this.ships.push(new Ship(idx, i, assets));
     }
+  }
+
+  applyNetworkState(state) {
+    this._networkState = state || null;
   }
 
   get currentShip() {
@@ -668,6 +674,39 @@ class Player {
         ship.consumeShot();
         this.stats.shotsFired++;
         this.shootCooldown = 180;   // ms cooldown between shots
+        return this._createLaser(ship);
+      }
+    } else if (this.type === 'remote') {
+      const s = this._networkState;
+      if (!s) return null;
+
+      // AI remote commands are incremental controls like local input.
+      const hasIncremental =
+        Number.isFinite(Number(s.movimento)) ||
+        Number.isFinite(Number(s.rotazione)) ||
+        Number.isFinite(Number(s.sparo));
+
+      if (hasIncremental) {
+        const movimento = Number(s.movimento) || 0;
+        const rotazione = Number(s.rotazione) || 0;
+
+        if (movimento === 1) ship.thrustForward(dt);
+        else if (movimento === 2) ship.thrustBackward(dt);
+
+        if (rotazione === 1) ship.rotateLeft(dt);
+        else if (rotazione === 2) ship.rotateRight(dt);
+      } else {
+        // Fallback for legacy remote peers sending absolute transforms.
+        ship.x     = s.x;
+        ship.y     = s.y;
+        ship.angle = s.angle;
+      }
+
+      this.shootCooldown -= dt;
+      if ((s.shoot || Number(s.sparo) === 1) && this.shootCooldown <= 0 && ship.canShoot()) {
+        ship.consumeShot();
+        this.stats.shotsFired++;
+        this.shootCooldown = 180;
         return this._createLaser(ship);
       }
     } else if (this.type === 'ai') {
@@ -904,6 +943,43 @@ class Game {
 
     /** @type {SocketManager|null} Active in 'online' mode only. */
     this.socketMgr = null;
+
+    // Local AI bridge (client local physics + ai_srvc commands over socket relay)
+    this.networkSocket = null;
+    this.networkRoomId = (typeof window !== 'undefined' && window.GAME_ROOM_ID)
+      ? window.GAME_ROOM_ID
+      : 'gameplay-room';
+    this._lastInputSend = 0;
+  }
+
+  _disconnectAIBridge() {
+    if (this.networkSocket) {
+      this.networkSocket.disconnect();
+      this.networkSocket = null;
+    }
+  }
+
+  _connectAIBridge() {
+    if (this.networkSocket || typeof io === 'undefined') return;
+
+    const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
+      ? window.GAME_SOCKET_PORT
+      : 4000;
+    const socketUrl = typeof window !== 'undefined'
+      ? `${window.location.protocol}//${window.location.hostname}:${socketPort}`
+      : `http://localhost:${socketPort}`;
+
+    this.networkSocket = io(socketUrl, { transports: ['websocket'] });
+    this.networkSocket.on('connect', () => {
+      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId);
+    });
+    this.networkSocket.on('disconnect', () => {
+      console.log('[AIBridge] disconnected');
+    });
+    this.networkSocket.on('ai_command', (payload) => {
+      if (!payload || payload.roomId !== this.networkRoomId) return;
+      this.onAICommand(payload);
+    });
   }
 
   /* ─── asset registration ─────────────────────────────────────── */
@@ -985,6 +1061,7 @@ class Game {
       this.socketMgr.disconnect();
       this.socketMgr = null;
     }
+    this._disconnectAIBridge();
   }
 
   cancelCurrentSession() {
@@ -1000,6 +1077,7 @@ class Game {
       this.socketMgr.disconnect();
       this.socketMgr = null;
     }
+    this._disconnectAIBridge();
     this.state = STATE.MENU;
     if (this.mainMenu) {
       this.mainMenu.reset(300);
@@ -1013,6 +1091,7 @@ class Game {
     this.meteors = [];
     this.particles = [];
     this.winner  = null;
+    this._disconnectAIBridge();
 
     const p1Controls = {
       forward:  'ArrowUp',
@@ -1031,19 +1110,30 @@ class Game {
 
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      this.players.push(new Player(1, 'ai',    {},          this.assets));
+      const aiP = new Player(1, 'remote', {}, this.assets);
+      aiP.isAI = true;
+      this.players.push(aiP);
+      this._connectAIBridge();
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai',    {},          this.assets));
+      const aiP = new Player(2, 'remote', {}, this.assets);
+      aiP.isAI = true;
+      this.players.push(aiP);
+      this._connectAIBridge();
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai',    {},          this.assets));
-      this.players.push(new Player(3, 'ai',    {},          this.assets));
+      const aiP2 = new Player(2, 'remote', {}, this.assets);
+      const aiP3 = new Player(3, 'remote', {}, this.assets);
+      aiP2.isAI = true;
+      aiP3.isAI = true;
+      this.players.push(aiP2);
+      this.players.push(aiP3);
+      this._connectAIBridge();
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1079,7 +1169,7 @@ class Game {
     // Assign display names and user IDs
     const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
     this.players.forEach(p => {
-      if (p.type === 'ai') {
+      if (p.type === 'ai' || (p.type === 'remote' && p.isAI)) {
         p.displayName = 'AI';
         p.userId = null;
       } else if (p.type === 'remote') {
@@ -1262,6 +1352,17 @@ class Game {
     this._gameOverCooldown -= 16;
   }
 
+  /** Feed authoritative position from a peer into their remote player slot */
+  onPeerState(state) {
+    const remote = this.players.find(p => p.type === 'remote' && p.idx === state.slot);
+    if (remote) remote.applyNetworkState(state);
+  }
+
+  onAICommand(state) {
+    const aiRemote = this.players.find(p => p.type === 'remote' && p.isAI && p.idx === state.slot);
+    if (aiRemote) aiRemote.applyNetworkState(state);
+  }
+
   /* ═══════════════════  UPDATE  ════════════════════════════════ */
   _update(dt) {
     // Online mode: server owns all physics.  Client only sends inputs and
@@ -1310,6 +1411,54 @@ class Game {
     // ── update particles ──
     this.particles.forEach(p => p.update(dt));
     this.particles = this.particles.filter(p => p.alive);
+
+    // ── send AI state snapshots to ai_srvc through Socket.IO bridge ──
+    if (this.networkSocket && this.networkSocket.connected && this.networkRoomId && now - this._lastInputSend > 33) {
+      this.players.forEach(p => {
+        if (!(p.type === 'remote' && p.isAI) || !p.alive) return;
+        const ship = p.currentShip;
+        if (!ship || !ship.alive) return;
+
+        this.networkSocket.emit('ai_game_state', {
+          roomId: this.networkRoomId,
+          slot: p.idx,
+          dt_ms: dt,
+          my_ship: {
+            x: ship.x,
+            y: ship.y,
+            angle: ship.angle,
+            vx: ship.vx,
+            vy: ship.vy,
+            energy: ship.energy,
+            hp: ship.hp,
+            alive: ship.alive,
+            radius: ship.radius,
+          },
+          enemies: this.players
+            .filter(other => other !== p && other.alive)
+            .map(other => {
+              const os = other.currentShip;
+              return os ? {
+                x: os.x,
+                y: os.y,
+                angle: os.angle,
+                hp: os.hp,
+                alive: os.alive,
+              } : null;
+            })
+            .filter(Boolean),
+          lasers: this.lasers.map(l => ({
+            x: l.x,
+            y: l.y,
+            is_enemy: l.ownerIdx !== p.idx,
+          })),
+          meteors: this.meteors
+            .filter(m => m.alive)
+            .map(m => ({ x: m.x, y: m.y, radius: m.radius, alive: m.alive })),
+        });
+      });
+      this._lastInputSend = now;
+    }
 
     // ── collisions: lasers ↔ ships ──
     this.lasers.forEach(laser => {
@@ -1448,6 +1597,7 @@ for (let i = 0; i < this.players.length; i++) {
         }
       });
     });
+
   }
 
   _checkGameEnd() {
