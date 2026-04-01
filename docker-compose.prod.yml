@@ -211,6 +211,10 @@ volumes:
     driver: local
   avatar_uploads:
     driver: local
+  ai_models:
+    driver: local
+  ai_logs:
+    driver: local
 
 networks:
   app_network:
