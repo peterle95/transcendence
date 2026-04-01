@@ -2,6 +2,8 @@
 # Docker Compose - Architecture Blueprint
 # ============================================================================
 
+name: transcendence
+
 services:
   # ========================================
   # PostgreSQL Database
@@ -10,6 +12,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: postgres_db
+    hostname: "postgres.transcendence-backend"
     environment:
       # Create multiple databases for different services
       - POSTGRES_USER=postgres
@@ -20,8 +23,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
       # Initialize multiple databases on startup
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/postgres"
     networks:
-      - transcendence_net
+      - backend_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -38,13 +55,28 @@ services:
   mongo:
     image: mongo:7-jammy
     container_name: mongo_db
+    hostname: "mongo.transcendence-backend"
     command: ["mongod", "--quiet", "--logpath", "/dev/null"]
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/mongo"
     networks:
-      - transcendence_net
+      - backend_net
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -61,6 +93,7 @@ services:
   auth_srvc:
     build: ./auth_srvc
     container_name: auth_service
+    hostname: "auth.transcendence-backend"
     ports:
       - "3000:3000"
     environment:
@@ -75,8 +108,23 @@ services:
         condition: service_healthy
       vault_srvc:
         condition: service_healthy
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/auth_srvc"
     networks:
-      - transcendence_net
+      - backend_net
     restart: unless-stopped
 
   # ========================================
@@ -86,6 +134,7 @@ services:
   chat_srvc:
     build: ./chat_srvc
     container_name: chat_service
+    hostname: "chat.transcendence-backend"
     ports:
       - "3001:3001"
     environment:
@@ -103,8 +152,23 @@ services:
         condition: service_started
       vault_srvc:
         condition: service_healthy
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/chat_srvc"
     networks:
-      - transcendence_net
+      - backend_net
     restart: unless-stopped
 
   # Frontend
@@ -113,6 +177,7 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend_service
+    hostname: "frontend.transcendence-backend"
     ports:
       - "3003:3003"
     environment:
@@ -130,13 +195,29 @@ services:
         condition: service_started
       vault_srvc:
         condition: service_healthy
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/frontend"
     networks:
-      - transcendence_net
+      - backend_net
 
   # Game Service - Serves games from public/games/
   game_srvc:
     build: ./game_srvc
     container_name: game_service
+    hostname: "game.transcendence-backend"
     ports:
       - "3002:3002"
       - "4000:4000"
@@ -155,28 +236,44 @@ services:
         condition: service_started
       vault_srvc:
         condition: service_healthy
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/game_srvc"
     networks:
-      - transcendence_net
+      - backend_net
     restart: unless-stopped
 
   # Vault Service - Secret management
   vault_srvc:
     build: "./vault_srvc"
     container_name: vault_service
-    ports:
-      - "8200:8200"
+    hostname: "vault.transcendence-backend"
+    expose:
+      - "8200"
     healthcheck:
-      test: ["CMD", "curl", "-f", "https://127.0.0.1:8200/v1/sys/health"]
-      start_period:   120s
-      start_interval: 30s
-      interval:       20s
-      timeout:        5s
-      retries:        10
+      test: ["CMD-SHELL", "curl -f https://vault.transcendence-backend:8200/v1/sys/health"]
+      start_period:   1m
+      start_interval: 20s
+      interval:       45s
+      timeout:        1m
+      retries:        3
     volumes:
       - "vault_data:/vault/"
     networks:
-      - transcendence_net
-#   restart: no
+      - backend_net
+    restart: no
     cap_add:
       - IPC_LOCK
 
@@ -190,7 +287,7 @@ volumes:
     driver: local
 
 networks:
-  transcendence_net:
+  backend_net:
     driver: bridge
 
 # ============================================================================
