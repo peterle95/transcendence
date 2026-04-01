@@ -40,7 +40,7 @@
     tableWrapper.innerHTML = '<div style="padding:32px;color:#555">Loading…</div>';
 
     // Fetch and render global ranking
-    fetch('/api/stats/ranking?type=global&limit=10', { credentials: 'include' })
+    fetch('/game/api/stats/ranking?type=global&limit=10', { credentials: 'include' })
       .then(r => r.json())
       .then(json => {
         const rows = json.data || [];

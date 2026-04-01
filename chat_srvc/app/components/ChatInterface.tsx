@@ -63,10 +63,15 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
 
   // Socket lifecycle — only recreated when authToken changes, not on every friend switch.
   useEffect(() => {
-    const socket = io({
-      auth: { token: authToken },
-      ...(process.env.NODE_ENV === 'development' ? { rejectUnauthorized: false } : {}),
-    });
+    const opts: any = { auth: { token: authToken } };
+    if (process.env.NODE_ENV === 'development') {
+      opts.rejectUnauthorized = false;
+    }
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      // Connect specifically to /chat/socket.io/ to allow Nginx to route to the chat container
+      opts.path = '/chat/socket.io/';
+    }
+    const socket = io(opts);
     socketRef.current = socket;
 
     socket.on('receive_message', (message: Message) => {

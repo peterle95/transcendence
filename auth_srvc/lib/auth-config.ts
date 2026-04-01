@@ -135,9 +135,9 @@ export const authOptions: NextAuthOptions = {
 				httpOnly: true,
 				// 'strict' prevents the cookie from being sent on cross-site navigations,
 				// which is correct for an API-only service.
-				sameSite: 'strict',
+				sameSite: 'lax',
 				path: '/',
-				secure: process.env.NODE_ENV === 'production',
+				secure: false, // TEMP: Re-enable after HTTPS
 			},
 		},
 	},

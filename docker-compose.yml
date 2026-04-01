@@ -228,6 +228,8 @@ services:
       - SOCKET_CORS_ORIGIN=http://localhost:3002
       - SOCKET_PORT=4000
       - SOCKET_IO_ALLOWLIST=http://localhost:3002,https://localhost:3002
+      - GAME_ROOM_ID=gameplay-room
+      - ENABLE_TRAINING_ROOM=false
       - NODE_ENV=development
     depends_on:
       postgres:
@@ -277,6 +279,173 @@ services:
     cap_add:
       - IPC_LOCK
 
+#=======
+#  # Dedicated training game server instance (isolated from player gameplay)
+#  game_srvc_train:
+#    build: ./game_srvc
+#    container_name: game_train_service
+#    environment:
+#      - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
+#      - AUTH_SERVICE_URL=http://auth_srvc:3000
+#      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+#      - SOCKET_CORS_ORIGIN=http://localhost:3002
+#      - SOCKET_PORT=4000
+#      - SOCKET_IO_ALLOWLIST=http://localhost:3002,https://localhost:3002
+#      - GAME_ROOM_ID=training-room
+#      - ENABLE_TRAINING_ROOM=true
+#      - NODE_ENV=development
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      auth_srvc:
+#        condition: service_started
+#    profiles:
+#      - training
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
+## ============================================================================
+## Aggiungi questo blocco al docker-compose.yml esistente, nella sezione services:
+## ============================================================================
+#
+#  # ========================================
+#  # AI Service - DQN Player
+#  # Socket.IO client: riceve ai_game_state e invia ai_command
+#  # ========================================
+#  ai_srvc:
+#    build: ./AI_srvc
+#    container_name: ai_service
+#    environment:
+#      - GAME_SVC_URL=http://game_srvc:4000
+#      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+#      - ROOM_ID=gameplay-room
+#      - AI_SLOT=1
+#      - MODEL_PATH=/app/models/live/dqn_latest.pt
+#      - MODEL_AUTO_RELOAD=true
+#      - MODEL_RELOAD_INTERVAL_S=5
+#      - TRAINING_MODE=false   # true = training contro bot, false = inference live
+#      - LOG_LEVEL=INFO
+#    volumes:
+#      - ai_models:/app/models:ro  # inference reads stable model only
+#      - ai_logs:/app/logs
+#    depends_on:
+#      - game_srvc
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
+#  ai_srvc_slot2:
+#    build: ./AI_srvc
+#    container_name: ai_service_slot2
+#    environment:
+#      - GAME_SVC_URL=http://game_srvc:4000
+#      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+#      - ROOM_ID=gameplay-room
+#      - AI_SLOT=2
+#      - MODEL_PATH=/app/models/live/dqn_latest.pt
+#      - MODEL_AUTO_RELOAD=true
+#      - MODEL_RELOAD_INTERVAL_S=5
+#      - TRAINING_MODE=false
+#      - LOG_LEVEL=INFO
+#    volumes:
+#      - ai_models:/app/models:ro
+#      - ai_logs:/app/logs
+#    depends_on:
+#      - game_srvc
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
+#  ai_srvc_slot3:
+#    build: ./AI_srvc
+#    container_name: ai_service_slot3
+#    environment:
+#      - GAME_SVC_URL=http://game_srvc:4000
+#      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+#      - ROOM_ID=gameplay-room
+#      - AI_SLOT=3
+#      - MODEL_PATH=/app/models/live/dqn_latest.pt
+#      - MODEL_AUTO_RELOAD=true
+#      - MODEL_RELOAD_INTERVAL_S=5
+#      - TRAINING_MODE=false
+#      - LOG_LEVEL=INFO
+#    volumes:
+#      - ai_models:/app/models:ro
+#      - ai_logs:/app/logs
+#    depends_on:
+#      - game_srvc
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
+#  # One-shot training worker, launched on demand: docker compose up ai_train
+#  ai_train_bot:
+#    build: ./AI_srvc
+#    container_name: ai_train_bot_service
+#    environment:
+#      - GAME_SVC_URL=http://game_srvc_train:4000
+#      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+#      - ROOM_ID=training-room
+#      - AI_SLOT=2
+#      - MODEL_PATH=/app/models/train/opponent_latest.pt
+#      - TRAINING_MODE=false
+#      - LOG_LEVEL=INFO
+#    volumes:
+#      - ai_models:/app/models
+#      - ai_logs:/app/logs
+#    depends_on:
+#      - game_srvc_train
+#    profiles:
+#      - training
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
+#  # Continuous training worker, launched on demand with training profile
+#  ai_train:
+#    build: ./AI_srvc
+#    container_name: ai_train_service
+#    environment:
+#      - GAME_SVC_URL=http://game_srvc_train:4000
+#      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+#      - ROOM_ID=training-room
+#      - AI_SLOT=1
+#      - TRAIN_AI_SLOTS=1,2
+#      - TRAIN_STEPS=0
+#      - MODEL_PATH=/app/models/train/dqn_latest.pt
+#      - TRAIN_CHECKPOINT_PATH=/app/models/train/dqn_training_checkpoint.pt
+#      - TRAINING_MODE=true
+#      - LOG_LEVEL=INFO
+#    volumes:
+#      - ai_models:/app/models
+#      - ai_logs:/app/logs
+#    depends_on:
+#      - game_srvc_train
+#      - ai_train_bot
+#    profiles:
+#      - training
+#    networks:
+#      - app_network
+#    restart: unless-stopped
+#
+#  # Promote trained model to live path atomically
+#  ai_promote:
+#    build: ./AI_srvc
+#    container_name: ai_promote_service
+#    command: ["python", "tools/promote_model.py"]
+#    environment:
+#      - PROMOTE_SOURCE_PATH=/app/models/train/dqn_latest.pt
+#      - PROMOTE_TARGET_PATH=/app/models/live/dqn_latest.pt
+#      - PROMOTE_VALIDATE=true
+#      - PROMOTE_BACKUP=true
+#    volumes:
+#      - ai_models:/app/models
+#    profiles:
+#      - training
+#    networks:
+#      - app_network
+#    restart: "no"
 
 volumes:
   postgres_data:
@@ -284,6 +453,9 @@ volumes:
   mongo_data:
     driver: local
   vault_data:
+  ai_models:
+    driver: local
+  ai_logs:
     driver: local
 
 networks:

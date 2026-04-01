@@ -50,7 +50,7 @@
           placement:      i + 1,
         })),
       };
-      await fetch('/api/stats/save', {
+      await fetch('/game/api/stats/save', {
         method:  'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -61,7 +61,7 @@
 
   /* ─── fetch a ranking tab ─── */
   async function fetchRanking(type) {
-    const res  = await fetch(`/api/stats/ranking?type=${type}&limit=10`, {
+    const res  = await fetch(`/game/api/stats/ranking?type=${type}&limit=10`, {
       credentials: 'include',
     });
     const json = await res.json();

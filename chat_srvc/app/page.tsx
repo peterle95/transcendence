@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import ChatInterface from './components/ChatInterface';
 import type { User } from '@/types';
 
-const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3000';
+// Changed fallback from http://localhost:3000 to /auth to work in production behind Nginx
+const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '/auth';
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
