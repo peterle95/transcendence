@@ -111,7 +111,11 @@ class SocketManager {
       return;
     }
 
-    this.socket = io(url, { transports: ['websocket'] });
+    const opts = { transports: ['websocket'] };
+    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      opts.path = '/game/socket.io';
+    }
+    this.socket = io(url, opts);
 
     this.socket.on('connect', () => {
       this.connected = true;
@@ -1050,8 +1054,9 @@ class Game {
       const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
         ? window.GAME_SOCKET_PORT
         : 4000;
-      const socketUrl = typeof window !== 'undefined'
-        ? `${window.location.protocol}//${window.location.hostname}:${socketPort}`
+      // In production (not localhost), we connect to the root domain and let Nginx route the path
+      const socketUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? window.location.origin
         : `http://localhost:${socketPort}`;
 
       this.socketMgr = new SocketManager(socketUrl);

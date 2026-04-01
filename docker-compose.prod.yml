@@ -53,7 +53,7 @@ services:
       - AUTH_SECRET=${AUTH_SECRET:?Set AUTH_SECRET in .env}
       - CORS_ALLOWED_ORIGIN=${PUBLIC_URL:-http://localhost:3003}
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in .env}
-      - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003}/auth
+      - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003}/auth # Added /auth to route NextAuth correctly behind Nginx
       - NODE_ENV=production
     volumes:
       - avatar_uploads:/app/uploads/avatars
@@ -66,7 +66,10 @@ services:
 
   # ── Chat Service ────────────────────────────────────────────────
   chat_srvc:
-    build: ./chat_srvc
+    build:
+      context: ./chat_srvc
+      args:
+        - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth        # baked into the bundle
     container_name: chat_service
     ports:
       - "127.0.0.1:3001:3001"
@@ -75,6 +78,9 @@ services:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3001}
+      - SOCKET_PATH=/chat/socket.io/                # Explicit socket path for Nginx single-host routing
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth          # also set at runtime for API routes
+      - NEXT_PUBLIC_GAME_SERVICE_URL=/game          # used in game-invite route
       - NODE_ENV=production
     depends_on:
       mongo:
@@ -85,7 +91,10 @@ services:
 
   # ── Frontend ────────────────────────────────────────────────────
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth # Bake the correct public auth subpath into frontend bundle
     container_name: frontend_service
     ports:
       - "127.0.0.1:3003:3003"
@@ -102,7 +111,11 @@ services:
 
   # ── Game Service ────────────────────────────────────────────────
   game_srvc:
-    build: ./game_srvc
+    build:
+      context: ./game_srvc
+      args:
+        - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+        - NEXT_PUBLIC_GAME_SERVICE_URL=/game
     container_name: game_service
     ports:
       - "127.0.0.1:3002:3002"
@@ -112,6 +125,9 @@ services:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3002}
+      - SOCKET_PATH=/game/socket.io/ # Explicit socket path for Nginx single-host routing
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+      - NEXT_PUBLIC_GAME_SERVICE_URL=/game
       - PORT=4000
       - NODE_ENV=production
     depends_on:

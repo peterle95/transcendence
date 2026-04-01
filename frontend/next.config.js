@@ -4,7 +4,8 @@ const path = require('path')
 const nextConfig = {
   reactStrictMode: true,
   env: {
-    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3000',
+    // NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3000',
+    NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '/auth',
   },
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname)

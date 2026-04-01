@@ -12,7 +12,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/authMiddleware';
 
 const ALLOWED_ORIGINS = (
-  process.env.ALLOWED_ORIGINS || 'http://localhost:3001,http://localhost:3002,http://localhost:3003'
+  //   process.env.ALLOWED_ORIGINS || 'http://localhost:3001,http://localhost:3002,http://localhost:3003'
+  process.env.ALLOWED_ORIGINS || process.env.PUBLIC_URL || ''
 ).split(',').map(s => s.trim());
 
 function corsHeaders(origin: string | null): Record<string, string> {
@@ -69,7 +70,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Socket.io not available' }, { status: 503, headers });
   }
 
-  const gameUrl = process.env.NEXT_PUBLIC_GAME_SERVICE_URL || 'http://localhost:3002';
+  // const gameUrl = process.env.NEXT_PUBLIC_GAME_SERVICE_URL || 'http://localhost:3002';
+  const gameUrl = process.env.NEXT_PUBLIC_GAME_SERVICE_URL || '/game';
 
   io.to(`user_${targetUserId}`).emit('game_invite_received', {
     inviterId:       auth.user.userId,

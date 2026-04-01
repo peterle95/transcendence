@@ -288,7 +288,11 @@ const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
   ? process.env.SOCKET_IO_ALLOWLIST.split(',').map(s => s.trim())
   : defaultOrigins;
 
-const io = new Server(httpServer, { cors: { origin: allowedOrigins, methods: ['GET', 'POST'] } });
+const io = new Server(httpServer, { 
+  // Custom path injected via docker-compose to align with Nginx's path-routing
+  path: process.env.SOCKET_PATH || '/socket.io',
+  cors: { origin: allowedOrigins, methods: ['GET', 'POST'] } 
+});
 
 // Countdown management
 let countdownTimer = null;
