@@ -3,6 +3,8 @@
 # All service ports bound to 127.0.0.1; only Nginx is public.
 # ============================================================================
 
+name: transcendence
+
 services:
   # ── PostgreSQL ──────────────────────────────────────────────────
   postgres:
@@ -11,8 +13,8 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-    ports:
-      - "127.0.0.1:5433:5432"
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
@@ -29,8 +31,8 @@ services:
   mongo:
     image: mongo:7-jammy
     container_name: mongo_db
-    ports:
-      - "127.0.0.1:27017:27017"
+    expose:
+      - "27017"
     volumes:
       - mongo_data:/data/db
     networks:
