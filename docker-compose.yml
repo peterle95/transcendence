@@ -161,29 +161,19 @@ services:
 
   # Vault Service - Secret management
   vault_srvc:
-    build:
-      context: "./vault_srvc"
-      args:
-        VAULT_API_PORT: 8200
+    build: "./vault_srvc"
     container_name: vault_service
     ports:
       - "8200:8200"
-    environment:
-      - VAULT_ADDR=http://127.0.0.1:8200
-      - VAULT_API_PORT=8200
-      - SAVE_UNSEAL_KEYS=1
-      - SAVE_ROOT_TOKEN=1
     healthcheck:
-      test: ["CMD", "/healthcheck.sh"]
+      test: ["CMD", "curl", "-f", "https://127.0.0.1:8200/v1/sys/health"]
       start_period:   120s
-      start_interval: 2s
+      start_interval: 30s
       interval:       20s
-      timeout:        3s
-      retries:        3
+      timeout:        5s
+      retries:        10
     volumes:
-      - "vault_storage:/vault/file/"
-      - "vault_secret:/vault/secret/"
-      - "vault_logs:/vault/logs/"
+      - "vault_data:/vault/"
     networks:
       - transcendence_net
 #   restart: no
@@ -196,11 +186,7 @@ volumes:
     driver: local
   mongo_data:
     driver: local
-  vault_storage:
-    driver: local
-  vault_secret:
-    driver: local
-  vault_logs:
+  vault_data:
     driver: local
 
 networks:
