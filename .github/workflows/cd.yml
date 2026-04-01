@@ -1,0 +1,32 @@
+name: CD — Deploy to VPS
+
+on:
+  push:
+    branches:
+      - AI_prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy via SSH
+        run: |
+          gcloud compute ssh ${{ vars.GCP_INSTANCE }} \
+            --zone=${{ vars.GCP_ZONE }} \
+            --project=${{ vars.GCP_PROJECT_ID }} \
+            --tunnel-through-iap \
+            --command="sudo /usr/local/bin/deploy_transcendence.sh AI_prod" \
+            --quiet
