@@ -43,5 +43,7 @@ next-env.d.ts
 # text files
 /txt
 
+# vscode
+.vscode/
 
 /src/generated/prisma
