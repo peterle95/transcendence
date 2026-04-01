@@ -28,8 +28,8 @@ TRAIN_CHECKPOINT_PATH = os.getenv("TRAIN_CHECKPOINT_PATH", "/app/models/dqn_trai
 
 REWARD_WIN = float(os.getenv("REWARD_WIN", "1.0"))
 REWARD_DEATH = float(os.getenv("REWARD_DEATH", "-1.0"))
-REWARD_HIT = float(os.getenv("REWARD_HIT", "0.02"))
-REWARD_HURT = float(os.getenv("REWARD_HURT", "-0.02"))
+REWARD_HIT = float(os.getenv("REWARD_HIT", "0.2"))
+REWARD_HURT = float(os.getenv("REWARD_HURT", "-0.2"))
 
 
 class Trainer:
@@ -317,5 +317,31 @@ class Trainer:
             MODEL_PATH,
             TRAIN_CHECKPOINT_PATH,
         )
-
-        await sio.disconnect()
+	def _log_training_config(self) -> None:
+		log.info(
+		"training config | device=%s gamma=%.4f lr=%g batch_size=%d "
+		"epsilon_start=%.4f epsilon_end=%.4f epsilon_decay_steps=%d "
+		"target_update_every=%d replay_capacity=%d "
+		"reward_win=%.4f reward_death=%.4f reward_hit=%.4f reward_hurt=%.4f "
+		"train_steps=%d save_every=%d train_resume=%s room=%s ai_slot=%d train_ai_slots=%s",
+		self.agent.cfg.device,
+		self.agent.cfg.gamma,
+		self.agent.cfg.lr,
+		self.agent.cfg.batch_size,
+		self.agent.cfg.epsilon_start,
+		self.agent.cfg.epsilon_end,
+		self.agent.cfg.epsilon_decay_steps,
+		self.agent.cfg.target_update_every,
+		self.agent.cfg.replay_capacity,
+		REWARD_WIN,
+		REWARD_DEATH,
+		REWARD_HIT,
+		REWARD_HURT,
+		TRAIN_STEPS,
+		SAVE_EVERY,
+		TRAIN_RESUME,
+		ROOM_ID,
+		AI_SLOT,
+		TRAIN_AI_SLOTS,
+		)
+		await sio.disconnect()

@@ -18,8 +18,8 @@ class AgentConfig:
     lr: float = 1e-3
     batch_size: int = 64
     epsilon_start: float = 1.0
-    epsilon_end: float = 0.05
-    epsilon_decay_steps: int = 50_000
+    epsilon_end: float = 0.20
+    epsilon_decay_steps: int = 150_000
     target_update_every: int = 1_000
     replay_capacity: int = 100_000
 
