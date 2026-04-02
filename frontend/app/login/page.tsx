@@ -59,9 +59,10 @@ export default function LoginPage() {
   }
 
   return (
+    // Dark base so transparent PixelBlast doesn't look gray
     <div style={{ minHeight: '100vh', background: '#07070f', position: 'relative' }}>
 
-      {/* PixelBlast canvas — needs dark base so it doesn't look gray */}
+      {/* PixelBlast canvas */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
         <PixelBlast
           variant="square"
@@ -81,30 +82,7 @@ export default function LoginPage() {
         />
       </div>
 
-      {/* Nav bar — pill style like React Bits */}
-      <header style={{ position: 'relative', zIndex: 10, padding: '20px 32px' }}>
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: '999px',
-            padding: '10px 24px',
-            backdropFilter: 'blur(12px)',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', letterSpacing: '0.02em' }}>
-            Space Supremacy – Transcendence
-          </span>
-        </div>
-      </header>
-
-      {/* Centered card */}
+      {/* Centered card — no extra header here, layout.tsx already renders Header */}
       <div
         style={{
           position: 'relative',
@@ -112,7 +90,7 @@ export default function LoginPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 'calc(100vh - 90px)',
+          minHeight: '100vh',
           padding: '0 16px',
         }}
       >
