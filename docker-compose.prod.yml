@@ -38,8 +38,9 @@ services:
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 30s        # was 5s — mongosh is slow on low RAM on VPS
+      retries: 3
+      start_period: 60s   # give it time on container start
     restart: unless-stopped
 
   # ── Auth Service ────────────────────────────────────────────────
@@ -84,7 +85,7 @@ services:
       - NODE_ENV=production
     depends_on:
       mongo:
-        condition: service_healthy
+        condition: service_started   # was service_healthy
     networks:
       - app_network
     restart: unless-stopped
@@ -137,12 +138,83 @@ services:
       - app_network
     restart: unless-stopped
 
+  # ── AI Service (DQN Player Bots) ────────────────────────────────
+  ai_srvc:
+    build: ./AI_srvc
+    container_name: ai_service
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - ROOM_ID=gameplay-room
+      - AI_SLOT=1
+      - MODEL_PATH=/app/models/live/dqn_latest.pt
+      - MODEL_AUTO_RELOAD=true
+      - MODEL_RELOAD_INTERVAL_S=5
+      - TRAINING_MODE=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models:ro
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  ai_srvc_slot2:
+    build: ./AI_srvc
+    container_name: ai_service_slot2
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - ROOM_ID=gameplay-room
+      - AI_SLOT=2
+      - MODEL_PATH=/app/models/live/dqn_latest.pt
+      - MODEL_AUTO_RELOAD=true
+      - MODEL_RELOAD_INTERVAL_S=5
+      - TRAINING_MODE=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models:ro
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  ai_srvc_slot3:
+    build: ./AI_srvc
+    container_name: ai_service_slot3
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
+      - ROOM_ID=gameplay-room
+      - AI_SLOT=3
+      - MODEL_PATH=/app/models/live/dqn_latest.pt
+      - MODEL_AUTO_RELOAD=true
+      - MODEL_RELOAD_INTERVAL_S=5
+      - TRAINING_MODE=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models:ro
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
   mongo_data:
     driver: local
   avatar_uploads:
+    driver: local
+  ai_models:
+    driver: local
+  ai_logs:
     driver: local
 
 networks:
