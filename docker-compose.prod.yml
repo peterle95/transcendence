@@ -10,16 +10,34 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: postgres_db
+    hostname: "postgres.transcendence-db"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     expose:
       - "5432"
+    depends_on:
+      vault_srvc:
+        condition: service_healthy
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/postgres_db"
     networks:
-      - app_network
+      - backend_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -31,12 +49,30 @@ services:
   mongo:
     image: mongo:7-jammy
     container_name: mongo_db
+    hostname: "mongo.transcendence-db"
     expose:
       - "27017"
+    depends_on:
+      vault_srvc:
+        condition: service_healthy
     volumes:
       - mongo_data:/data/db
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/mongo_db"
     networks:
-      - app_network
+      - backend_net
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -48,6 +84,7 @@ services:
   auth_srvc:
     build: ./auth_srvc
     container_name: auth_service
+    hostname: "auth.transcendence-backend"
     ports:
       - "127.0.0.1:3000:3000"
     environment:
@@ -57,13 +94,27 @@ services:
       - INTERNAL_SERVICE_SECRET=${INTERNAL_SERVICE_SECRET:?Set INTERNAL_SERVICE_SECRET in .env}
       - NEXTAUTH_URL=${PUBLIC_URL:-http://localhost:3003}/auth # Added /auth to route NextAuth correctly behind Nginx
       - NODE_ENV=production
-    volumes:
-      - avatar_uploads:/app/uploads/avatars
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - avatar_uploads:/app/uploads/avatars
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/auth_srvc"
     networks:
-      - app_network
+      - backend_net
     restart: unless-stopped
 
   # ── Chat Service ────────────────────────────────────────────────
@@ -73,6 +124,7 @@ services:
       args:
         - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth        # baked into the bundle
     container_name: chat_service
+    hostname: "chat.transcendence-backend"
     ports:
       - "127.0.0.1:3001:3001"
     environment:
@@ -87,8 +139,23 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/chat_srvc"
     networks:
-      - app_network
+      - backend_net
     restart: unless-stopped
 
   # ── Frontend ────────────────────────────────────────────────────
@@ -98,6 +165,7 @@ services:
       args:
         - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth # Bake the correct public auth subpath into frontend bundle
     container_name: frontend_service
+    hostname: "frontend.transcendence-backend"
     ports:
       - "127.0.0.1:3003:3003"
     environment:
@@ -105,10 +173,27 @@ services:
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - NODE_ENV=production
     depends_on:
-      - auth_srvc
-      - chat_srvc
+      auth_srvc:
+        condition: service_started
+      chat_srvc:
+        condition: service_started
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/frontend"
     networks:
-      - app_network
+      - backend_net
     restart: unless-stopped
 
   # ── Game Service ────────────────────────────────────────────────
@@ -119,6 +204,7 @@ services:
         - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
         - NEXT_PUBLIC_GAME_SERVICE_URL=/game
     container_name: game_service
+    hostname: "game.transcendence-backend"
     ports:
       - "127.0.0.1:3002:3002"
       - "127.0.0.1:4000:4000"
@@ -135,9 +221,117 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/game_srvc"
     networks:
-      - app_network
+      - backend_net
     restart: unless-stopped
+
+  # ── Caddy ───────────────────────────────────────────────────────
+  caddy:
+    container_name: "clear_proxy"
+    hostname: "clear.transcendence-proxy"
+    build: "./caddy"
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - backend_net
+      - proxy_net
+    depends_on:
+      tor:
+        condition: service_started
+    volumes:
+      - ./caddy/conf:/etc/caddy
+      - caddy_data:/data
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/clear_proxy"
+
+  # ── Tor ─────────────────────────────────────────────────────────
+  tor:
+    container_name: "dark_proxy"
+    hostname: "dark.transcendence-proxy"
+    build: "./tor"
+    restart: unless-stopped
+    ports:
+      - "9050:9050"
+    networks:
+      - proxy_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl --socks5-hostname 127.0.0.1:9050 http://$(cat /var/lib/tor/hidden_services/main/hostname)"]
+      start_period:   1m
+      start_interval: 20s
+      interval:       45s
+      timeout:        1m
+      retries:        3
+    depends_on:
+      vault_srvc:
+        condition: service_healthy
+    volumes:
+      - "tor_data:/data"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/pub"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/cacert"
+      - type: volume
+        source: "vault_data"
+        target: "/vault/prv"
+        read_only: true
+        volume:
+          nocopy: true
+          subpath: "distribute/dark_proxy"
+
+  # ── Vault Service ───────────────────────────────────────────────
+  vault_srvc:
+    build: "./vault_srvc"
+    container_name: vault_service
+    hostname: "vault.transcendence-secret"
+    expose:
+      - "8200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f https://vault.transcendence-secret:8200/v1/sys/health"]
+      start_period:   1m
+      start_interval: 20s
+      interval:       45s
+      timeout:        1m
+      retries:        3
+    volumes:
+      - "vault_data:/vault/"
+    networks:
+      - backend_net
+      - proxy_net
+    restart: no
+    cap_add:
+      - IPC_LOCK
 
 volumes:
   postgres_data:
@@ -146,7 +340,34 @@ volumes:
     driver: local
   avatar_uploads:
     driver: local
+  caddy_data:
+    driver: local
+  tor_data:
+    driver: local
+  vault_data:
+    driver: local
 
 networks:
-  app_network:
+  backend_net:
     driver: bridge
+    enable_ipv6: false
+#    ipam:
+#      driver: default
+#      config:
+#        - subnet: 133.7.42.9
+#          ip_range:
+#          gateway:
+#          aux_addresses:
+  proxy_net:
+    driver: bridge
+    enable_ipv6: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 133.7.42.0/29
+          ip_range: 133.7.42.0/29
+          gateway: 133.7.42.6
+          aux_addresses:
+            dark.transcendence-proxy: 133.7.42.2
+            clear.transcendence-proxy: 133.7.42.3
+            vault.transcendence-backend: 133.7.42.4
