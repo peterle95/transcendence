@@ -1,8 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+// Dynamic import prevents SSR issues with WebGL/Three.js
+const PixelBlast = dynamic(() => import('@/components/PixelBlast'), {
+  ssr: false,
+});
 
 export default function Home() {
   const router = useRouter();
@@ -40,8 +46,27 @@ export default function Home() {
   }
 
   return (
-    <main className="flex-1 flex items-center justify-center p-4 min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900">
-      <div className="w-full max-w-6xl">
+<main className="flex-1 flex items-center justify-center p-4 min-h-screen relative">
+      {/* Full-page background */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
+        <PixelBlast
+          variant="square"
+          pixelSize={2}
+          color="#592deb"
+          patternScale={3.75}
+          patternDensity={1.2}
+          pixelSizeJitter={0.4}
+          enableRipples
+          rippleSpeed={0.4}
+          rippleThickness={0.12}
+          rippleIntensityScale={1.5}
+          liquid={false}
+          speed={0.5}
+          edgeFade={0.25}
+          transparent
+        />
+      </div>
+      <div className="w-full max-w-6xl relative z-10">
         {/* Hero */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
