@@ -1,32 +1,64 @@
-name: CD — Deploy to VPS
+name: CD — Deploy to Production
 
 on:
   push:
     branches:
-      - AI_prod
+      - main # fires once per merge
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false   # never cancel a running deploy mid-flight
 
 jobs:
   deploy:
+    name: SSH → GCP VM → docker compose up
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
+    environment: production    # optional: adds an approval gate in GitHub UI
 
     steps:
-      - name: Authenticate to GCP
+      # ── 1. Authenticate to GCP via Workload Identity Federation ──────────
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          service_account:            ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
+      # ── 2. SSH into the VM and deploy ────────────────────────────────────
       - name: Deploy via SSH
+        uses: google-github-actions/ssh-compute@v1
+        with:
+          instance_name: transcendence-server
+          zone:          europe-west10-a
+          project_id:    ${{ secrets.GCP_PROJECT_ID }}
+          ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          command: |
+            set -euo pipefail
+
+            # Fix git safe.directory for root-owned repo cloned by another user
+            git config --global --add safe.directory /opt/transcendence
+
+            cd /opt/transcendence
+
+            echo "==> Pulling latest main"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+
+            echo "==> Running deploy script"
+            sudo /usr/local/bin/deploy_transcendence.sh
+
+      # ── 3. Smoke check ───────────────────────────────────────────────────
+      - name: Smoke check production
         run: |
-          gcloud compute ssh ${{ vars.GCP_INSTANCE }} \
-            --zone=${{ vars.GCP_ZONE }} \
-            --project=${{ vars.GCP_PROJECT_ID }} \
-            --tunnel-through-iap \
-            --command="sudo /usr/local/bin/deploy_transcendence.sh AI_prod" \
-            --quiet
+          BASE="https://spacesupremacy.duckdns.org"
+
+          check() {
+            echo -n "  $1 ... "
+            STATUS=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 15 "$BASE$1")
+            if [ "$STATUS" = "$2" ]; then echo "OK ($STATUS)"
+            else echo "FAIL (got $STATUS, expected $2)"; exit 1; fi
+          }
+
+          check "/auth/api/auth/csrf"  "200"
+          check "/chat/"               "200"
+          check "/game/"               "308"   # Next.js redirect to /game/games/...
