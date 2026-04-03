@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import socketio
@@ -25,6 +26,8 @@ TRAIN_AI_SLOTS = os.getenv("TRAIN_AI_SLOTS", "1,2")
 STATE_TIMEOUT_S = float(os.getenv("TRAIN_STATE_TIMEOUT_S", "15"))
 TRAIN_RESUME = os.getenv("TRAIN_RESUME", "true").lower() == "true"
 TRAIN_CHECKPOINT_PATH = os.getenv("TRAIN_CHECKPOINT_PATH", "/app/models/dqn_training_checkpoint.pt")
+TRAIN_AUDIT_LOG_PATH = os.getenv("TRAIN_AUDIT_LOG_PATH", "/app/training/AI_Training_Log.md")
+TRAIN_AUDIT_EVERY = int(os.getenv("TRAIN_AUDIT_EVERY", "100"))
 
 REWARD_WIN = float(os.getenv("REWARD_WIN", "1.0"))
 REWARD_DEATH = float(os.getenv("REWARD_DEATH", "-1.0"))
@@ -66,6 +69,35 @@ class Trainer:
     def _ensure_artifact_dirs(self) -> None:
         self._ensure_parent_dir(MODEL_PATH)
         self._ensure_parent_dir(TRAIN_CHECKPOINT_PATH)
+        self._ensure_parent_dir(TRAIN_AUDIT_LOG_PATH)
+
+    def _ensure_audit_log_header(self) -> None:
+        if os.path.exists(TRAIN_AUDIT_LOG_PATH) and os.path.getsize(TRAIN_AUDIT_LOG_PATH) > 0:
+            return
+
+        with open(TRAIN_AUDIT_LOG_PATH, "w", encoding="utf-8") as f:
+            f.write("# AI Training Log\n\n")
+            f.write("| timestamp | event | session_episode | total_episode | session_transition | total_transition | epsilon | replay | avg_reward | avg_loss | applied_runtime_config_updates |\n")
+            f.write("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |\n")
+
+    def _append_audit_log(self, event: str, applied_updates: Optional[dict] = None) -> None:
+        self._ensure_artifact_dirs()
+        self._ensure_audit_log_header()
+
+        avg_reward = sum(self._recent_rewards) / len(self._recent_rewards) if self._recent_rewards else 0.0
+        avg_loss = sum(self._recent_losses) / len(self._recent_losses) if self._recent_losses else 0.0
+
+        timestamp = datetime.now(timezone.utc).isoformat()
+        updates_text = "-" if not applied_updates else "; ".join(
+            f"{key}: {value[0]} -> {value[1]}" for key, value in applied_updates.items()
+        )
+
+        with open(TRAIN_AUDIT_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(
+                f"| {timestamp} | {event} | {self._session_episodes} | {self._total_episodes} | "
+                f"{self._session_transitions} | {self._total_transitions} | {self.agent.epsilon:.4f} | "
+                f"{len(self.agent.replay)} | {avg_reward:.6f} | {avg_loss:.6f} | {updates_text} |\n"
+            )
 
     def _resume_if_available(self) -> None:
         if not TRAIN_RESUME:
@@ -98,16 +130,31 @@ class Trainer:
             except Exception:
                 log.exception("failed to load existing model, starting from fresh weights")
 
-    def _save_checkpoint(self) -> None:
+    def _save_checkpoint(self) -> dict:
         self._ensure_artifact_dirs()
+        agent_state = self.agent.checkpoint_state()
+        applied_updates = agent_state.get("applied_runtime_config_updates", {})
         checkpoint = {
-            "agent": self.agent.checkpoint_state(),
+            "agent": agent_state,
             "trainer": {
                 "total_transitions": int(self._total_transitions),
                 "total_episodes": int(self._total_episodes),
             },
         }
         torch.save(checkpoint, TRAIN_CHECKPOINT_PATH)
+        return applied_updates if isinstance(applied_updates, dict) else {}
+
+    def _build_model_metadata(self) -> dict:
+        return {
+            "source": "training",
+            "saved_at_utc": datetime.now(timezone.utc).isoformat(),
+            "session_transitions": int(self._session_transitions),
+            "total_transitions": int(self._total_transitions),
+            "session_episodes": int(self._session_episodes),
+            "total_episodes": int(self._total_episodes),
+            "train_steps": int(self.agent.train_steps),
+            "epsilon": float(self.agent.epsilon),
+        }
 
     @staticmethod
     def _extract_metrics(payload: dict) -> Dict[str, float]:
@@ -191,6 +238,8 @@ class Trainer:
             if done:
                 self._session_episodes += 1
                 self._total_episodes += 1
+                if self._total_episodes % TRAIN_AUDIT_EVERY == 0:
+                    self._append_audit_log(event="episode")
                 self._last_state = None
                 self._last_action = None
                 self._last_metrics = None
@@ -225,8 +274,13 @@ class Trainer:
 
         if self._session_transitions % SAVE_EVERY == 0 and self._session_transitions > 0:
             self._ensure_artifact_dirs()
-            save_model(self.agent.online, MODEL_PATH)
-            self._save_checkpoint()
+            save_model(self.agent.online, MODEL_PATH, metadata=self._build_model_metadata())
+            applied_updates = self._save_checkpoint()
+            self._append_audit_log(event="checkpoint", applied_updates=applied_updates)
+
+            if applied_updates:
+                log.info("runtime config applied at checkpoint: %s", applied_updates)
+
             log.info(
                 "checkpoint saved at session_transition=%d total_transition=%d -> %s and %s",
                 self._session_transitions,
@@ -252,6 +306,8 @@ class Trainer:
                 ROOM_ID,
                 AI_SLOT,
             )
+
+        self._append_audit_log(event="session_start")
 
         sio = socketio.AsyncClient(reconnection=True, reconnection_attempts=0)
 
@@ -306,8 +362,11 @@ class Trainer:
             await asyncio.sleep(0.1)
 
         self._ensure_artifact_dirs()
-        save_model(self.agent.online, MODEL_PATH)
-        self._save_checkpoint()
+        self._ensure_audit_log_header()
+        save_model(self.agent.online, MODEL_PATH, metadata=self._build_model_metadata())
+        applied_updates = self._save_checkpoint()
+        self._append_audit_log(event="session_end", applied_updates=applied_updates)
+
         log.info(
             "live training completed: session_transitions=%d session_episodes=%d total_transitions=%d total_episodes=%d model=%s checkpoint=%s",
             self._session_transitions,
@@ -317,31 +376,3 @@ class Trainer:
             MODEL_PATH,
             TRAIN_CHECKPOINT_PATH,
         )
-	def _log_training_config(self) -> None:
-		log.info(
-		"training config | device=%s gamma=%.4f lr=%g batch_size=%d "
-		"epsilon_start=%.4f epsilon_end=%.4f epsilon_decay_steps=%d "
-		"target_update_every=%d replay_capacity=%d "
-		"reward_win=%.4f reward_death=%.4f reward_hit=%.4f reward_hurt=%.4f "
-		"train_steps=%d save_every=%d train_resume=%s room=%s ai_slot=%d train_ai_slots=%s",
-		self.agent.cfg.device,
-		self.agent.cfg.gamma,
-		self.agent.cfg.lr,
-		self.agent.cfg.batch_size,
-		self.agent.cfg.epsilon_start,
-		self.agent.cfg.epsilon_end,
-		self.agent.cfg.epsilon_decay_steps,
-		self.agent.cfg.target_update_every,
-		self.agent.cfg.replay_capacity,
-		REWARD_WIN,
-		REWARD_DEATH,
-		REWARD_HIT,
-		REWARD_HURT,
-		TRAIN_STEPS,
-		SAVE_EVERY,
-		TRAIN_RESUME,
-		ROOM_ID,
-		AI_SLOT,
-		TRAIN_AI_SLOTS,
-		)
-		await sio.disconnect()
