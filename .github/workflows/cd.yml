@@ -39,22 +39,13 @@ jobs:
             set -exuo pipefail
 
             REPO_DIR="/opt/transcendence/code_base"
-            CURRENT_USER=$(whoami)
 
-            echo "==> Taking ownership of the codebase for the deploy user ($CURRENT_USER)"
-            sudo chown -R "$CURRENT_USER" "$REPO_DIR"
-
-            # Adding safe.directory is still good practice in CI
-            git config --global --add safe.directory "$REPO_DIR"
-
-            cd "$REPO_DIR"
-            echo "==> Pulling latest main"
-            git fetch origin main
-            git checkout -B main origin/main
-            git reset --hard origin/main
+            # Authorize root (who runs the deploy script) to safely manipulate the git repo
+            sudo git config --global --add safe.directory "$REPO_DIR"
 
             echo "==> Running deploy script"
-            sudo /usr/local/bin/deploy_transcendence.sh
+            # Crucially, pass 'main' as the required argument to satisfy the deploy script
+            sudo /usr/local/bin/deploy_transcendence.sh main
 
       - name: Print SSH stderr on failure
         if: failure()
