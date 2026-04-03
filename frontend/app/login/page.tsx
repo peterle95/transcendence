@@ -3,11 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
-
-const PixelBlast = dynamic(() => import('@/components/PixelBlast'), {
-  ssr: false,
-})
 
 export default function LoginPage() {
   const router = useRouter()
@@ -59,28 +54,7 @@ export default function LoginPage() {
   }
 
   return (
-    // Dark base so transparent PixelBlast doesn't look gray
-    <div style={{ minHeight: '100vh', background: '#07070f', position: 'relative' }}>
-
-      {/* PixelBlast canvas */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
-        <PixelBlast
-          variant="square"
-          pixelSize={2}
-          color="#592deb"
-          patternScale={3.75}
-          patternDensity={1.2}
-          pixelSizeJitter={0.4}
-          enableRipples
-          rippleSpeed={0.4}
-          rippleThickness={0.12}
-          rippleIntensityScale={1.5}
-          liquid={false}
-          speed={0.5}
-          edgeFade={0.25}
-          transparent
-        />
-      </div>
+    <div style={{ minHeight: '100vh', position: 'relative' }}>
 
       {/* Centered card — no extra header here, layout.tsx already renders Header */}
       <div

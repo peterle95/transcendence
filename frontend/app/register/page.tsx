@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
+import Link from 'next/link'
 export default function RegisterPage() {
 	const router = useRouter()
 	const [formData, setFormData] = useState({
@@ -42,83 +42,152 @@ export default function RegisterPage() {
 	}
 
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-md w-full space-y-8">
-				<div>
-					<h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+		<div style={{ minHeight: '100vh', position: 'relative' }}>
+			
+			{/* Centered card */}
+			<div
+				style={{
+					position: 'relative',
+					zIndex: 10,
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					minHeight: '100vh',
+					padding: '0 16px',
+				}}
+			>
+				<div
+					style={{
+						width: '100%',
+						maxWidth: '420px',
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						padding: '40px 36px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(89,45,235,0.25)',
+					}}
+				>
+					<h2
+						style={{
+							margin: '0 0 28px',
+							textAlign: 'center',
+							fontSize: '1.75rem',
+							fontWeight: 800,
+							color: '#fff',
+							letterSpacing: '-0.01em',
+						}}
+					>
 						Create your account
 					</h2>
-				</div>
-				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-					{error && (
-						<div className="rounded-md bg-red-50 p-4">
-							<p className="text-sm text-red-800">{error}</p>
-						</div>
-					)}
-					<div className="rounded-md shadow-sm -space-y-px">
-						<div>
-							<label htmlFor="email" className="sr-only">
-								Email address
-							</label>
-							<input
-								id="email"
-								name="email"
-								type="email"
-								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-								placeholder="Email address"
-								value={formData.email}
-								onChange={(e) =>
-									setFormData({ ...formData, email: e.target.value })
-								}
-							/>
-						</div>
-						<div>
-							<label htmlFor="username" className="sr-only">
-								Username
-							</label>
-							<input
-								id="username"
-								name="username"
-								type="text"
-								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-								placeholder="Username"
-								value={formData.username}
-								onChange={(e) =>
-									setFormData({ ...formData, username: e.target.value })
-								}
-							/>
-						</div>
-						<div>
-							<label htmlFor="password" className="sr-only">
-								Password
-							</label>
-							<input
-								id="password"
-								name="password"
-								type="password"
-								required
-								className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-								placeholder="Password"
-								value={formData.password}
-								onChange={(e) =>
-									setFormData({ ...formData, password: e.target.value })
-								}
-							/>
-						</div>
-					</div>
 
-					<div>
+					<form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+						{error && (
+							<div
+								style={{
+									borderRadius: '10px',
+									padding: '10px 14px',
+									background: 'rgba(239,68,68,0.15)',
+									border: '1px solid rgba(239,68,68,0.35)',
+									color: '#fca5a5',
+									fontSize: '0.85rem',
+								}}
+							>
+								{error}
+							</div>
+						)}
+
+						<input
+							type="email"
+							id="email"
+							name="email"
+							required
+							placeholder="Email address"
+							value={formData.email}
+							onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+							style={{
+								width: '100%',
+								padding: '13px 16px',
+								borderRadius: '12px',
+								background: 'rgba(255,255,255,0.07)',
+								border: '1px solid rgba(255,255,255,0.15)',
+								color: '#fff',
+								fontSize: '0.95rem',
+								outline: 'none',
+								boxSizing: 'border-box',
+							}}
+						/>
+
+						<input
+							type="text"
+							id="username"
+							name="username"
+							required
+							placeholder="Username"
+							value={formData.username}
+							onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+							style={{
+								width: '100%',
+								padding: '13px 16px',
+								borderRadius: '12px',
+								background: 'rgba(255,255,255,0.07)',
+								border: '1px solid rgba(255,255,255,0.15)',
+								color: '#fff',
+								fontSize: '0.95rem',
+								outline: 'none',
+								boxSizing: 'border-box',
+							}}
+						/>
+
+						<input
+							type="password"
+							id="password"
+							name="password"
+							required
+							placeholder="Password"
+							value={formData.password}
+							onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+							style={{
+								width: '100%',
+								padding: '13px 16px',
+								borderRadius: '12px',
+								background: 'rgba(255,255,255,0.07)',
+								border: '1px solid rgba(255,255,255,0.15)',
+								color: '#fff',
+								fontSize: '0.95rem',
+								outline: 'none',
+								boxSizing: 'border-box',
+							}}
+						/>
+
+						<Link
+							href="/login"
+							style={{ color: '#a78bfa', fontSize: '0.875rem', textDecoration: 'none', marginTop: '2px' }}
+						>
+							Already have an account? Sign in
+						</Link>
+
 						<button
 							type="submit"
 							disabled={isLoading}
-							className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+							style={{
+								marginTop: '10px',
+								width: '100%',
+								padding: '14px',
+								borderRadius: '12px',
+								border: 'none',
+								background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+								color: '#fff',
+								fontWeight: 700,
+								fontSize: '1rem',
+								cursor: isLoading ? 'not-allowed' : 'pointer',
+								opacity: isLoading ? 0.6 : 1,
+							}}
 						>
-							{isLoading ? 'Creating account...' : 'Register'}
+							{isLoading ? 'Creating account…' : 'Register'}
 						</button>
-					</div>
-				</form>
+					</form>
+				</div>
 			</div>
 		</div>
 	)

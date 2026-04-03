@@ -5,10 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// Dynamic import prevents SSR issues with WebGL/Three.js
-const PixelBlast = dynamic(() => import('@/components/PixelBlast'), {
-  ssr: false,
-});
+
 
 export default function Home() {
   const router = useRouter();
@@ -47,25 +44,7 @@ export default function Home() {
 
   return (
 <main className="flex-1 flex items-center justify-center p-4 min-h-screen relative">
-      {/* Full-page background */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
-        <PixelBlast
-          variant="square"
-          pixelSize={2}
-          color="#592deb"
-          patternScale={3.75}
-          patternDensity={1.2}
-          pixelSizeJitter={0.4}
-          enableRipples
-          rippleSpeed={0.4}
-          rippleThickness={0.12}
-          rippleIntensityScale={1.5}
-          liquid={false}
-          speed={0.5}
-          edgeFade={0.25}
-          transparent
-        />
-      </div>
+
       <div className="w-full max-w-6xl relative z-10">
         {/* Hero */}
         <div className="text-center mb-16">
@@ -80,22 +59,35 @@ export default function Home() {
         {/* Main Cards Grid */}
         <div className="grid md:grid-cols-2 gap-8 mx-auto max-w-4xl">
           {/* Chat Card */}
-          <Link href="/chat/"> {/* this will point to the right port via nginx */}
+          <Link href="/chat/">
             <div
               onMouseEnter={() => setHoveredCard('chat')}
               onMouseLeave={() => setHoveredCard(null)}
-              className={`cursor-pointer rounded-2xl p-8 transition-all duration-300 transform ${
-                hoveredCard === 'chat'
-                  ? 'scale-105 shadow-2xl shadow-blue-500/50'
-                  : 'shadow-lg'
-              } bg-gradient-to-br from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700`}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '20px',
+                padding: '32px',
+                backdropFilter: 'blur(20px)',
+                transition: 'all 0.3s ease',
+                transform: hoveredCard === 'chat' ? 'scale(1.05)' : 'scale(1)',
+                boxShadow: hoveredCard === 'chat' ? '0 24px 80px rgba(59,130,246,0.3)' : '0 12px 40px rgba(0,0,0,0.2)',
+                cursor: 'pointer'
+              }}
             >
               <div className="text-6xl mb-4">💬</div>
               <h2 className="text-3xl font-bold text-white mb-2">Chat</h2>
-              <p className="text-blue-100 mb-4">
+              <p className="text-blue-100 mb-4 opacity-80">
                 Connect with other players in real-time. Share strategies, make friends, and stay in touch.
               </p>
-              <div className="inline-block px-6 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition">
+              <div style={{
+                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                color: '#fff',
+                padding: '8px 24px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                display: 'inline-block'
+              }}>
                 Enter Chat →
               </div>
             </div>
@@ -106,18 +98,31 @@ export default function Home() {
             <div
               onMouseEnter={() => setHoveredCard('game')}
               onMouseLeave={() => setHoveredCard(null)}
-              className={`cursor-pointer rounded-2xl p-8 transition-all duration-300 transform ${
-                hoveredCard === 'game'
-                  ? 'scale-105 shadow-2xl shadow-purple-500/50'
-                  : 'shadow-lg'
-              } bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700`}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '20px',
+                padding: '32px',
+                backdropFilter: 'blur(20px)',
+                transition: 'all 0.3s ease',
+                transform: hoveredCard === 'game' ? 'scale(1.05)' : 'scale(1)',
+                boxShadow: hoveredCard === 'game' ? '0 24px 80px rgba(124,58,237,0.3)' : '0 12px 40px rgba(0,0,0,0.2)',
+                cursor: 'pointer'
+              }}
             >
               <div className="text-6xl mb-4">🕹️</div>
               <h2 className="text-3xl font-bold text-white mb-2">Play Game</h2>
-              <p className="text-purple-100 mb-4">
+              <p className="text-purple-100 mb-4 opacity-80">
                 Keep Control of the Galaxy by annihilating challengers Space Fleets.
               </p>
-              <div className="inline-block px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition">
+              <div style={{
+                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                color: '#fff',
+                padding: '8px 24px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                display: 'inline-block'
+              }}>
                 Play Now →
               </div>
             </div>
