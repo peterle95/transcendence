@@ -14,6 +14,9 @@ jobs:
     name: SSH → GCP VM → docker compose up
     runs-on: ubuntu-latest
     environment: production    # optional: adds an approval gate in GitHub UI
+    permissions:
+      contents: read
+      id-token: write   # ← required for Workload Identity Federation
 
     steps:
       # ── 1. Authenticate to GCP via Workload Identity Federation ──────────
