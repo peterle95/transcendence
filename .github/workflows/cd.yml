@@ -37,8 +37,8 @@ jobs:
           ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           command: |
             set -euo pipefail
-            git config --global --add safe.directory /opt/transcendence
-            cd /opt/transcendence
+            git config --global --add safe.directory /opt/transcendence/code_base 
+            cd /opt/transcendence/code_base
             echo "==> Pulling latest main"
             git fetch origin main
             git checkout main
