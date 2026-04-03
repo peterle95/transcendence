@@ -91,7 +91,7 @@ jobs:
           }
 
           check "/auth/api/auth/csrf" "200"
-          check "/chat/"              "200"
+          check "/chat/"              "308"
           check "/game/"              "308"
 
       - name: Runner-side diagnostics after smoke failure
