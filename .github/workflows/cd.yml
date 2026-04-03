@@ -39,16 +39,17 @@ jobs:
 
             REPO_DIR="/opt/transcendence/code_base"
 
-            echo "==> Repo permissions"
-            whoami
-            ls -ld "$REPO_DIR" "$REPO_DIR/.git"
+            echo "==> Taking ownership of the codebase for the deploy user ($USER)"
+            sudo chown -R $USER "$REPO_DIR"
 
-            sudo git config --global --add safe.directory "$REPO_DIR"
+            # Adding safe.directory is still good practice in CI
+            git config --global --add safe.directory "$REPO_DIR"
 
+            cd "$REPO_DIR"
             echo "==> Pulling latest main"
-            sudo git -C "$REPO_DIR" fetch origin main
-            sudo git -C "$REPO_DIR" checkout main
-            sudo git -C "$REPO_DIR" reset --hard origin/main
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
 
             echo "==> Running deploy script"
             sudo /usr/local/bin/deploy_transcendence.sh
