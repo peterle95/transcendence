@@ -28,7 +28,6 @@ jobs:
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Deploy via SSH
-        id: compute_ssh
         uses: google-github-actions/ssh-compute@v2
         with:
           instance_name: transcendence-server
@@ -37,12 +36,20 @@ jobs:
           ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           command: |
             set -euo pipefail
-            git config --global --add safe.directory /opt/transcendence/code_base 
-            cd /opt/transcendence/code_base
+
+            REPO_DIR="/opt/transcendence/code_base"
+
+            echo "==> Repo permissions"
+            whoami
+            ls -ld "$REPO_DIR" "$REPO_DIR/.git"
+
+            sudo git config --global --add safe.directory "$REPO_DIR"
+
             echo "==> Pulling latest main"
-            git fetch origin main
-            git checkout main
-            git reset --hard origin/main
+            sudo git -C "$REPO_DIR" fetch origin main
+            sudo git -C "$REPO_DIR" checkout main
+            sudo git -C "$REPO_DIR" reset --hard origin/main
+
             echo "==> Running deploy script"
             sudo /usr/local/bin/deploy_transcendence.sh
 
