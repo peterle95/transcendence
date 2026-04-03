@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       id-token: write   # ← required for Workload Identity Federation
-
+  
     steps:
       # ── 1. Authenticate to GCP via Workload Identity Federation ──────────
       - name: Authenticate to Google Cloud
@@ -33,6 +33,7 @@ jobs:
           instance_name: transcendence-server
           zone:          europe-west10-a
           project_id:    ${{ secrets.GCP_PROJECT_ID }}
+          user: molzerpeter3_gmail_com
           ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
           command: |
             set -euo pipefail
