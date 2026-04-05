@@ -130,7 +130,7 @@ export default function Home() {
         </div>
 
         {/* Stats */}
-        <div className="mt-16 grid grid-cols-3 gap-4 text-center">
+        {/*<div className="mt-16 grid grid-cols-3 gap-4 text-center">
           <div className="bg-white/10 backdrop-blur rounded-lg p-4">
             <div className="text-3xl font-bold text-white">1000+</div>
             <p className="text-gray-300">Active Players</p>
@@ -143,7 +143,7 @@ export default function Home() {
             <div className="text-3xl font-bold text-white">24/7</div>
             <p className="text-gray-300">Always Online</p>
           </div>
-        </div>
+        </div>*/}
       </div>
     </main>
   );

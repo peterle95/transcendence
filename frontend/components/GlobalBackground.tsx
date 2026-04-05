@@ -19,7 +19,7 @@ export default function GlobalBackground() {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: -1,
+        zIndex: 0,
         background: '#07070f',
         pointerEvents: 'none',
       }}

@@ -1,7 +1,7 @@
 import { Effect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import './PixelBlast.css';
+
 
 type PixelBlastVariant = 'square' | 'circle' | 'triangle' | 'diamond';
 
@@ -312,7 +312,8 @@ void main(){
       float t = max(uTime - uClickTimes[i], 0.0);
       float r = distance(uv, cuv);
       float waveR = speed * t;
-      float ring  = exp(-pow((r - waveR) / thickness, 2.0));
+      float diff = (r - waveR) / thickness;
+      float ring  = exp(-(diff * diff));
       float atten = exp(-dampT * t) * exp(-dampR * r);
       feed = max(feed, ring * atten * uRippleIntensity);
     }
@@ -693,8 +694,14 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`pixel-blast-container ${className ?? ''}`}
-      style={style}
+      className={className}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        ...style
+      }}
       aria-label="PixelBlast interactive background"
     />
   );
