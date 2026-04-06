@@ -466,7 +466,7 @@ const httpServer = http.createServer((req, res) => {
   res.end('game socket server is running');
 });
 
-const defaultOrigins = ['http://localhost:3002', 'https://localhost:3002'];
+const defaultOrigins = ['http://localhost:8080', 'https://localhost:8080'];
 const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
   ? process.env.SOCKET_IO_ALLOWLIST.split(',').map(s => s.trim())
   : defaultOrigins;

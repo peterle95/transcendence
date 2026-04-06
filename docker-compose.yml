@@ -88,6 +88,7 @@ services:
       - SOCKET_IO_ALLOWLIST=http://localhost:8080
       - SOCKET_PATH=/chat/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - HOSTNAME=0.0.0.0
       - NODE_ENV=development
     depends_on:
       mongo:
@@ -353,8 +354,8 @@ networks:
 # ============================================================================
 #
 # Access Chat Service:
-#   http://localhost:3001/api/chat/send
-#   http://localhost:3001/api/chat/history
+#   http://localhost:8080/chat/api/chat/send
+#   http://localhost:8080/chat/api/chat/history
 #
 # Connect to databases:
 #   PostgreSQL: postgresql://postgres:password@localhost:5433/
