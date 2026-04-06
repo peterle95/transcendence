@@ -112,8 +112,8 @@ class SocketManager {
     }
 
     const opts = { transports: ['websocket'] };
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      opts.path = '/game/socket.io';
+    if (typeof window !== 'undefined') {
+      opts.path = '/game/socket.io/';
     }
     this.socket = io(url, opts);
 
@@ -965,11 +965,17 @@ class Game {
     const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
       ? window.GAME_SOCKET_PORT
       : 4000;
+    
     const socketUrl = typeof window !== 'undefined'
-      ? `${window.location.protocol}//${window.location.hostname}:${socketPort}`
+      ? window.location.origin
       : `http://localhost:${socketPort}`;
 
-    this.networkSocket = io(socketUrl, { transports: ['websocket'] });
+    const opts = { transports: ['websocket'] };
+    if (typeof window !== 'undefined') {
+      opts.path = '/game/socket.io/';
+    }
+
+    this.networkSocket = io(socketUrl, opts);
     this.networkSocket.on('connect', () => {
       console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId);
     });
@@ -1144,8 +1150,8 @@ class Game {
       const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
         ? window.GAME_SOCKET_PORT
         : 4000;
-      // In production (not localhost), we connect to the root domain and let Nginx route the path
-      const socketUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+      // Connect to the root domain and let Nginx route the path
+      const socketUrl = typeof window !== 'undefined'
         ? window.location.origin
         : `http://localhost:${socketPort}`;
 
