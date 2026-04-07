@@ -60,10 +60,11 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
       - AUTH_SECRET=3f4b9c1c0c6a2f2a8e7d9c4b1a5e6f0c3b7d2a1f9e8c6b5d4a3f2c1e0b9a8d7
-      - NEXTAUTH_URL=http://localhost:3000
-      - CORS_ALLOWED_ORIGIN=http://localhost:3003,http://localhost:3001
+      - NEXTAUTH_URL=http://localhost:8080/auth
+      - CORS_ALLOWED_ORIGIN=http://localhost:8080
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
-      - NODE_ENV=development
+      - NODE_ENV=production
+    command: sh -c "npx prisma migrate deploy && npx next start -H 0.0.0.0 -p 3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,10 +84,12 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongo:27017/chat-service
       - AUTH_SERVICE_URL=http://auth_srvc:3000
-      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
-      - NEXT_PUBLIC_GAME_SERVICE_URL=http://localhost:3002
-      - SOCKET_IO_ALLOWLIST=http://localhost:3001,https://localhost:3001,http://localhost:3003,http://localhost:3002
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+      - NEXT_PUBLIC_GAME_SERVICE_URL=/game
+      - SOCKET_IO_ALLOWLIST=http://localhost:8080
+      - SOCKET_PATH=/chat/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - HOSTNAME=0.0.0.0
       - NODE_ENV=development
     depends_on:
       mongo:
@@ -107,12 +110,13 @@ services:
       - "3003:3003"
     environment:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
-      - NEXT_PUBLIC_AUTH_SERVICE_URL=http://localhost:3000
-      - CHAT_SERVICE_URL=http://localhost:3001
-      - NEXT_PUBLIC_CHAT_SERVICE_URL=http://localhost:3001
-      - GAME_SERVICE_URL=http://localhost:3002
-      - NEXT_PUBLIC_GAME_SERVICE_URL=http://localhost:3002
-      - NODE_ENV=development
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+      - CHAT_SERVICE_URL=http://chat_srvc:3001
+      - NEXT_PUBLIC_CHAT_SERVICE_URL=/chat
+      - GAME_SERVICE_URL=http://game_srvc:3002
+      - NEXT_PUBLIC_GAME_SERVICE_URL=/game
+      - NODE_ENV=production
+    command: npx next start -H 0.0.0.0 -p 3003
     depends_on:
       - auth_srvc
       - chat_srvc
@@ -130,12 +134,14 @@ services:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
-      - SOCKET_CORS_ORIGIN=http://localhost:3002
+      - SOCKET_CORS_ORIGIN=http://localhost:8080
       - SOCKET_PORT=4000
-      - SOCKET_IO_ALLOWLIST=http://localhost:3002,https://localhost:3002
+      - SOCKET_IO_ALLOWLIST=http://localhost:8080
+      - SOCKET_PATH=/game/socket.io/
       - GAME_ROOM_ID=gameplay-room
       - ENABLE_TRAINING_ROOM=false
-      - NODE_ENV=development
+      - NODE_ENV=production
+    command: sh -c "npm run start:socket & npx next start -H 0.0.0.0 -p 3002"
     depends_on:
       postgres:
         condition: service_healthy
@@ -153,9 +159,10 @@ services:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
-      - SOCKET_CORS_ORIGIN=http://localhost:3002
+      - SOCKET_CORS_ORIGIN=http://localhost:8080
       - SOCKET_PORT=4000
-      - SOCKET_IO_ALLOWLIST=http://localhost:3002,https://localhost:3002
+      - SOCKET_IO_ALLOWLIST=http://localhost:8080
+      - SOCKET_PATH=/game/socket.io/
       - GAME_ROOM_ID=training-room
       - ENABLE_TRAINING_ROOM=true
       - NODE_ENV=development
@@ -312,6 +319,25 @@ services:
       - app_network
     restart: "no"
 
+  # ========================================
+  # Nginx Gateway (Local Proxy)
+  # ========================================
+  nginx:
+    image: nginx:alpine
+    container_name: local_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - auth_srvc
+      - chat_srvc
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
@@ -331,8 +357,8 @@ networks:
 # ============================================================================
 #
 # Access Chat Service:
-#   http://localhost:3001/api/chat/send
-#   http://localhost:3001/api/chat/history
+#   http://localhost:8080/chat/api/chat/send
+#   http://localhost:8080/chat/api/chat/history
 #
 # Connect to databases:
 #   PostgreSQL: postgresql://postgres:password@localhost:5433/

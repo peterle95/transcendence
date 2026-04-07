@@ -194,35 +194,44 @@ export default function PendingRequestsPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-3xl mx-auto">
-				<div className="mb-6">
+		<div style={{ minHeight: '100vh', padding: '48px 16px' }}>
+			<div className="max-w-3xl mx-auto space-y-6">
+				<div className="mb-2">
 					<Link
 						href={currentUserId ? `/profile/${currentUserId}` : '/profile'}
-						className="text-indigo-600 hover:text-indigo-500 flex items-center text-sm"
+						className="text-blue-400 hover:text-blue-300 inline-flex items-center text-sm font-semibold transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg"
 					>
-						<svg style={{ width: '16px', height: '16px' }} className="mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg style={{ width: '16px', height: '16px' }} className="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
 						</svg>
 						Back to Profile
 					</Link>
 				</div>
 
-				<div className="bg-white shadow overflow-hidden sm:rounded-lg">
-					<div className="px-4 py-5 sm:px-6">
-						<h3 className="text-lg leading-6 font-medium text-gray-900">
+				<div 
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+						overflow: 'hidden',
+					}}
+				>
+					<div className="px-4 py-5 sm:px-6 bg-black/20 border-b border-white/10">
+						<h3 className="text-xl font-bold text-white">
 							Pending Friend Requests
 						</h3>
-						<p className="mt-1 max-w-2xl text-sm text-gray-500">
+						<p className="mt-1 text-sm text-gray-400">
 							Accept, reject, or block friend requests
 						</p>
 					</div>
-					<div className="border-t border-gray-200">
+					<div>
 						{requests.length === 0 ? (
-							<div className="px-4 py-12 text-center">
+							<div className="px-4 py-16 text-center">
 								<svg
 									style={{ width: '48px', height: '48px' }}
-									className="mx-auto text-gray-400"
+									className="mx-auto text-blue-500/50 mb-4"
 									fill="none"
 									stroke="currentColor"
 									viewBox="0 0 24 24"
@@ -234,38 +243,38 @@ export default function PendingRequestsPage() {
 										d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
 									/>
 								</svg>
-								<p className="mt-2 text-sm text-gray-500">No pending friend requests</p>
+								<p className="text-sm font-semibold text-blue-200">No pending friend requests</p>
 								<Link
 									href="/friends/add"
-									className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+									className="mt-6 inline-flex items-center px-6 py-3 border border-blue-500/50 text-sm font-bold rounded-lg text-blue-300 bg-blue-900/30 hover:bg-blue-900/50 transition-colors"
 								>
 									Add a friend
 								</Link>
 							</div>
 						) : (
-							<ul className="divide-y divide-gray-200">
+							<ul className="divide-y divide-white/10">
 								{requests.map((request) => (
-									<li key={request.id} className="px-4 py-4">
-										<div className="flex items-center justify-between">
+									<li key={request.id} className="px-4 py-6 hover:bg-white/5 transition-colors">
+										<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
 											<div className="flex-1 min-w-0">
 												<Link
 													href={`/profile/${request.requester.id}`}
-													className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+													className="text-lg font-bold text-blue-400 hover:text-blue-300 transition-colors"
 												>
 													{request.requester.username}
 												</Link>
-		<p className="text-xs text-gray-400 mt-1">
-													Sent {new Date(request.createdAt).toLocaleDateString()}
+												<p className="text-xs font-semibold text-gray-500 mt-1">
+													Sent <span className="text-gray-400">{new Date(request.createdAt).toLocaleDateString()}</span>
 												</p>
 											</div>
-											<div className="flex gap-2 ml-4">
+											<div className="flex flex-wrap gap-3">
 												<button
 													onClick={() => handleAccept(request.id)}
 													disabled={actionLoading === request.id}
-													className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="inline-flex items-center px-4 py-2 border border-green-500/50 shadow-sm text-sm font-bold rounded-lg text-green-400 bg-green-900/20 hover:bg-green-900/40 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
 												>
 													{actionLoading === request.id ? (
-														<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+														<div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-400"></div>
 													) : (
 														'Accept'
 													)}
@@ -273,14 +282,14 @@ export default function PendingRequestsPage() {
 												<button
 													onClick={() => handleReject(request.id)}
 													disabled={actionLoading === request.id}
-													className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="inline-flex items-center px-4 py-2 border border-white/20 shadow-sm text-sm font-bold rounded-lg text-white bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
 												>
 													Reject
 												</button>
 												<button
 													onClick={() => handleBlock(request.id)}
 													disabled={actionLoading === request.id}
-													className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="inline-flex items-center px-4 py-2 border border-red-500/50 shadow-sm text-sm font-bold rounded-lg text-red-400 bg-red-900/20 hover:bg-red-900/40 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
 												>
 													Block
 												</button>

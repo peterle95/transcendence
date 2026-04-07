@@ -1,7 +1,20 @@
 export default function PrivacyPolicy() {
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-purple-900 via-black to-blue-900">
-			<div className="max-w-3xl mx-auto px-4 py-16 text-gray-200">
+		<div style={{ minHeight: '100vh', position: 'relative', display: 'flex', justifyContent: 'center', padding: '64px 16px' }}>
+			<div
+				style={{
+					width: '100%',
+					maxWidth: '800px',
+					background: 'rgba(255,255,255,0.06)',
+					border: '1px solid rgba(255,255,255,0.12)',
+					borderRadius: '20px',
+					padding: '40px 48px',
+					boxSizing: 'border-box',
+					backdropFilter: 'blur(20px)',
+					boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+					color: '#e5e7eb'
+				}}
+			>
 				<h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
 				<p className="text-gray-400 mb-10">Last updated: March 2026</p>
 

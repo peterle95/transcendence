@@ -215,20 +215,28 @@ export default function UpdateProfilePage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+		<div style={{ minHeight: '100vh', padding: '48px 16px' }}>
 			<div className="max-w-md mx-auto space-y-6">
 
 				{/* Avatar section */}
-				<div className="bg-white shadow sm:rounded-lg">
-					<div className="px-4 py-5 sm:p-6">
-						<h3 className="text-lg leading-6 font-medium text-gray-900">
+				<div 
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+					}}
+				>
+					<div className="px-4 py-5 sm:p-6 text-white">
+						<h3 className="text-xl font-bold">
 							Profile Picture
 						</h3>
-						<p className="mt-1 text-sm text-gray-500">
+						<p className="mt-1 text-sm text-gray-400">
 							Upload a PNG or JPEG image (max 2MB)
 						</p>
 
-						<div className="mt-4 flex items-center gap-5">
+						<div className="mt-6 flex items-center gap-5">
 							<img
 								src={
 									avatarPreview
@@ -238,7 +246,7 @@ export default function UpdateProfilePage() {
 											: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
 								}
 								alt="Avatar preview"
-								className="rounded-full object-cover border-2 border-gray-200"
+								className="rounded-full object-cover border-4 border-blue-500/30"
 								style={{ width: '80px', height: '80px' }}
 							/>
 							<div className="flex-1 space-y-2">
@@ -246,31 +254,34 @@ export default function UpdateProfilePage() {
 									type="file"
 									accept=".png,.jpg,.jpeg"
 									onChange={handleAvatarChange}
-									className="block w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+									className="block w-full text-sm text-gray-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-blue-600/30 file:text-blue-300 hover:file:bg-blue-600/50 transition-colors file:cursor-pointer"
 								/>
 								{avatarError && (
-									<p className="text-xs text-red-600">{avatarError}</p>
+									<p className="text-xs text-red-400">{avatarError}</p>
 								)}
 								{avatarSuccess && (
-									<p className="text-xs text-green-600">Avatar updated successfully!</p>
+									<p className="text-xs text-green-400">Avatar updated successfully!</p>
 								)}
 							</div>
 						</div>
 
 						{avatarFile && (
-							<div className="mt-4 flex gap-3">
+							<div className="mt-6 flex gap-3">
 								<button
 									type="button"
 									onClick={handleAvatarUpload}
 									disabled={isUploadingAvatar}
-									className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+									style={{
+										background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+									}}
+									className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-bold rounded-lg text-white hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									{isUploadingAvatar ? 'Uploading...' : 'Upload Avatar'}
 								</button>
 								<button
 									type="button"
 									onClick={() => { setAvatarFile(null); setAvatarPreview(null); setAvatarError('') }}
-									className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+									className="inline-flex justify-center py-2 px-6 border border-white/20 shadow-sm text-sm font-bold rounded-lg text-white bg-white/10 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
 								>
 									Cancel
 								</button>
@@ -280,25 +291,33 @@ export default function UpdateProfilePage() {
 				</div>
 
 				{/* Username / email section */}
-				<div className="bg-white shadow sm:rounded-lg">
-					<div className="px-4 py-5 sm:p-6">
-						<h3 className="text-lg leading-6 font-medium text-gray-900">
+				<div 
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+					}}
+				>
+					<div className="px-4 py-5 sm:p-6 text-white">
+						<h3 className="text-xl font-bold">
 							Update Profile
 						</h3>
-						<p className="mt-1 text-sm text-gray-500">
+						<p className="mt-1 text-sm text-gray-400">
 							Update your account information
 						</p>
 
-						<form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+						<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
 							{error && (
-								<div className="rounded-md bg-red-50 p-4">
-									<p className="text-sm text-red-800">{error}</p>
+								<div className="rounded-lg bg-red-900/40 border border-red-500/50 p-4">
+									<p className="text-sm text-red-200">{error}</p>
 								</div>
 							)}
 
 							{success && (
-								<div className="rounded-md bg-green-50 p-4">
-									<p className="text-sm text-green-800">
+								<div className="rounded-lg bg-green-900/40 border border-green-500/50 p-4">
+									<p className="text-sm text-green-200">
 										Profile updated successfully! Redirecting...
 									</p>
 								</div>
@@ -307,7 +326,7 @@ export default function UpdateProfilePage() {
 							<div>
 								<label
 									htmlFor="username"
-									className="block text-sm font-medium text-gray-700"
+									className="block text-sm font-medium text-gray-300"
 								>
 									Username
 								</label>
@@ -315,7 +334,12 @@ export default function UpdateProfilePage() {
 									type="text"
 									id="username"
 									required
-									className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+									style={{
+										background: 'rgba(0,0,0,0.2)',
+										border: '1px solid rgba(255,255,255,0.2)',
+										color: 'white',
+									}}
+									className="mt-2 block w-full rounded-lg shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-all"
 									value={formData.username}
 									onChange={(e) =>
 										setFormData({ ...formData, username: e.target.value })
@@ -326,7 +350,7 @@ export default function UpdateProfilePage() {
 							<div>
 								<label
 									htmlFor="email"
-									className="block text-sm font-medium text-gray-700"
+									className="block text-sm font-medium text-gray-300"
 								>
 									Email
 								</label>
@@ -334,25 +358,33 @@ export default function UpdateProfilePage() {
 									type="email"
 									id="email"
 									required
-									className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+									style={{
+										background: 'rgba(0,0,0,0.2)',
+										border: '1px solid rgba(255,255,255,0.2)',
+										color: 'white',
+									}}
+									className="mt-2 block w-full rounded-lg shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-all"
 									value={formData.email}
 									onChange={(e) =>
 										setFormData({ ...formData, email: e.target.value })
 									}
 								/>
 							</div>
-							<div className="flex gap-3">
+							<div className="flex gap-3 pt-4">
 								<button
 									type="submit"
 									disabled={isSaving}
-									className="flex-1 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+									style={{
+										background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+									}}
+									className="flex-1 inline-flex justify-center py-3 px-4 border border-transparent shadow-sm text-sm font-bold rounded-lg text-white hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									{isSaving ? 'Saving...' : 'Save Changes'}
 								</button>
 								<button
 									type="button"
 									onClick={() => router.back()}
-									className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+									className="inline-flex justify-center py-3 px-6 border border-white/20 shadow-sm text-sm font-bold rounded-lg text-white bg-white/10 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
 								>
 									Cancel
 								</button>
@@ -361,12 +393,21 @@ export default function UpdateProfilePage() {
 					</div>
 				</div>
 
-				<div className="bg-white shadow sm:rounded-lg border border-red-200">
-					<div className="px-4 py-5 sm:p-6">
-						<h3 className="text-lg leading-6 font-medium text-red-600">
+				{/* Danger Zone */}
+				<div 
+					style={{
+						background: 'rgba(239,68,68,0.05)',
+						border: '1px solid rgba(239,68,68,0.2)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+					}}
+				>
+					<div className="px-4 py-5 sm:p-6 text-white">
+						<h3 className="text-xl font-bold text-red-400">
 							Danger Zone
 						</h3>
-						<p className="mt-1 text-sm text-gray-500">
+						<p className="mt-1 text-sm text-red-200/70">
 							Permanently delete your account and all associated data. This action cannot be undone.
 						</p>
 
@@ -374,40 +415,45 @@ export default function UpdateProfilePage() {
 							<button
 								type="button"
 								onClick={() => setShowDeleteConfirm(true)}
-								className="mt-4 inline-flex justify-center py-2 px-4 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+								className="mt-6 inline-flex justify-center py-2 px-6 border border-red-500/50 shadow-sm text-sm font-bold rounded-lg text-red-400 bg-red-900/20 hover:bg-red-900/40 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
 							>
 								Delete Account
 							</button>
 						) : (
-							<div className="mt-4 space-y-3">
+							<div className="mt-6 space-y-4">
 								{deleteError && (
-									<div className="rounded-md bg-red-50 p-4">
-										<p className="text-sm text-red-800">{deleteError}</p>
+									<div className="rounded-lg bg-red-900/50 border border-red-500/50 p-4">
+										<p className="text-sm text-red-300">{deleteError}</p>
 									</div>
 								)}
-								<p className="text-sm font-medium text-gray-700">
-									Type <span className="font-mono font-bold">delete</span> to confirm:
+								<p className="text-sm font-medium text-red-200">
+									Type <span className="font-mono font-bold bg-black/40 px-2 py-0.5 rounded">delete</span> to confirm:
 								</p>
 								<input
 									type="text"
-									className="block w-full border border-red-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+									style={{
+										background: 'rgba(0,0,0,0.2)',
+										border: '1px solid rgba(239,68,68,0.4)',
+										color: 'white',
+									}}
+									className="block w-full rounded-lg shadow-sm py-2 px-4 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent sm:text-sm transition-all"
 									value={deleteInput}
 									onChange={(e) => setDeleteInput(e.target.value)}
 									placeholder="delete"
 								/>
-								<div className="flex gap-3">
+								<div className="flex gap-3 pt-2">
 									<button
 										type="button"
 										onClick={handleDeleteAccount}
 										disabled={deleteInput !== 'delete' || isDeleting}
-										className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+										className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-bold rounded-lg text-white bg-red-600 hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
 									>
 										{isDeleting ? 'Deleting...' : 'Confirm Delete'}
 									</button>
 									<button
 										type="button"
 										onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); setDeleteError('') }}
-										className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+										className="inline-flex justify-center py-2 px-6 border border-white/20 shadow-sm text-sm font-bold rounded-lg text-white bg-white/10 hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
 									>
 										Cancel
 									</button>
