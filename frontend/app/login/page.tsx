@@ -79,6 +79,7 @@ export default function LoginPage() {
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: '20px',
             padding: '40px 36px',
+            boxSizing: 'border-box',
             backdropFilter: 'blur(20px)',
             boxShadow: '0 24px 80px rgba(89,45,235,0.25)',
           }}
