@@ -2,7 +2,6 @@ import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import GlobalBackground from '@/components/GlobalBackground'
-import DevAuthBypass from '@/components/DevAuthBypass' // remove this for production
 
 export const metadata = {
   title: 'Space Supremacy',
@@ -17,7 +16,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <DevAuthBypass />
         <GlobalBackground />
         <Header />
         <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
