@@ -101,6 +101,7 @@ export default function RegisterPage() {
 						<input
 							type="email"
 							id="email"
+							aria-label="Email"
 							name="email"
 							required
 							placeholder="Email address"
@@ -122,6 +123,7 @@ export default function RegisterPage() {
 						<input
 							type="text"
 							id="username"
+							aria-label="Username"
 							name="username"
 							required
 							placeholder="Username"
@@ -143,6 +145,7 @@ export default function RegisterPage() {
 						<input
 							type="password"
 							id="password"
+							aria-label="Password"
 							name="password"
 							required
 							placeholder="Password"
