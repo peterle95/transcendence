@@ -13,7 +13,7 @@ jobs:
   deploy:
     name: SSH → GCP VM → docker compose up
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # timeout-minutes: 60
     environment: production
     permissions:
       contents: read
@@ -36,7 +36,7 @@ jobs:
 
       - name: Deploy via SSH
         id: deploy_ssh
-        timeout-minutes: 45
+        # timeout-minutes: 45
         uses: google-github-actions/ssh-compute@v2
         with:
           instance_name: ${{ env.INSTANCE_NAME }}
