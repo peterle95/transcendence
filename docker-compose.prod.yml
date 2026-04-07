@@ -79,7 +79,7 @@ services:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3001}
-      - SOCKET_PATH=/chat/socket.io/                # Explicit socket path for Nginx single-host routing
+      - SOCKET_PATH=/socket.io
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth          # also set at runtime for API routes
       - NEXT_PUBLIC_GAME_SERVICE_URL=/game          # used in game-invite route
       - NODE_ENV=production
@@ -126,10 +126,10 @@ services:
       - AUTH_SERVICE_URL=http://auth_srvc:3000
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3002}
-      - SOCKET_PATH=/game/socket.io/ # Explicit socket path for Nginx single-host routing
+      - SOCKET_PATH=/socket.io
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - NEXT_PUBLIC_GAME_SERVICE_URL=/game
-      - PORT=4000
+      - SOCKET_PORT=4000
       - NODE_ENV=production
     depends_on:
       postgres:
