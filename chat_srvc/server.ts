@@ -9,7 +9,7 @@ import path from 'path';
 import { socketHandler } from './socket/socketHandler';
 
 const dev = process.env.NODE_ENV !== 'production';
-const port = parseInt(process.env.PORT ?? '3001', 10);
+const port = parseInt(process.env.CHAT_PORT ?? '3001', 10);
 const hostname = process.env.HOSTNAME ?? 'localhost';
 
 // Load .env.local before anything else
@@ -18,8 +18,8 @@ loadEnvConfig(projectDir);
 
 // Load SSL certificates (safe lazy-loading/fallback approach)
 let httpsOptions: any = undefined;
-const keyPath = path.resolve(projectDir, 'certs/key.pem');
-const certPath = path.resolve(projectDir, 'certs/cert.pem');
+const keyPath = '/certs/key.pem';
+const certPath = '/certs/cert.pem';
 
 if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
@@ -50,13 +50,13 @@ app.prepare().then(() => {
         : createHttpServer(requestHandler);
 
     const defaultOrigins = [`http://${hostname}:${port}`, `https://${hostname}:${port}`];
-    const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
-        ? process.env.SOCKET_IO_ALLOWLIST.split(',').map(s => s.trim())
+    const allowedOrigins = process.env.CHAT_WS_CORS
+        ? process.env.CHAT_WS_CORS.split(',').map(s => s.trim())
         : defaultOrigins; // if env variable not available it defaults back to localhost
 
     const io = new SocketIOServer(server, {
         // Custom path injected via docker-compose to align with Nginx's path-routing
-        path: process.env.SOCKET_PATH || '/socket.io',
+        path: process.env.CHAT_WS_PATH || '/socket.io',
         cors: {
             origin: allowedOrigins,
             methods: ["GET", "POST"]

@@ -2,6 +2,8 @@ FROM node:20-bookworm-slim
 
 WORKDIR /app
 
+RUN apt update && apt install -y --no-install-recommends ca-certificates jq curl
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
@@ -11,9 +13,9 @@ RUN npx prisma generate
 
 COPY . .
 
-EXPOSE 3000
-
 RUN npm run build
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
+
+CMD ["sh", "-c", "npx prisma migrate deploy && exec npm start"]
 # npm run build + npm start instead of npm run dev for production

@@ -4,11 +4,11 @@
   "description": "Game Server Orchestration Service",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3002",
+    "dev": "next dev -p ${GAME_PORT:-3002}",
     "dev:socket": "node server.js",
     "dev:all": "npm run dev:socket & npm run dev",
     "build": "next build",
-    "start": "next start -p 3002",
+    "start": "next start -p ${GAME_PORT:-3002}",
     "start:socket": "NODE_ENV=production node server.js",
     "lint": "next lint",
     "prisma:generate": "prisma generate",

@@ -2,6 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache jq curl ca-certificates
+
 COPY package*.json ./
 
 RUN npm ci
@@ -17,6 +19,6 @@ RUN npm run build
 ARG NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
 ENV NEXT_PUBLIC_AUTH_SERVICE_URL=${NEXT_PUBLIC_AUTH_SERVICE_URL}
 
-EXPOSE 3003
+ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
 
 CMD ["npm", "start"]

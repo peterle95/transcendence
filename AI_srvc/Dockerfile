@@ -13,6 +13,8 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
+	jq \
+	ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # ── workdir ──────────────────────────────────────────────────────────────────
@@ -36,7 +38,8 @@ ENV PYTHONUNBUFFERED=1 \
     MODEL_PATH=/app/models/dqn_latest.pt \
     TRAINING_MODE=false \
     LOG_LEVEL=INFO
-EXPOSE 4000
+
+ENTRYPOINT ["/inject/inject.sh"]
 
 # ── entrypoint ───────────────────────────────────────────────────────────────
 CMD ["python", "main.py"]

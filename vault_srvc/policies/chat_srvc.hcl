@@ -1,3 +1,3 @@
-path  "secret/data/chat_srvc"  {
+path  "secret/data/chat/env"  {
   capabilities = ["read"]
 }

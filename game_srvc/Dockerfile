@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Prisma requires OpenSSL on Alpine
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl ca-certificates jq curl
 
 # Copy package files and prisma schema first (needed for prisma generate)
 COPY package*.json ./
@@ -26,8 +26,6 @@ ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
 
 RUN npm run build
 
-# Expose ports
-EXPOSE 3002 4000 
-
+ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
 # Start Next.js + Socket.IO together
 CMD ["sh", "/app/docker-start.sh"]

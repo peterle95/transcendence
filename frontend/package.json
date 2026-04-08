@@ -4,9 +4,9 @@
   "description": "dashboard for game project",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3003",
+    "dev": "next dev -p ${FRONTEND_PORT:-3003}",
     "build": "next build",
-    "start": "next start -p 3003",
+    "start": "next start -p ${FRONTEND_PORT:-3003}",
     "lint": "next lint"
   },
   "dependencies": {

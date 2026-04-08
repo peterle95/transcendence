@@ -1,3 +1,3 @@
-path  "secret/data/ai_srvc"  {
+path  "secret/data/ai/env"  {
   capabilities = ["read"]
 }
