@@ -131,42 +131,55 @@ export default function AddFriendPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-md mx-auto">
-				<div className="mb-6">
+		<div style={{ minHeight: '100vh', padding: '48px 16px' }}>
+			<div className="max-w-md mx-auto space-y-6">
+				<div className="mb-2">
 					<Link
 						href={currentUserId ? `/profile/${currentUserId}` : '/profile'}
-						className="text-indigo-600 hover:text-indigo-500 flex items-center text-sm"
+						className="text-blue-400 hover:text-blue-300 inline-flex items-center text-sm font-semibold transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg"
 					>
-						<svg style={{ width: '16px', height: '16px' }} className="mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<svg style={{ width: '16px', height: '16px' }} className="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
 						</svg>
 						Back to Profile
 					</Link>
 				</div>
 
-				<div className="bg-white shadow sm:rounded-lg">
-					<div className="px-4 py-5 sm:p-6">
-						<h3 className="text-lg leading-6 font-medium text-gray-900">
+				<div 
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+					}}
+				>
+					<div className="px-4 py-6 sm:p-8">
+						<h3 className="text-2xl font-bold text-white">
 							Add a Friend
 						</h3>
-						<p className="mt-2 text-sm text-gray-500">
+						<p className="mt-2 text-sm text-gray-400">
 							Enter the username of the person you want to add as a friend
 						</p>
 
-						<form onSubmit={handleSubmit} className="mt-5">
+						<form onSubmit={handleSubmit} className="mt-8 space-y-6">
 							<div>
-								<label htmlFor="username" className="block text-sm font-medium text-gray-700">
+								<label htmlFor="username" className="block text-sm font-medium text-gray-300">
 									Username
 								</label>
-								<div className="mt-1">
+								<div className="mt-2">
 									<input
 										type="text"
 										name="username"
 										id="username"
 										value={username}
 										onChange={(e) => setUsername(e.target.value)}
-										className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md px-3 py-2 border"
+										style={{
+											background: 'rgba(0,0,0,0.2)',
+											border: '1px solid rgba(255,255,255,0.2)',
+											color: 'white',
+										}}
+										className="block w-full rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm transition-all"
 										placeholder="Enter username"
 										disabled={isLoading}
 									/>
@@ -174,7 +187,7 @@ export default function AddFriendPage() {
 							</div>
 
 							{error && (
-								<div className="mt-4 rounded-md bg-red-50 p-4">
+								<div className="rounded-lg bg-red-900/40 border border-red-500/50 p-4">
 									<div className="flex">
 										<div className="flex-shrink-0">
 											<svg
@@ -193,14 +206,14 @@ export default function AddFriendPage() {
 											</svg>
 										</div>
 										<div className="ml-3">
-											<p className="text-sm text-red-800">{error}</p>
+											<p className="text-sm text-red-200">{error}</p>
 										</div>
 									</div>
 								</div>
 							)}
 
 							{success && (
-								<div className="mt-4 rounded-md bg-green-50 p-4">
+								<div className="rounded-lg bg-green-900/40 border border-green-500/50 p-4">
 									<div className="flex">
 										<div className="flex-shrink-0">
 											<svg
@@ -219,17 +232,20 @@ export default function AddFriendPage() {
 											</svg>
 										</div>
 										<div className="ml-3">
-											<p className="text-sm text-green-800">{success}</p>
+											<p className="text-sm text-green-200">{success}</p>
 										</div>
 									</div>
 								</div>
 							)}
 
-							<div className="mt-5">
+							<div className="pt-2">
 								<button
 									type="submit"
 									disabled={isLoading}
-									className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+									style={{
+										background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+									}}
+									className="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									{isLoading ? (
 										<>
@@ -246,9 +262,22 @@ export default function AddFriendPage() {
 				</div>
 
 				{/* Tips Section */}
-				<div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-					<h4 className="text-sm font-medium text-blue-900 mb-2">Tips:</h4>
-					<ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+				<div 
+					style={{
+						background: 'rgba(59,130,246,0.1)',
+						border: '1px solid rgba(59,130,246,0.2)',
+						borderRadius: '16px',
+						backdropFilter: 'blur(10px)',
+					}}
+					className="p-5"
+				>
+					<h4 className="text-sm font-bold text-blue-300 mb-3 flex items-center">
+						<svg style={{ width: '16px', height: '16px' }} className="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+						Tips
+					</h4>
+					<ul className="text-sm text-blue-200/80 space-y-2 list-disc list-inside">
 						<li>Make sure you enter the exact username</li>
 						<li>Usernames are case-sensitive</li>
 						<li>You can view your pending sent requests in your profile</li>

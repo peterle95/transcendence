@@ -10,7 +10,7 @@ import { socketHandler } from './socket/socketHandler';
 
 const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.CHAT_PORT ?? '3001', 10);
-const hostname = process.env.HOSTNAME ?? 'localhost';
+const hostname = process.env.HOSTNAME ?? '0.0.0.0';
 
 // Load .env.local before anything else
 const projectDir = process.cwd();
@@ -21,7 +21,7 @@ let httpsOptions: any = undefined;
 const keyPath = '/certs/key.pem';
 const certPath = '/certs/cert.pem';
 
-if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+if (process.env.USE_SSL === 'true' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
         key: fs.readFileSync(keyPath),
         cert: fs.readFileSync(certPath),

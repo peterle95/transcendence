@@ -9,7 +9,7 @@ const CORS_HEADERS = {
 }
 
 function resolveOrigin(request: NextRequest): string | null {
-	const allowedOrigins = (process.env.CORS_ALLOWED_ORIGIN || 'http://localhost:3003')
+	const allowedOrigins = (process.env.CORS_ALLOWED_ORIGIN || 'http://localhost:8080')
 		.split(',')
 		.map(o => o.trim())
 		.filter(Boolean)

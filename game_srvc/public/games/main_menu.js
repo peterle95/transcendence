@@ -72,7 +72,8 @@
       }
 
       if (selectedOption.mode === 'home') {
-        const homeUrl = window.location.protocol + '//' + window.location.hostname + ':3003';
+        // const homeUrl = window.location.protocol + '//' + window.location.hostname + ':3003';
+        const homeUrl = '/';
         window.location.href = homeUrl;
         return;
       }

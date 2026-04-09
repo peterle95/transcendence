@@ -67,7 +67,7 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     if (process.env.NODE_ENV === 'development') {
       opts.rejectUnauthorized = false;
     }
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    if (typeof window !== 'undefined') {
       // Connect specifically to /chat/socket.io/ to allow Nginx to route to the chat container
       opts.path = '/chat/socket.io/';
     }

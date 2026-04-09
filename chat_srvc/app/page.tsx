@@ -83,7 +83,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <a
-            href={AUTH_SERVICE_URL.replace(/:\d+$/, ':3003')}
+            href="/"
             className="inline-block text-xs tracking-widest px-6 py-3 transition-all"
             style={{
               fontFamily: 'Orbitron, sans-serif',

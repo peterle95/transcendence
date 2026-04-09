@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Dark base so PixelBlast transparent canvas never shows a gray/white bleed */
+html, body {
+  background-color: #07070f;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}

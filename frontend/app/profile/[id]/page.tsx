@@ -165,29 +165,47 @@ export default function ProfilePage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-3xl mx-auto space-y-6">
-				<div className="bg-white shadow overflow-hidden sm:rounded-lg">
-					<div className="px-4 py-5 sm:px-6 flex justify-between items-center">
+		<div style={{ minHeight: '100vh', padding: '48px 16px' }}>
+			<div className="max-w-3xl mx-auto space-y-8">
+				<div
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
+						overflow: 'hidden',
+					}}
+				>
+					<div className="px-4 py-5 sm:px-6 flex justify-between items-center bg-black/20 border-b border-white/10">
 						<div>
-							<h3 className="text-lg leading-6 font-medium text-gray-900">
+							<h3 className="text-xl font-bold text-white">
 								User Profile
 							</h3>
-							<p className="mt-1 max-w-2xl text-sm text-gray-500">
+							<p className="mt-1 max-w-2xl text-sm text-gray-300">
 								{isOwnProfile ? 'Your profile information' : 'Profile details'}
 							</p>
 						</div>
 						{isOwnProfile && (
 							<Link
 								href="/profile/update"
-								className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+								style={{
+									padding: '8px 16px',
+									borderRadius: '8px',
+									background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+									color: '#fff',
+									fontWeight: 'bold',
+									fontSize: '0.875rem',
+									textDecoration: 'none',
+									display: 'inline-block'
+								}}
 							>
 								Edit Profile
 							</Link>
 						)}
 					</div>
-					<div className="border-t border-gray-200">
-						<div className="px-4 py-6 sm:px-6 flex justify-center">
+					<div>
+						<div className="px-4 py-8 sm:px-6 flex justify-center">
 							<img
 								src={
 									profile.avatarUrl
@@ -195,32 +213,32 @@ export default function ProfilePage() {
 										: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
 								}
 								alt={`${profile.username}'s avatar`}
-								className="rounded-full object-cover border-2 border-gray-200"
-								style={{ width: '100px', height: '100px' }}
+								className="rounded-full object-cover border-4 border-blue-500/30"
+								style={{ width: '120px', height: '120px', boxShadow: '0 0 40px rgba(59,130,246,0.5)' }}
 							/>
 						</div>
-						<dl>
-							<div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-								<dt className="text-sm font-medium text-gray-500">Username</dt>
-								<dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+						<dl className="divide-y divide-white/10">
+							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
+								<dt className="text-sm font-medium text-blue-200">Username</dt>
+								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
 									{profile.username}
 								</dd>
 							</div>
-							<div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-								<dt className="text-sm font-medium text-gray-500">Wins</dt>
-								<dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
+								<dt className="text-sm font-medium text-blue-200">Wins</dt>
+								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
 									{profile.wins}
 								</dd>
 							</div>
-							<div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-								<dt className="text-sm font-medium text-gray-500">Losses</dt>
-								<dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
+								<dt className="text-sm font-medium text-blue-200">Losses</dt>
+								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
 									{profile.losses}
 								</dd>
 							</div>
-							<div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-								<dt className="text-sm font-medium text-gray-500">Points</dt>
-								<dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
+								<dt className="text-sm font-medium text-blue-200">Points</dt>
+								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
 									{profile.points}
 								</dd>
 							</div>
@@ -229,22 +247,33 @@ export default function ProfilePage() {
 				</div>
 
 				{isOwnProfile && (
-					<div className="bg-white shadow sm:rounded-lg p-6">
+					<div 
+						style={{
+							background: 'rgba(255,255,255,0.06)',
+							border: '1px solid rgba(255,255,255,0.12)',
+							borderRadius: '20px',
+							backdropFilter: 'blur(20px)',
+							padding: '24px',
+						}}
+					>
 						<div className="flex flex-col sm:flex-row gap-4">
 							<Link
 								href="/friends/pending"
-								className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+								className="flex-1 inline-flex justify-center items-center px-4 py-3 border border-white/20 shadow-sm text-sm font-bold rounded-xl text-white bg-white/10 hover:bg-white/20 transition-colors"
 							>
-								<svg style={{ width: '16px', height: '16px' }} className="mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg style={{ width: '18px', height: '18px' }} className="mr-2 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
 								</svg>
 								View Pending Requests
 							</Link>
 							<Link
 								href="/friends/add"
-								className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+								className="flex-1 inline-flex justify-center items-center px-4 py-3 border border-transparent shadow-sm text-sm font-bold rounded-xl text-white"
+								style={{
+									background: 'linear-gradient(135deg, #3b82f6, #2563eb)'
+								}}
 							>
-								<svg style={{ width: '16px', height: '16px' }} className="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<svg style={{ width: '18px', height: '18px' }} className="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
 								</svg>
 								Add New Friend
@@ -253,48 +282,56 @@ export default function ProfilePage() {
 					</div>
 				)}
 
-				{isOwnProfile && <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-					<div className="px-4 py-5 sm:px-6">
-						<h3 className="text-lg leading-6 font-medium text-gray-900">
+				{isOwnProfile && <div 
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						overflow: 'hidden'
+					}}
+				>
+					<div className="px-4 py-5 sm:px-6 bg-black/20 border-b border-white/10">
+						<h3 className="text-xl leading-6 font-bold text-white">
 							Friends ({friends.length})
 						</h3>
 					</div>
-					<div className="border-t border-gray-200">
+					<div>
 						{friends.length === 0 ? (
 							<div className="px-4 py-12 text-center">
-								<p className="mt-2 text-sm text-gray-500">
+								<p className="mt-2 text-sm text-blue-200">
 									{isOwnProfile ? 'You don\'t have any friends yet' : 'No friends to display'}
 								</p>
 								{isOwnProfile && (
 									<Link
 										href="/friends/add"
-										className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+										className="mt-4 inline-flex items-center px-4 py-2 border border-blue-500/50 text-sm font-medium rounded-md text-blue-300 bg-blue-900/30 hover:bg-blue-900/50 transition-colors"
 									>
 										Add your first friend
 									</Link>
 								)}
 							</div>
 						) : (
-							<ul className="divide-y divide-gray-200">
+							<ul className="divide-y divide-white/10">
 								{friends.map((friend) => (
-									<li key={friend.id} className="px-4 py-4 hover:bg-gray-50">
+									<li key={friend.id} className="px-4 py-4 hover:bg-white/5 transition-colors">
 										<div className="flex items-center justify-between gap-4">
-											<Link href={`/profile/${friend.id}`} className="flex-1 min-w-0">
+											<Link href={`/profile/${friend.id}`} className="flex-1 min-w-0 group">
 												<div className="flex items-center justify-between">
 													<div className="flex-1 min-w-0">
-														<p className="text-sm font-medium text-indigo-600 truncate">
+														<p className="text-sm font-bold text-blue-400 group-hover:text-blue-300 transition-colors truncate">
 															{friend.username}
 														</p>
-														<div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
-															<span>Wins: {friend.wins}</span>
-															<span>Losses: {friend.losses}</span>
-															<span>Points: {friend.points}</span>
+														<div className="mt-1 flex items-center gap-4 text-xs font-semibold text-gray-400">
+															<span>Wins: <span className="text-gray-200">{friend.wins}</span></span>
+															<span>Losses: <span className="text-gray-200">{friend.losses}</span></span>
+															<span>Points: <span className="text-blue-300">{friend.points}</span></span>
 														</div>
 													</div>
 													<div>
 														<svg
 															style={{ width: '16px', height: '16px' }}
-															className="text-gray-400"
+															className="text-white/20 group-hover:text-white/60 transition-colors"
 															fill="none"
 															stroke="currentColor"
 															viewBox="0 0 24 24"
@@ -316,11 +353,11 @@ export default function ProfilePage() {
 														handleRemoveFriend(friend.id)
 													}}
 													disabled={removingFriendId === friend.id}
-													className="flex-shrink-0 inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="flex-shrink-0 inline-flex items-center px-3 py-1.5 border border-red-500/30 text-xs font-bold rounded-lg text-red-400 bg-red-900/20 hover:bg-red-900/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 													title="Remove friend"
 												>
 													{removingFriendId === friend.id ? (
-														<div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+														<div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-400"></div>
 													) : (
 														<svg
 															style={{ width: '14px', height: '14px' }}
