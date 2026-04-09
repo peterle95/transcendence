@@ -282,8 +282,10 @@ try_vanity_address ()		{
 		chmod -R 700 /tor
 		chown -R 100:101 /tor
 	fi
-#		rm -rf	"/tor/tor/""$VANITY_ADDRESS_MAIN""*" \
-#			"/tor/tor/""$VANITY_ADDRESS_VAULT""*"
+	set +e
+		rm -rf	"/tor/tor/""$VANITY_ADDRESS_MAIN""*" \
+			"/tor/tor/""$VANITY_ADDRESS_VAULT""*"
+	set -e
 }
 setup_postgres_db ()		{
 	set -xv
