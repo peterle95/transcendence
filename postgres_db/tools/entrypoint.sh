@@ -6,6 +6,10 @@ update-ca-certificates&&api="https://vault.transcendence-secret/v1";export $(2>/
 
 if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 
+	if ! cat "/etc/passwd" | grep "$POSTGRES_USER"; then
+		adduser "$POSTGRES_USER" --shell "/sbin/nologin"
+	fi
+
 	2>/dev/null	echo "$POSTGRES_PASSWORD" >			"/.pwfile"
 	&>/dev/null	chown	"$POSTGRES_USER":"$POSTGRES_USER"	"/.pwfile"
 	&>/dev/null	chmod	400					"/.pwfile"
@@ -17,7 +21,7 @@ if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 					--data-checksums	--no-locale	\
 					--pwfile="/.pwfile"			)
 
-	(su-exec $POSTGRES_USER postgres &)
+	(su-exec "$POSTGRES_USER" postgres &)
 	pid=$?
 
 	shred -uf "/.pwfile"
@@ -42,11 +46,10 @@ if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 		echo "ssl = 'on'"			>>	postgresql.conf
 		echo "ssl_key_file = 'key.pem'"		>>	postgresql.conf
 		echo "ssl_cert_file = 'cert.pem'"	>>	postgresql.conf
-		echo "ssl_ca_file = '"$CA_ROOT_DIR"/root_"$PROJECT_NAME"_ca.crt'" \
-		>> postgresql.conf
+		echo "ssl_ca_file = '"$PGSSLROOTCERT"'" >>	postgresql.conf
 	fi
 
-	rm -f "$POSTGRES_DATA_DIR""/pg_hba.conf"
+	#rm -f "$POSTGRES_DATA_DIR""/pg_hba.conf"
 	echo "hostssl "$GAME_DB" all 133.7.42.16/28 scram-sha-256 " \
 	>>	pg_hba.conf
 	echo "hostssl "$AUTH_DB" all 133.7.42.16/28 scram-sha-256" \

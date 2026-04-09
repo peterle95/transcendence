@@ -102,7 +102,7 @@ services:
     build: "./auth_srvc"
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    expose: [ "${AUTH_PORT}" ]
+    ports: [ "127.0.0.1:3000:${AUTH_PORT}" ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -127,7 +127,7 @@ services:
     build: "./chat_srvc"
     container_name: "chat_service"
     hostname: "chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    expose: [ "${CHAT_PORT}" ]
+    ports: [ "127.0.0.1:3001:${CHAT_PORT}" ]
     depends_on: [ "mongo" ]
     volumes:
       - type: volume
@@ -149,7 +149,7 @@ services:
     build:  "./frontend"
     container_name: "frontend_service"
     hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    expose: [ "${FRONTEND_PORT}" ]
+    ports: [ "127.0.0.1:3003:${FRONTEND_PORT}" ]
     depends_on: [ "auth_srvc", "chat_srvc" ]
     volumes:
       - type: volume
@@ -171,7 +171,7 @@ services:
     build: "./game_srvc"
     container_name: "game_service"
     hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    expose: [ "${GAME_PORT}", "${GAME_WS_PORT}" ]
+    expose: [ "127.0.0.1:3002:${GAME_PORT}", "127.0.0.1:4000${GAME_WS_PORT}" ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -191,38 +191,37 @@ services:
     restart: unless-stopped
 
   # ── Caddy ───────────────────────────────────────────────────────
-  caddy:
-    #env_file: ".env" ## CHEATING
-    build: "./caddy"
-    container_name: "${CADDY_CODENAME}_${REV_PROXY_NAMESPACE}"
-    hostname: "${CADDY_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
-    ports:  [ "${CADDY_TCP}", "${CADDY_TLS}", "${CADDY_UDP}" ]
-    <<: *depends-on-vault 
-    volumes:
-      - "caddy_data:/data"
-      - type: volume
-        <<: *type-inject
-      - type: volume
-        <<: *type-ca-root
-      - type: volume
-        <<: *type-ca-cert
-        volume:
-          nocopy: true
-          subpath: "distribute/${CADDY_CODENAME}_${REV_PROXY_NAMESPACE}"
-    networks:
-      backend_net:
-        ipv4_address: 133.7.42.19
-      proxy_net:
-        ipv4_address: 133.7.42.3
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f ${HTTP}${CADDY_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
-      <<: *health-slow
-    restart: unless-stopped
-    develop:
-      watch:
-        - path: "./caddy/conf/Caddyfile"
-          action: sync+restart
-          target: "/etc/caddy/Caddyfile"
+#  caddy:
+#    build: "./caddy"
+#    container_name: "${CADDY_CODENAME}_${REV_PROXY_NAMESPACE}"
+#    hostname: "${CADDY_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
+#    ports:  [ "${CADDY_TCP}", "${CADDY_TLS}", "${CADDY_UDP}" ]
+#    <<: *depends-on-vault 
+#    volumes:
+#      - "caddy_data:/data"
+#      - type: volume
+#        <<: *type-inject
+#      - type: volume
+#        <<: *type-ca-root
+#      - type: volume
+#        <<: *type-ca-cert
+#        volume:
+#          nocopy: true
+#          subpath: "distribute/${CADDY_CODENAME}_${REV_PROXY_NAMESPACE}"
+#    networks:
+#      backend_net:
+#        ipv4_address: 133.7.42.19
+#      proxy_net:
+#        ipv4_address: 133.7.42.3
+#    healthcheck:
+#      test: ["CMD-SHELL", "curl -f ${HTTP}${CADDY_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
+#      <<: *health-slow
+#    restart: unless-stopped
+#    develop:
+#      watch:
+#        - path: "./caddy/conf/Caddyfile"
+#          action: sync+restart
+#          target: "/etc/caddy/Caddyfile"
 
   # ── Tor ─────────────────────────────────────────────────────────
   tor:
@@ -306,7 +305,7 @@ volumes:
     driver: local
   mongo_data:     *default-driver
   avatar_uploads: *default-driver
-  caddy_data:     *default-driver
+#  caddy_data:     *default-driver
   tor_data:       *default-driver
   vault_data:     *default-driver
   ai_models:      *default-driver
