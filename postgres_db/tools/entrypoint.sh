@@ -27,7 +27,7 @@ if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 	shred -uf "/.pwfile"
 	pushd	"$POSTGRES_DATA_DIR"
 
-	sleep 1
+	sleep $(( $GRACE_PERIOD ))
 	psql -v ON_ERROR_STOP=1 "postgresql://""$POSTGRES_USER"":""$POSTGRES_PASSWORD""@127.0.0.1:""$PGPORT" <<-EOSQL
 		-- Auth Service Database
 		CREATE USER ${POSTGRES_USER_VAULT_AUTH} WITH PASSWORD '${POSTGRES_PASSWORD_VAULT_AUTH}' SUPERUSER;
@@ -37,6 +37,7 @@ if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 		CREATE DATABASE ${GAME_DB};
 		GRANT ALL PRIVILEGES ON DATABASE ${GAME_DB} TO ${POSTGRES_USER_VAULT_GAME};
 	EOSQL
+	sync
 	kill -9 $pid
 
 	cp /certs/*.pem						.
@@ -49,12 +50,14 @@ if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 		echo "ssl_ca_file = '"$PGSSLROOTCERT"'" >>	postgresql.conf
 	fi
 
-	#rm -f "$POSTGRES_DATA_DIR""/pg_hba.conf"
-	echo "hostssl "$GAME_DB" all 133.7.42.16/28 scram-sha-256 " \
+	tail -n 10 pg_hba.conf | head -n 1 > pg_hba.conf.tmp
+	mv	pg_hba.conf.tmp		pg_hba.conf
+	echo "hostssl "$GAME_DB" all 10.133.7.16/28 scram-sha-256 " \
 	>>	pg_hba.conf
-	echo "hostssl "$AUTH_DB" all 133.7.42.16/28 scram-sha-256" \
+	echo "hostssl "$AUTH_DB" all 10.133.7.16/28 scram-sha-256" \
 	>>	pg_hba.conf
 
+	sleep $(( $GRACE_PERIOD * 2 ))
 	2>/dev/null curl --cert /certs/cert.pem --key /certs/key.pem -H "X-Vault-Token: ""$(2>/dev/null curl -X POST --cert /certs/cert.pem --key /certs/key.pem "$api""/auth/cert/login"|jq -r '.auth.client_token')" "$api""/secret/data/""$(echo ${HOSTNAME%$(dnsdomainname)}|sed 's/\./\//')""init" --json '{ "data": { "init": "true" } }'
 
 	popd

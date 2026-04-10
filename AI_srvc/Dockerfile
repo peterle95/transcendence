@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
 	jq \
 	ca-certificates \
+	bash \
     && rm -rf /var/lib/apt/lists/*
 
 # ── workdir ──────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ ENV PYTHONUNBUFFERED=1 \
     TRAINING_MODE=false \
     LOG_LEVEL=INFO
 
-ENTRYPOINT ["/inject/inject.sh"]
+ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
 
 # ── entrypoint ───────────────────────────────────────────────────────────────
 CMD ["python", "main.py"]

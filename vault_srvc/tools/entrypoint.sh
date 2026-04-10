@@ -23,7 +23,7 @@ find_vault_keys ()	{
 }
 
 find_vault_cacert ()	{
-	if [ -f "/vault/secret/cacert/root_""$1""_ca.crt" ]; then
+	if [ -f "/vault/secret/cacert/root_""$PROJECT_NAME""_ca.crt" ]; then
 		echo "Vault CA Certificate found!"
 		return 0
 	else
@@ -39,15 +39,23 @@ try_vault_unseal ()	{
 				echo "FATAL_ERROR: VAULT INITIALIZED BUT NO KEYSHARES FOUND"
 				exit 1
 			else
-				vault operator init -key-shares="$keyshare_count" -key-threshold="$keyshare_count" |	\
+				2>/dev/null vault operator init 		\
+					-key-shares="$keyshare_count"		\
+				       	-key-threshold="$keyshare_count" |	\
 					while read line; do
-					if [ "${line:0:11}" = "Unseal Key " ]; then
+					if [ "${line:0:11}" = "Unseal Key " ]
+					then
 						keyshare=${line:14}
-						vault operator unseal "$keyshare" &>/dev/null
-						echo "$keyshare" >> "/vault/secret/.keyshares"
-					elif [ "${line:0:20}" = "Initial Root Token: " ]; then
+						 &>/dev/null 	vault operator	\
+							 	unseal "$keyshare"
+						2>/dev/null echo "$keyshare" >> \
+							"/vault/secret/.keyshares"
+					elif [ "${line:0:20}" = "Initial Root Token: " ]
+					then
 						vault_root_token=${line:20}
-						echo "$vault_root_token" > "/vault/secret/.root_token"
+						2> /dev/null echo 		\
+						"$vault_root_token" >		\
+						"/vault/secret/.root_token"
 						chmod 400 "/vault/secret/.root_token"
 					fi
 				done
@@ -55,7 +63,7 @@ try_vault_unseal ()	{
 			fi
 		else
 			while read keyshare; do
-				vault operator unseal "$keyshare" &>/dev/null
+				&>/dev/null vault operator unseal "$keyshare"
 			done < /vault/secret/.keyshares 
 		fi
 
@@ -78,11 +86,13 @@ start_and_unseal_vault ()	{
 		set +e
 
 		status_code=1
+		i=0
 		while [ $status_code -eq 1 ]; do
 			vault status -non-interactive &>/dev/null
 			status_code=$?
-			echo "Waiting for startup... $status_code"
-			sleep .42
+			echo "Waiting for startup... "$i"s"
+			i=$(( i + $GRACE_PERIOD ))
+			sleep $(( $GRACE_PERIOD ))
 		done
 
 		set -e
@@ -112,7 +122,7 @@ create_vault_intermediate_pki ()	{
 
 	vault write "pki_""$1""_int/roles/""$2""-""$1"				\
 	issuer_ref="$(vault read -field=default pki_$1_int/config/issuers)"	\
-		allowed_domains="$allowed_domains"				\
+		allowed_domains="$2""-""$1"					\
 		allow_subdomains=true						\
 		max_ttl="21900h"
 
@@ -127,7 +137,7 @@ create_vault_root_pki ()	{
 
 	vault write -field=certificate "pki/root/generate/internal"		\
 	     common_name="$PROJECT_NAME"					\
-	     issuer_name="root-""$PROJECT_NAME"						\
+	     issuer_name="root-""$PROJECT_NAME"					\
 	     ttl="87600h" > "/vault/secret/cacert/root_""$PROJECT_NAME""_ca.crt"
 
 	vault write "pki/roles/""$PROJECT_NAME""-servers" allow_any_name=true
@@ -140,39 +150,40 @@ create_vault_root_pki ()	{
 }
 
 create_vault_cacert ()	{
-	export VAULT_ADDR="http://127.0.0.1:""$VAULT_BOOTSTRAP_PORT"
+	export VAULT_ADDR="http://127.0.0.1:8200"
 
-	start_and_unseal_vault bootstrap "$1"
+	start_and_unseal_vault bootstrap "$PROJECT_NAME"
 
-	create_vault_root_pki "$1"
+	create_vault_root_pki
 
-	intermediates="$SERVICE_NAMESPACE $VAULT_NAMESPACE $REV_PROXY_NAMESPACE $DATABASE_NAMESPACE"
+	export NAMESPACES="$(for nskv in $(env | grep "NAMESPACE")
+					do echo "${nskv#*=}";done)"
 
-	for intermediate in $intermediates; do
-		create_vault_intermediate_pki "$intermediate" "$1"
+	for namespace in $NAMESPACES; do
+		create_vault_intermediate_pki "$namespace" "$PROJECT_NAME"
 	done &>/dev/null
 
 	if [ -d "/tor" ]; then
-		create_vault_intermediate_pki "tor" "$1" &>/dev/null
+		create_vault_intermediate_pki "tor" "$PROJECT_NAME" &>/dev/null
 	fi
 
 	mkdir /vault/secret/cacert/int
 	mv *.csr *.pem /vault/secret/cacert/int
 
-	vault write -format=json "pki_secret_int/issue/"$1"-secret"	\
-		common_name="vault."$1"-secret"				\
-		alt_names="vault_srvc,vault_service" ttl="21000h"	\
-		ip_sans="127.0.0.1,133.7.42.4,133.7.42.17"		\
-		client_flag=true server_flag=true			\
+	vault write -format=json "pki_secret_int/issue/""$PROJECT_NAME""-""$VAULT_NAMESPACE"\
+		common_name="vault.""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
+		alt_names="vault_srvc,vault_service" ttl="21000h"		\
+		ip_sans="127.0.0.1,10.42.42.4,10.133.7.17"			\
+		client_flag=true server_flag=true				\
 		format="pem_bundle" > tmp.pem.json
 
-	cat tmp.pem.json | jq -r '.data.certificate' > 			\
-		"/vault/secret/cacert/""$1""-secret-vault.crt"
-	cat tmp.pem.json | jq -r '.data.private_key' > 			\
-		"/vault/secret/cacert/""$1""-secret-vault.key"
+	cat tmp.pem.json | jq -r '.data.certificate' > 				\
+		"/vault/secret/cacert/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"
+	cat tmp.pem.json | jq -r '.data.private_key' > 				\
+		"/vault/secret/cacert/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
 
-	chmod 444	"/vault/secret/cacert/""$1""-secret-vault.crt"	\
-			"/vault/secret/cacert/""$1""-secret-vault.key"
+	chmod 444	"/vault/secret/cacert/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"	\
+			"/vault/secret/cacert/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
 
 	chown -R vault:vault /vault/secret/cacert
 
@@ -197,6 +208,14 @@ create_vault_policies ()	{
 	vault write "auth/cert/config" enable_metadata_on_failures=true
 	vault secrets enable -path secret kv-v2
 
+	vault write	"sys/policies/password/jwt"		\
+	policy="@/vault/policies/password/jwt_pw.hcl"
+	export "SERVICE_SECRET"="$(vault read -field password	\
+				sys/policies/password/jwt/generate)"
+	export "AUTH_SECRET"="$(vault read -field password	\
+				sys/policies/password/jwt/generate)"
+	export "NEXTAUTH_SECRET=""$AUTH_SECRET"
+
 	touch /.policies_done
 
 	for policy in $(ls -lp /vault/policies/ | grep -v / | tail -n +2 | cut -b 58-); do
@@ -218,31 +237,53 @@ create_vault_policies ()	{
 				orphan=true					\
 				renewable=false	use-limit=1			\
 				token_no_default_policy=true			\
-				token_explicit_max_ttls=15m
+				token_explicit_max_ttls="$(( $GRACE_PERIOD ))m"
 
 			if [ "${service: -5}" = "proxy" ]; then
-				net="proxy"
+				net="$REV_PROXY_NAMESPACE"
 				subdomain=${service%_proxy}
 			elif [ "${service: -2}" = "db" ]; then
-				net="db"
+				net="$DATABASE_NAMESPACE"
 				subdomain=${service%_db}
 			else
-				net="backend"
+				net="$SERVICE_NAMESPACE"
 				subdomain=${service%_srvc}
 			fi
+			if [ "$subdomain" = "ai" ]; then
+				i=0
+				net=$AI_NAMESPACE
+				san=""
+				while [ $i -ne $AI_AMOUNT ]; do
+					i=$(( i + 1 ))
+					san=$(echo -n "$subdomain""_srvc"	
+					if [ $i -ne 1 ]; then
+						echo -n "_slot""$i"
+					fi
+					echo -n ",""$subdomain""-""$i"".""$1""-""$net"","
+					echo -n "$subdomain""_service"
+					if [ $i -ne 1 ]; then
+						echo -n "_slot""$i"","
+					fi
+					echo -n "$san")
+				done
+			else
+				san="$subdomain""_srvc,""$subdomain""_service"
+			fi
+
 			vault write -format=json "pki_""$net""_int/issue/""$1""-""$net"	\
 				common_name="$subdomain"".""$1""-""$net"		\
-				alt_names="$subdomain""_srvc,""$subdomain""_service"	\
+				alt_names="$san"					\
 				key_type="rsa" key_bits=8192 signature_bits=512		\
 				ttl="21000h" client_flag=true server_flag=true		\
 				format="pem_bundle" > tmp.pem.json
 
-			cat tmp.pem.json | jq -r '.data.certificate' > 		\
+			cat tmp.pem.json | jq -r '.data.certificate' > 			\
 			"/vault/distribute/""$service""/cert.pem"
-			cat tmp.pem.json | jq -r '.data.private_key' > 		\
+			cat tmp.pem.json | jq -r '.data.private_key' > 			\
 			"/vault/distribute/""$service""/key.pem"
 
-			mv tmp.pem.json "/vault/secret/cacert/bundles/""$1""/""$net""/""$subdomain""-""$date"".pem.json"
+			mv tmp.pem.json							\
+	"/vault/secret/cacert/bundles/""$1""/""$net""/""$subdomain""-""$date"".pem.json"
 
 			vault write auth/cert/certs/$service token_policies=$service	\
 				certificate="@/vault/distribute/""$service""/cert.pem"
@@ -251,26 +292,36 @@ create_vault_policies ()	{
 				vault write	"sys/policies/password/""$subdomain"	\
 				policy="@/vault/policies/password/""$subdomain""_pw.hcl"
 
-				export "$(echo "$subdomain" | tr '[:lower:]' '[:upper:]'\
-				)""_PASSWORD=""$(vault read -field password		\
-				sys/policies/password/"$subdomain"/generate)"
-				export "$(echo "$subdomain" | tr '[:lower:]' '[:upper:]'\
-				)""_PASSWORD_VAULT_GAME=""$(vault read -field password	\
-				sys/policies/password/"$subdomain"/generate)"
-				export "$(echo "$subdomain" | tr '[:lower:]' '[:upper:]'\
-				)""_PASSWORD_VAULT_AUTH=""$(vault read -field password	\
-				sys/policies/password/"$subdomain"/generate)"
+				for password in						\
+				$(cat "/vault/policies/env/""$subdomain""_wants.env" 	\
+				| grep "PASSWORD"); do
+					export "$password""=""$(vault 			\
+					read	-field password 			\
+					sys/policies/password/"$subdomain"/generate)"
+				done
 			fi
 
 			if [ -f "/vault/policies/env/""$subdomain""_wants.env" ]; then
-				env_bundle=$(create_env_bundles "$subdomain")
-				vault kv put -mount secret "$subdomain""/env" "env""=""$env_bundle"
+				i=1
+				tmp=$subdomain
+				if [ "$tmp" = "ai" ]; then
+					i=$(( $AI_AMOUNT + 1 ))
+					subdomain="$subdomain""-""$i"
+				fi
+				while [ $i -ne 0 ]; do
+					env_bundle=$(create_env_bundle "$tmp" $i)
+					vault kv put -mount secret	\
+					"$subdomain""/env" "env""=""$env_bundle"
+					i=$(( $i - 1 ))
+					subdomain="$tmp""-""$i"
+				done
 			fi
 		fi
 	done
 }
 
 try_vanity_address ()		{
+	set +e
 	if [ ! -d "/tor/onion_service" ]; then
 		mv "/tor/""$VANITY_ADDRESS_MAIN"* /tor/onion_service
 		chmod -R 700 /tor
@@ -282,21 +333,19 @@ try_vanity_address ()		{
 		chmod -R 700 /tor
 		chown -R 100:101 /tor
 	fi
-	set +e
 		rm -rf	"/tor/tor/""$VANITY_ADDRESS_MAIN""*" \
 			"/tor/tor/""$VANITY_ADDRESS_VAULT""*"
 	set -e
 }
 setup_postgres_db ()		{
-	set -xv
 	vault secrets enable database
 
 	while [ "$(vault kv get -mount secret -field init postgres/init)" != "true" ]; do
 		echo "waiting for postgres to setup the initial database..."
-		sleep 1
+		sleep $(( $GRACE_PERIOD ))
 	done 2>/dev/null
 
-	sleep 2
+	sleep $(( $GRACE_PERIOD * 5 ))
 	vault write "database/config/""$GAME_DB"					\
 		plugin_name="postgresql-database-plugin"				\
 		allowed_roles="$GAME_DB""_game"						\
@@ -317,23 +366,28 @@ setup_postgres_db ()		{
 
 	vault write "database/roles/""$AUTH_DB""_auth" db_name="$AUTH_DB"		\
 		creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}'; \
-		GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\"; \
+		GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";		\
+		GRANT DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";		\
 		GRANT CREATE ON SCHEMA public TO \"{{name}}\";"
 
 	vault write "database/roles/""$GAME_DB""_game" db_name="$GAME_DB"		\
 		creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}'; \
-		GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\"; \
+		GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";		\
+		GRANT DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";		\
 		GRANT CREATE ON SCHEMA public TO \"{{name}}\";"
 }
 
-create_env_bundles ()		{
+create_env_bundle ()		{
+	if [ "$1" = "ai" ]; then
+		echo " AI_SLOT=""$(( $2 ))"
+	fi
 	for key in $(cat "/vault/policies/env/""$1""_wants.env"); do
 		case $key in
 			"CORS_ALLOWED_ORIGIN" | "PUBLIC_URL" | "SOCKET_IO_ALLOWLIST" | "CHAT_WS_CORS" | "GAME_WS_CORS" | "AUTH_CORS")
-				echo " $key""=""$HTTP""$PUBLIC_URL"
+				echo " $key""=""$HTTP""$DOMAIN"
 				;;
-			"INTERNAL_SERVICE_SECRET" | "SERVICE_SECRET")
-				echo " $key""=""$INTERNAL_SECRET"
+			"INTERNAL_SERVICE_SECRET")
+				echo " $key""=""$SERVICE_SECRET"
 				;;
 			"AI_LOG_LEVEL")
 				echo " LOG_LEVEL""=""$AI_LOG_LEVEL"
@@ -341,8 +395,8 @@ create_env_bundles ()		{
 			"MONGODB_URI" | "CHAT_DB_URL")
 				echo " $key""=""mongodb://mongo.""$PROJECT_NAME""-""$DATABASE_NAMESPACE"":""$MONGO_PORT""/""$CHAT_DB"
 				;;
-			"PORT")
-				echo " $key""=""$SOME_GAME_PORT_IG"
+			"GAME_SOCKET_PORT" | "SOCKET_PORT" | "GAME_WS_PORT")
+				echo " $key""=""$GAME_WS_PORT"
 				;;
 			"PGPORT" | "POSTGRES_PORT")
 				echo " $key""=""$POSTGRES_PORT"
@@ -352,6 +406,33 @@ create_env_bundles ()		{
 				;;
 			"PGSSLKEY" | "KEY_PATH")
 				echo " $key""=""$KEY_PATH"
+				;;
+			"PGSSLROOTCERT" | "NODE_EXTRA_CA_CERTS" | "ROOTCERT")
+				echo " $key""=""$CA_ROOT_DIR""/root_""$PROJECT_NAME""_ca.crt"
+				;;
+			"NEXTAUTH_URL") ## SANITY CHECK SSL
+				echo " $key""=""http://""$DOMAIN""$AUTH_PATH"
+				;;
+			"NEXT_PUBLIC_AUTH_SERVICE_URL")
+				echo " $key""=""$AUTH_PATH"
+				;;
+			"NEXT_PUBLIC_GAME_SERVICE_URL")
+				echo " $key""=""$GAME_PATH"
+				;;
+			"NEXT_PUBLIC_CHAT_SERVICE_URL")
+				echo " $key""=""$CHAT_PATH"
+				;;
+			"GAME_WS_PATH" | "CHAT_WS_PATH" | "SOCKET_PATH")
+				echo " $key""=""$SOCKET_PATH"
+				;;
+			"PGDATADIR")
+				echo " $key""=""$POSTGRES_DATA_DIR"
+				;;
+			"GAME_SVC_URL")
+				echo " $key""=""$HTTP""game.""$PROJECT_NAME""-""$SERVICE_NAMESPACE"":""$GAME_WS_PORT"
+				;;
+			"AUTH_SERVICE_URL" | "NEXTAUTH_URL_INTERNAL") ## TESTING
+				echo " $key""=""$HTTP""auth.""$PROJECT_NAME""-""$SERVICE_NAMESPACE"":""$AUTH_PORT"
 				;;
 			*)
 				echo " $key""=""$(printenv "$key")"
@@ -376,13 +457,13 @@ init_vault ()			{
 		keyshare_count=9
 	fi
 
-	if ! find_vault_cacert "$1"; then
-		create_vault_cacert "$1"
+	if ! find_vault_cacert; then
+		create_vault_cacert
 	fi
 
-	export	VAULT_ADDR="https://127.0.0.1:""$VAULT_BOOTSTRAP_PORT"
+	unset	VAULT_ADDR
 
-	cp -a	"/vault/secret/cacert/root_""$1""_ca.crt"	\
+	cp -a	"/vault/secret/cacert/root_""$PROJECT_NAME""_ca.crt"	\
 		"$CA_ROOT_DIR""/"
 
 	update-ca-certificates
@@ -408,14 +489,21 @@ init_vault ()			{
 
 	kill $server_pid
 	wait $server_pid
+
+	touch "/vault/.done"
 }
 
-init_vault "$PROJECT_NAME"
-
+if [ ! -f "/vault/.done" ]; then
+	init_vault "$PROJECT_NAME"
+fi
 
 set +u
 
 if [ -z $1 ]; then
+	cp -a	"/vault/secret/cacert/root_""$PROJECT_NAME""_ca.crt"	\
+		"$CA_ROOT_DIR""/"
+	update-ca-certificates
+	export VAULT_ADDR="https://127.0.0.1:""$VAULT_PORT"
 	setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 	chown -R vault:vault /vault/file /vault/logs /vault/secret
 	(set -m; start_and_unseal_vault default &>/dev/null; exit) &

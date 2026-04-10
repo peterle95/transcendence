@@ -1,20 +1,16 @@
 # ============================================================================
-# Docker Compose – PRODUCTION
+# Docker Compose – Secret Management
 # ============================================================================
 
 name: "${PROJECT_NAME?run make env}"
 
-x-health-fast: &health-fast
-  interval: 10s
-  timeout: 5s
-  retries: 5
-
-x-health-slow: &health-slow
-  start_period:   2m
-  start_interval: 20s
-  interval:       45s
-  timeout:        1m
-  retries:        3
+x-type-script: &type-inject
+    source: "vault_data"
+    target: "/inject"
+    read_only: true
+    volume:
+      nocopy: true
+      subpath: "distribute/inject"
 
 x-type-ca-root: &type-ca-root
     source: "vault_data"
@@ -29,24 +25,41 @@ x-type-ca-cert: &type-ca-cert
     target: "/certs"
     read_only: true
 
-x-type-script: &type-inject
-    source: "vault_data"
-    target: "/inject"
-    read_only: true
-    volume:
-      nocopy: true
-      subpath: "distribute/inject"
+x-health: &health
+  start_period:   "${GRACE_PERIOD}m"
+  start_interval: "${GRACE_PERIOD}0s"
+  interval:       1m
+  timeout:        45s
+  retries:        "${GRACE_PERIOD}0"
+
+x-depends-on-vault: &depends-on-vault
+  depends_on:
+    vault_srvc:
+      condition: "service_healthy"
+
+x-ai-srvc:  &ai-srvc
+    build: "./AI_srvc"
+    <<: *depends-on-vault 
+    volumes:
+      - "ai_models:/app/models:ro"
+      - "ai_logs:/app/logs"
+      - type: volume
+        <<: *type-inject
+      - type: volume
+        <<: *type-ca-root
+      - type: volume
+        <<: *type-ca-cert
+        volume:
+          nocopy: true
+          subpath: "distribute/ai_srvc"
+    networks: [ "ai_net" ]
+    restart: unless-stopped
 
 x-vanity: &vanity
     image: "ghcr.io/cathugger/mkp224o:master"
     volumes: [ "tor_data:/keys" ]
     deploy:
       mode: "global-job"
-
-x-depends-on-vault: &depends-on-vault
-  depends_on:
-    vault_srvc:
-      condition: "service_healthy"
 
 services:
   # ── PostgreSQL ──────────────────────────────────────────────────
@@ -67,10 +80,10 @@ services:
           subpath: "distribute/postgres_${DATABASE_NAMESPACE}"
     networks:
       backend_net:
-        ipv4_address: 133.7.42.24
+        ipv4_address: 10.133.7.24
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_PORT}"]
-      <<: *health-fast
+      <<: *health
     restart: unless-stopped
 
   # ── MongoDB ─────────────────────────────────────────────────────
@@ -91,10 +104,10 @@ services:
           subpath: "distribute/mongo_${DATABASE_NAMESPACE}"
     networks:
       backend_net:
-        ipv4_address: 133.7.42.23
+        ipv4_address: 10.133.7.23
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      <<: *health-slow
+      <<: *health
     restart: unless-stopped
 
   # ── Auth Service ────────────────────────────────────────────────
@@ -119,7 +132,7 @@ services:
           subpath: "distribute/auth_srvc"
     networks:
       backend_net:
-        ipv4_address: 133.7.42.22
+        ipv4_address: 10.133.7.22
     restart: unless-stopped
 
   # ── Chat Service ────────────────────────────────────────────────
@@ -141,7 +154,7 @@ services:
           subpath: "distribute/chat_srvc"
     networks:
       backend_net:
-        ipv4_address: 133.7.42.21
+        ipv4_address: 10.133.7.21
     restart: unless-stopped
 
   # ── Frontend ────────────────────────────────────────────────────
@@ -163,7 +176,7 @@ services:
           subpath: "distribute/frontend"
     networks:
       backend_net:
-        ipv4_address: 133.7.42.20
+        ipv4_address: 10.133.7.20
     restart: unless-stopped
 
   # ── Game Service ────────────────────────────────────────────────
@@ -171,7 +184,7 @@ services:
     build: "./game_srvc"
     container_name: "game_service"
     hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    expose: [ "127.0.0.1:3002:${GAME_PORT}", "127.0.0.1:4000${GAME_WS_PORT}" ]
+    ports: [ "127.0.0.1:3002:${GAME_PORT}", "127.0.0.1:4000:${GAME_WS_PORT}" ]
     depends_on:
       postgres:
         condition: service_healthy
@@ -187,41 +200,25 @@ services:
           subpath: "distribute/game_srvc"
     networks:
       backend_net:
-        ipv4_address: 133.7.42.19
+        ipv4_address: 10.133.7.19
+      ai_net:
     restart: unless-stopped
 
-  # ── Caddy ───────────────────────────────────────────────────────
-#  caddy:
-#    build: "./caddy"
-#    container_name: "${CADDY_CODENAME}_${REV_PROXY_NAMESPACE}"
-#    hostname: "${CADDY_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
-#    ports:  [ "${CADDY_TCP}", "${CADDY_TLS}", "${CADDY_UDP}" ]
-#    <<: *depends-on-vault 
-#    volumes:
-#      - "caddy_data:/data"
-#      - type: volume
-#        <<: *type-inject
-#      - type: volume
-#        <<: *type-ca-root
-#      - type: volume
-#        <<: *type-ca-cert
-#        volume:
-#          nocopy: true
-#          subpath: "distribute/${CADDY_CODENAME}_${REV_PROXY_NAMESPACE}"
-#    networks:
-#      backend_net:
-#        ipv4_address: 133.7.42.19
-#      proxy_net:
-#        ipv4_address: 133.7.42.3
-#    healthcheck:
-#      test: ["CMD-SHELL", "curl -f ${HTTP}${CADDY_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
-#      <<: *health-slow
-#    restart: unless-stopped
-#    develop:
-#      watch:
-#        - path: "./caddy/conf/Caddyfile"
-#          action: sync+restart
-#          target: "/etc/caddy/Caddyfile"
+  # ── AI Service (DQN Player Bots) ────────────────────────────────
+#  ai_srvc:
+#    container_name: "ai_service"
+#    hostname: "ai-1.${PROJECT_NAME}-${AI_NAMESPACE}"
+#    <<: *ai-srvc
+#
+#  ai_srvc_slot2:
+#    hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
+#    container_name: "ai_service_slot2"
+#    <<: *ai-srvc
+#
+#  ai_srvc_slot3:
+#    hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
+#    container_name: "ai_service_slot3"
+#    <<: *ai-srvc
 
   # ── Tor ─────────────────────────────────────────────────────────
   tor:
@@ -241,10 +238,7 @@ services:
           subpath: "distribute/${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
     networks:
       proxy_net:
-        ipv4_address: 133.7.42.2
-#     healthcheck:
-#      test: ["CMD-SHELL", "cat /var/lib/tor/*/hostname | xargs -n 1 tor-resolve"]
-#      <<: *health-slow
+        ipv4_address: 10.42.42.2
     restart: unless-stopped
 
   # ── Vault Service ───────────────────────────────────────────────
@@ -262,12 +256,13 @@ services:
     volumes:  [ "vault_data:/vault", "tor_data:/tor" ]
     networks:
       backend_net:
-        ipv4_address: 133.7.42.18
+        ipv4_address: 10.133.7.18
       proxy_net:
-        ipv4_address: 133.7.42.4
+        ipv4_address: 10.42.42.4
+      ai_net:
     healthcheck:
       test: ["CMD-SHELL", "curl -f ${HTTP}vault.${PROJECT_NAME}-${VAULT_NAMESPACE}:${VAULT_PORT}/v1/sys/health"]
-      <<: *health-slow
+      <<: *health
     restart: no
     cap_add: [ IPC_LOCK ]
     develop:
@@ -283,33 +278,42 @@ services:
     command: "-d /keys -S 1 -n 1 -T ${VANITY_ADDRESS_MAIN}"
     <<: *vanity
 
-  # ── AI Service (DQN Player Bots) ────────────────────────────────
-#  ai_srvc:
-#    build: ./AI_srvc
-#    container_name: ai_service
-#    volumes:
-#      - ai_models:/app/models:ro
-#      - ai_logs:/app/logs
-#    depends_on:
-#      - game_srvc
-#    networks:
-#      backend_net:
-#    restart: unless-stopped
-#    deploy:
-#      mode: replicated
-#      replicas: 3
-#      endpoint_mode: dnsrr
+  # ── nginx ───────────────────────────────────────────────────────
+  nginx:
+    build: "./nginx_docker"
+    container_name: "${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
+    hostname: "${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
+    ports:  [ "${NGINX_PORT_EXTERNAL}:${NGINX_PORT}" ]
+    depends_on: [ "frontend", "game_srvc" ]
+    volumes:
+      - "./nginx_docker/conf/nginx.conf:/etc/nginx/nginx.conf.tmp:ro"
+      - type: volume
+        <<: *type-inject
+      - type: volume
+        <<: *type-ca-root
+      - type: volume
+        <<: *type-ca-cert
+        volume:
+          nocopy: true
+          subpath: "distribute/${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
+    networks:
+      backend_net:
+        ipv4_address: 10.133.7.25
+      proxy_net:
+        ipv4_address: 10.42.42.3
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
+      <<: *health
+    restart: unless-stopped
 
 volumes:
-  postgres_data:  &default-driver
-    driver: local
-  mongo_data:     *default-driver
-  avatar_uploads: *default-driver
-#  caddy_data:     *default-driver
-  tor_data:       *default-driver
-  vault_data:     *default-driver
-  ai_models:      *default-driver
-  ai_logs:        *default-driver
+  postgres_data:
+  mongo_data:
+  avatar_uploads:
+  tor_data:
+  vault_data:
+  ai_models:
+  ai_logs:
 
 networks:
   backend_net:
@@ -318,11 +322,18 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 133.7.42.16/28
+        - subnet: 10.133.7.16/28
   proxy_net:
     driver: bridge
     enable_ipv6: false
     ipam:
       driver: default
       config:
-        - subnet: 133.7.42.0/29
+        - subnet: 10.42.42.0/29
+  ai_net:
+    driver: bridge
+    enable_ipv6: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.10.10.0/28

@@ -18,10 +18,10 @@ loadEnvConfig(projectDir);
 
 // Load SSL certificates (safe lazy-loading/fallback approach)
 let httpsOptions: any = undefined;
-const keyPath = '/certs/key.pem';
-const certPath = '/certs/cert.pem';
+const keyPath = path.resolve(projectDir, 'certs/key.pem');
+const certPath = path.resolve(projectDir, 'certs/cert.pem');
 
-if (process.env.USE_SSL === 'true' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+if (process.env.HTTP === 'https://' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
         key: fs.readFileSync(keyPath),
         cert: fs.readFileSync(certPath),

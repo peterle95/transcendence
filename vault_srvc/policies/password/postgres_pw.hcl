@@ -1,4 +1,4 @@
-length=64
+length=100
 
 rule "charset" {
   charset = "0123456789"

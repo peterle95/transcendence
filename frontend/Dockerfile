@@ -26,4 +26,4 @@ RUN npm run build
 
 ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

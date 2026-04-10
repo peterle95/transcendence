@@ -17,5 +17,5 @@ RUN npm run build
 
 ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
 
-CMD ["sh", "-c", "npx prisma migrate deploy && exec npm start"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
 # npm run build + npm start instead of npm run dev for production

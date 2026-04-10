@@ -10,27 +10,34 @@
 	tls {$CERT_PATH} {$KEY_PATH}
 	log
 	handle {
-		reverse_proxy frontend.{$PROJECT_NAME}-{$SERVICE_NAMESPACE}:{$FRONTEND_PORT} {
+		reverse_proxy {$HTTP}frontend:{$FRONTEND_PORT} {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 		}
 	}
+	handle_path /api/auth/me/* {
+		reverse_proxy {$HTTP}auth_srvc:{$AUTH_PORT} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up Cookie {http.request.header.Cookie}
+		}
+	}
 	handle_path /auth/* {
-		reverse_proxy auth.{$PROJECT_NAME}-{$SERVICE_NAMESPACE}:{$AUTH_PORT} {
+		reverse_proxy {$HTTP}auth_srvc:{$AUTH_PORT} {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 			header_up Cookie {http.request.header.Cookie}
 		}
 	}
 	handle_path /chat/* {
-		reverse_proxy {$HTTP}chat.{$PROJECT_NAME}-{$SERVICE_NAMESPACE}:{$CHAT_PORT} {
+		reverse_proxy {$HTTP}chat_srvc:{$CHAT_PORT} {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 			header_up Cookie {http.request.header.Cookie}
 		}
 	}
 	handle_path /chat/{$CHAT_WS_PATH}/* {
-		reverse_proxy {$HTTP}chat.{$PROJECT_NAME}-{$SERVICE_NAMESPACE}:{$CHAT_PORT} {
+		reverse_proxy {$HTTP}chat_srvc:{$CHAT_PORT} {
 			transport http {
 				versions h2c 1.1
 			}
@@ -41,14 +48,14 @@
 		}
 	}
 	handle_path /game* {
-		reverse_proxy {$HTTP}game.{$PROJECT_NAME}-{$SERVICE_NAMESPACE}:{$GAME_PORT} {
+		reverse_proxy {$HTTP}game_srvc:{$GAME_PORT} {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 			header_up Cookie {http.request.header.Cookie}
 		}
 	}
 	handle_path /game/{$GAME_WS_PATH}/* {
-		reverse_proxy {$HTTP}game.{$PROJECT_NAME}-{$SERVICE_NAMESPACE}:{$GAME_WS_PORT} {
+		reverse_proxy {$HTTP}game_srvc:{$GAME_WS_PORT} {
 			transport http {
 				versions h2c 1.1
 			}
