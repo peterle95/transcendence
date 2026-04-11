@@ -137,7 +137,7 @@ export const authOptions: NextAuthOptions = {
 				// which is correct for an API-only service.
 				sameSite: 'lax',
 				path: '/',
-				secure: false, // TEMP: Re-enable after HTTPS
+				secure: true, // TEMP: ....
 			},
 		},
 	},

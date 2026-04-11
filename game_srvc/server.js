@@ -8,7 +8,39 @@
  */
 
 const { Server } = require("socket.io");
+const https      = require("https");
 const http       = require("http");
+const path	 = require("path");
+const fs         = require("fs");
+
+//const ROOTCERT	= process.env.PGSSLROOTCERT || "/usr/local/share/ca-certificates/ca_transcendence_root.crt";
+//process.env.PGSSLKEY || 
+//process.env.PGSSLCERT ||
+//const CERT_PATH	= "certs/key.pem";
+//const KEY_PATH	=  "certs/cert.pem";
+
+const projectDir	= process.cwd();
+const keyPath		= path.resolve(projectDir, '../certs/key.pem');
+const certPath		= path.resolve(projectDir, '../certs/cert.pem');
+
+if (process.env.HTTP === 'https://' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    tls = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+    };
+} else {
+    console.warn(`[WARN] SSL certificates not found at ${keyPath} and ${certPath}. Falling back to HTTP server.`);
+}
+
+
+//const tls	 =	{
+//	key:	fs.readFileSync('${KEY_PATH}'),
+//	cert:	fs.readFileSync('${CERT_PATH}')//,
+//	ca:	fs.readFileSync('${ROOTCERT}')
+//};
+
+const HOSTNAME		= process.env.HOSTNAME || '0.0.0.0';
+const HTTP		= process.env.HTTP || 'https://';
 
 const PORT              = Number(process.env.SOCKET_PORT) || 4000;
 const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
@@ -442,8 +474,8 @@ function resetGame() {
 /* ═══════════════════════════════════════════════════════════════════════
    HTTP + SOCKET.IO
    ═══════════════════════════════════════════════════════════════════════ */
-const httpServer = http.createServer((req, res) => {
-  const requestUrl = new URL(req.url, 'http://localhost');
+const httpsServer = https.createServer(tls, (req, res) => {
+  const requestUrl = new URL(req.url, '${HTTP}${HOSTNAME}');
 
   if (ENABLE_TRAINING_ROOM && requestUrl.pathname === '/training/start') {
     const aiSlots = (requestUrl.searchParams.get('slots') || '1,2')
@@ -471,7 +503,7 @@ const allowedOrigins = process.env.SOCKET_IO_ALLOWLIST
   ? process.env.SOCKET_IO_ALLOWLIST.split(',').map(s => s.trim())
   : defaultOrigins;
 
-const io = new Server(httpServer, { 
+const io = new Server(httpsServer, { 
   // Custom path injected via docker-compose to align with Nginx's path-routing
   path: process.env.SOCKET_PATH || '/socket.io',
   cors: { origin: allowedOrigins, methods: ['GET', 'POST'] } 
@@ -771,4 +803,4 @@ function gameTick() {
 setInterval(gameTick, TICK_MS);
 lastTickTime = Date.now();
 
-httpServer.listen(PORT, () => console.log(`socket server running on port ${PORT}`));
+httpsServer.listen(PORT, () => console.log(`socket server running on port ${PORT}`));

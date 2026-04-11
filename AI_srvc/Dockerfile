@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
 	jq \
 	ca-certificates \
-	bash \
     && rm -rf /var/lib/apt/lists/*
 
 # ── workdir ──────────────────────────────────────────────────────────────────

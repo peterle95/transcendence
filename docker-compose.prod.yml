@@ -2,34 +2,38 @@
 # Docker Compose – Secret Management
 # ============================================================================
 
-name: "${PROJECT_NAME?run make env}"
+name: "${PROJECT_NAME?check example.env}"
+
+x-vault-ro: &vault-ro
+  source: "vault_data"
+  read_only: true
 
 x-type-script: &type-inject
-    source: "vault_data"
+    <<: *vault-ro
     target: "/inject"
-    read_only: true
     volume:
       nocopy: true
-      subpath: "distribute/inject"
+      subpath: "share/trust/me/bro"
 
 x-type-ca-root: &type-ca-root
-    source: "vault_data"
-    target: "${CA_ROOT_DIR}"
-    read_only: true
+    <<: *vault-ro
+    target: "/usr/local/share/ca-certificates"
     volume:
       nocopy: true
-      subpath: "distribute/cacert"
+      subpath: "share/ca_root"
 
 x-type-ca-cert: &type-ca-cert
-    source: "vault_data"
+    <<: *vault-ro
     target: "/certs"
-    read_only: true
+    volume:
+      nocopy: true
+      subpath: "share/ca_root"
 
 x-health: &health
   start_period:   "${GRACE_PERIOD}m"
   start_interval: "${GRACE_PERIOD}0s"
-  interval:       1m
-  timeout:        45s
+  interval:       "${GRACE_PERIOD}m"
+  timeout:        "${GRACE_PERIOD}0s"
   retries:        "${GRACE_PERIOD}0"
 
 x-depends-on-vault: &depends-on-vault
@@ -43,23 +47,31 @@ x-ai-srvc:  &ai-srvc
     volumes:
       - "ai_models:/app/models:ro"
       - "ai_logs:/app/logs"
-      - type: volume
+      - type: "volume"
         <<: *type-inject
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/ai_srvc"
+          subpath: "share/ai_srvc"
     networks: [ "ai_net" ]
-    restart: unless-stopped
+    restart: "unless-stopped"
 
 x-vanity: &vanity
+    profiles:  [ "hidden_service" ]
     image: "ghcr.io/cathugger/mkp224o:master"
-    volumes: [ "tor_data:/keys" ]
+    volumes:  [ "tor_data:/keys" ]
+    network_mode: "none"
     deploy:
       mode: "global-job"
+
+x-net: &net
+  driver: "bridge"
+  attachable: false
+  enable_ipv6: false
+
 
 services:
   # ── PostgreSQL ──────────────────────────────────────────────────
@@ -71,20 +83,20 @@ services:
     <<: *depends-on-vault 
     volumes:
       - "postgres_data:${POSTGRES_DATA_DIR}"
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/postgres_${DATABASE_NAMESPACE}"
+          subpath: "share/postgres_db"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.24
+      service_net:
+        ipv4_address: "10.133.7.24"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_PORT}"]
       <<: *health
-    restart: unless-stopped
+    restart: "unless-stopped"
 
   # ── MongoDB ─────────────────────────────────────────────────────
   mongo:
@@ -95,114 +107,114 @@ services:
     <<: *depends-on-vault 
     volumes:
       - "mongo_data:/data/db"
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/mongo_${DATABASE_NAMESPACE}"
+          subpath: "share/mongo_db"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.23
+      service_net:
+        ipv4_address: "10.133.7.23"
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       <<: *health
-    restart: unless-stopped
+    restart: "unless-stopped"
 
   # ── Auth Service ────────────────────────────────────────────────
   auth_srvc:
     build: "./auth_srvc"
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    ports: [ "127.0.0.1:3000:${AUTH_PORT}" ]
+    expose: [ "${AUTH_PORT}" ]
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: "service_healthy"
     volumes:
       - "avatar_uploads:/app/uploads/avatars"
-      - type: volume
+      - type: "volume"
         <<: *type-inject
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/auth_srvc"
+          subpath: "share/auth_srvc"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.22
-    restart: unless-stopped
+      service_net:
+        ipv4_address: "10.133.7.22"
+    restart: "unless-stopped"
 
   # ── Chat Service ────────────────────────────────────────────────
   chat_srvc:
     build: "./chat_srvc"
     container_name: "chat_service"
     hostname: "chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    ports: [ "127.0.0.1:3001:${CHAT_PORT}" ]
+    expose: [ "${CHAT_PORT}" ]
     depends_on: [ "mongo" ]
     volumes:
-      - type: volume
+      - type: "volume"
         <<: *type-inject
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/chat_srvc"
+          subpath: "share/chat_srvc"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.21
-    restart: unless-stopped
+      service_net:
+        ipv4_address: "10.133.7.21"
+    restart: "unless-stopped"
 
   # ── Frontend ────────────────────────────────────────────────────
   frontend:
     build:  "./frontend"
     container_name: "frontend_service"
     hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    ports: [ "127.0.0.1:3003:${FRONTEND_PORT}" ]
+    expose: [ "${FRONTEND_PORT}" ]
     depends_on: [ "auth_srvc", "chat_srvc" ]
     volumes:
-      - type: volume
+      - type: "volume"
         <<: *type-inject
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/frontend"
+          subpath: "share/frontend"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.20
-    restart: unless-stopped
+      service_net:
+        ipv4_address: "10.133.7.20"
+    restart: "unless-stopped"
 
   # ── Game Service ────────────────────────────────────────────────
   game_srvc:
     build: "./game_srvc"
     container_name: "game_service"
     hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    ports: [ "127.0.0.1:3002:${GAME_PORT}", "127.0.0.1:4000:${GAME_WS_PORT}" ]
+    expose: [ "${GAME_PORT}", "${GAME_WS_PORT}" ]
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: "service_healthy"
     volumes:
-      - type: volume
+      - type: "volume"
         <<: *type-inject
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/game_srvc"
+          subpath: "share/game_srvc"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.19
+      service_net:
+        ipv4_address: "10.133.7.19"
       ai_net:
-    restart: unless-stopped
+    restart: "unless-stopped"
 
   # ── AI Service (DQN Player Bots) ────────────────────────────────
 #  ai_srvc:
@@ -222,24 +234,17 @@ services:
 
   # ── Tor ─────────────────────────────────────────────────────────
   tor:
-    build: "./tor"
+    profiles: [ "hidden_service" ]
+    build: "./tor_proxy"
     container_name: "${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
     hostname: "${TOR_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
     ports:  [ "${HIDDEN_SERVICE_PORT}:9050" ]
     <<: *depends-on-vault
-    volumes:
-      - "tor_data:/var/lib/tor"
-      - type: volume
-        <<: *type-ca-root
-      - type: volume
-        <<: *type-ca-cert
-        volume:
-          nocopy: true
-          subpath: "distribute/${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
+    volumes:  [ "tor_data:/var/lib/tor" ]
     networks:
       proxy_net:
-        ipv4_address: 10.42.42.2
-    restart: unless-stopped
+        ipv4_address: "10.133.7.10"
+    restart: "unless-stopped"
 
   # ── Vault Service ───────────────────────────────────────────────
   vault_srvc:
@@ -248,27 +253,26 @@ services:
     hostname: "vault.${PROJECT_NAME}-${VAULT_NAMESPACE}"
     env_file: ".env"
     expose: [ "${VAULT_PORT}" ]
-    depends_on:
-      mkp224o_main:
-        condition: service_completed_successfully
-      mkp224o_vault:
-        condition: service_completed_successfully
     volumes:  [ "vault_data:/vault", "tor_data:/tor" ]
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.18
+      service_net:
+        ipv4_address: "10.133.7.18"
       proxy_net:
-        ipv4_address: 10.42.42.4
+        ipv4_address: "10.133.7.12"
       ai_net:
     healthcheck:
       test: ["CMD-SHELL", "curl -f ${HTTP}vault.${PROJECT_NAME}-${VAULT_NAMESPACE}:${VAULT_PORT}/v1/sys/health"]
       <<: *health
-    restart: no
-    cap_add: [ IPC_LOCK ]
+    restart: "no"
+    cap_add: [ "IPC_LOCK" ]
     develop:
       watch:
         - path: "./vault_srvc/tools/entrypoint.sh"
-          action: rebuild
+          action: "rebuild"
+
+  mkp224o_x:
+    command: "-d /keys -S 1 -n 1 -T x"
+    <<: *vanity
 
   mkp224o_vault:
     command: "-d /keys -S 1 -n 1 -T ${VANITY_ADDRESS_VAULT}"
@@ -280,60 +284,42 @@ services:
 
   # ── nginx ───────────────────────────────────────────────────────
   nginx:
-    build: "./nginx_docker"
+    build: "./nginx_proxy"
     container_name: "${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
     hostname: "${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
-    ports:  [ "${NGINX_PORT_EXTERNAL}:${NGINX_PORT}" ]
+    ports:  ["${EXT}${NGINX_TCP}", "${EXT}${NGINX_TLS}", "${EXT}${NGINX_UDP}" ]
     depends_on: [ "frontend", "game_srvc" ]
     volumes:
-      - "./nginx_docker/conf/nginx.conf:/etc/nginx/nginx.conf.tmp:ro"
-      - type: volume
+      - "./nginx_proxy/conf/nginx.conf:/etc/nginx/nginx.conf.tmp:ro"
+      - type: "volume"
         <<: *type-inject
-      - type: volume
+      - type: "volume"
         <<: *type-ca-root
-      - type: volume
+      - type: "volume"
         <<: *type-ca-cert
         volume:
           nocopy: true
-          subpath: "distribute/${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
+          subpath: "share/${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
     networks:
-      backend_net:
-        ipv4_address: 10.133.7.25
+      service_net:
+        ipv4_address: "10.133.7.25"
       proxy_net:
-        ipv4_address: 10.42.42.3
+        ipv4_address: "10.133.7.11"
     healthcheck:
       test: ["CMD-SHELL", "curl -f ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
       <<: *health
-    restart: unless-stopped
+    restart: "unless-stopped"
 
-volumes:
-  postgres_data:
-  mongo_data:
-  avatar_uploads:
-  tor_data:
-  vault_data:
-  ai_models:
-  ai_logs:
+volumes:  { "postgres_data", "mongo_data", "avatar_uploads",
+          "ai_models", "ai_logs", "tor_data", "vault_data" }
 
 networks:
-  backend_net:
-    driver: bridge
-    enable_ipv6: false
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.133.7.16/28
+  service_net:
+    <<: *net
+    ipam: {config: [subnet: "${SERVICE_SUBNET}"]}
   proxy_net:
-    driver: bridge
-    enable_ipv6: false
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.42.42.0/29
+    <<: *net
+    ipam: {config: [subnet: "${PROXY_SUBNET}"]}
   ai_net:
-    driver: bridge
-    enable_ipv6: false
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.10.10.0/28
+    <<: *net
+    ipam: {config: [subnet: "${AI_SUBNET}"]}

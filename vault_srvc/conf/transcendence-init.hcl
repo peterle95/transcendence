@@ -15,6 +15,6 @@ storage   "file"  {
 listener  "tcp"   {
   address = "127.0.0.1:8200"
 
-  tls_cert_file       = "/vault/secret/cacert/transcendence-secret-vault.crt"
-  tls_key_file        = "/vault/secret/cacert/transcendence-secret-vault.key"
+  tls_cert_file       = "/vault/secret/ca_root/transcendence-secret-vault.crt"
+  tls_key_file        = "/vault/secret/ca_root/transcendence-secret-vault.key"
 }

@@ -14,8 +14,3 @@ rule "charset" {
   charset = "ABCDEFGHJIKLMNOPQRSTUVWXYZ"
   min-chars = 8
 }
-
-rule "charset" {
-  charset = "+"
-  min-chars = 2
-}

@@ -52,9 +52,9 @@ if [ ! -f "$POSTGRES_DATA_DIR""/pg_hba.conf" ]; then
 
 	tail -n 10 pg_hba.conf | head -n 1 > pg_hba.conf.tmp
 	mv	pg_hba.conf.tmp		pg_hba.conf
-	echo "hostssl "$GAME_DB" all 10.133.7.16/28 scram-sha-256 " \
+	echo "hostssl "$GAME_DB" all "$SERVICE_SUBNET" scram-sha-256 "	\
 	>>	pg_hba.conf
-	echo "hostssl "$AUTH_DB" all 10.133.7.16/28 scram-sha-256" \
+	echo "hostssl "$AUTH_DB" all "$SERVICE_SUBNET" scram-sha-256"	\
 	>>	pg_hba.conf
 
 	sleep $(( $GRACE_PERIOD * 2 ))
