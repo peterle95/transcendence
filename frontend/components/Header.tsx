@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 export default function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; username: string } | null>(null)
 
@@ -19,13 +20,15 @@ export default function Header() {
         const data = await res.json()
         if (data?.user?.id) {
           setUser({ id: String(data.user.id), username: data.user.name })
+        } else {
+          setUser(null)
         }
       } catch {
-        // no session
+        setUser(null)
       }
     }
     fetchSession()
-  }, [])
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
