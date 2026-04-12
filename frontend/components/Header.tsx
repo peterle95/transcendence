@@ -28,30 +28,42 @@ export default function Header() {
   }, [])
 
   const handleLogout = async () => {
-  try {
-    const csrfResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`,
-      { credentials: 'include' }
-    )
-    const { csrfToken } = await csrfResponse.json()
+    try {
+      const csrfResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`,
+        { credentials: 'include' }
+      )
 
-    await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        csrfToken,
-        callbackUrl: '/login',
-        json: 'true',
-      }),
-    })
-  } finally {
-    setUser(null)
-    setIsOpen(false)
-    router.replace('/login')
-    router.refresh()
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to fetch CSRF token')
+      }
+
+      const { csrfToken } = await csrfResponse.json()
+
+      const signoutResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          csrfToken,
+          callbackUrl: '/login',
+          json: 'true',
+        }),
+      })
+
+      if (!signoutResponse.ok) {
+        throw new Error('Failed to sign out')
+      }
+
+      setUser(null)
+      setIsOpen(false)
+      router.replace('/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Do not clear state or redirect on failure
+    }
   }
-}
 
   return (
     <header className="sticky top-0 z-10 bg-black/40 backdrop-blur border-b border-white/10">

@@ -41,7 +41,7 @@ jobs:
   build:
     name: Docker build (${{ matrix.service }})
     runs-on: ubuntu-latest
-    needs: [typecheck, ai_srvc_check]
+    needs: typecheck
     strategy:
       matrix:
         service: [auth_srvc, chat_srvc, game_srvc, frontend, AI_srvc]
