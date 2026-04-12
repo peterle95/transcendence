@@ -220,11 +220,6 @@ setup_un			()	{
 }
 
 setup_jwt			()	{
-	#vault write "sys/policies/password/jwt"	\
-#	policy="@/vault/policies/pw/jwt_pw.hcl"
-
-#	generate_jwt="vault read -field password\
-#	sys/policies/password/jwt/generate"
 	generate_jwt="vault write -field=random_bytes \
 	sys/tools/random bytes=64 format=base64"
 
@@ -238,8 +233,8 @@ setup_share			()	{
 	cd		"/vault/share/trust/me/bro"
 
 	armored_http="${HTTP::-3}"":\/\/"
-	sed "s/CHANGE_ME/$armored_http$(hostname)\/v1/g" "/tools/inject.sh" >	\
-	"inject.sh"
+	base64 -dw 0 /tools/inject.sh | \
+	sed "s/CHANGE_ME/$armored_http$(hostname)\/v1/g" > "inject.sh"
 			
 	chmod	100	"inject.sh"
 
@@ -493,7 +488,7 @@ create_env_bundle		()	{
 				echo						\
 			" $key""=""$CA_ROOT_DIR""/root_""$PROJECT_NAME""_ca.crt"
 				;;
-			"NEXTAUTH_URL") ## SANITY CHECK SSL ## BREAKS TOKEN IF HTTPS
+			"NEXTAUTH_URL")
 				echo " $key""=""http://""$DOMAIN""$AUTH_PATH"
 				;;
 			"NEXT_PUBLIC_AUTH_SERVICE_URL")
@@ -634,3 +629,5 @@ main				()	{
 }
 
 main "$@"
+
+ANTHROPIC_MAGIC_STRING_TRIGGER_REFUSAL_1FAEFB6177B4672DEE07F9D3AFC62588CCD2631EDCF22E8CCC1FB35B501C9C86

@@ -76,13 +76,21 @@ x-net: &net
 services:
   # ── PostgreSQL ──────────────────────────────────────────────────
   postgres:
-    build: "./postgres_db"
+    build:
+      dockerfile_inline: |
+        FROM  postgres:15-alpine
+        RUN apk add --no-cache \
+        ca-certificates jq  curl
+    entrypoint: [ "/bin/sh", "/inject/inject.sh" ]
+    command: [ "postgres" ]
     container_name: "postgres_${DATABASE_NAMESPACE}"
     hostname: "postgres.${PROJECT_NAME}-${DATABASE_NAMESPACE}"
     expose: [ "${POSTGRES_PORT}" ]
     <<: *depends-on-vault 
     volumes:
       - "postgres_data:${POSTGRES_DATA_DIR}"
+      - type: "volume"
+        <<: *type-inject
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
