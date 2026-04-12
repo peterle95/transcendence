@@ -8,7 +8,7 @@ on:
 
 jobs:
   # ════════════════════════════════════════════════════════════════
-  # Stage 1: Typecheck — catch compile errors in every TS service
+  # Stage 1: Typecheck — catch compile errors in every service
   # ════════════════════════════════════════════════════════════════
   typecheck:
     name: Typecheck (${{ matrix.service }})
