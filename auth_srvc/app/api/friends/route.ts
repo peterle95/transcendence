@@ -1,12 +1,13 @@
-import { requireAuthWithUserId } from '@/lib/proxy/auth';
+import { NextRequest } from 'next/server';
+import { requireAuthWithUserIdFromRequest } from '@/lib/proxy/auth';
 import { getFriends } from '@/lib/friend';
 import { handleApiError, successResponse } from '@/lib/utils/api-response';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
 	try {
-		const { userId } = await requireAuthWithUserId();
+		const { userId } = await requireAuthWithUserIdFromRequest(req);
 		const result = await getFriends(userId);
 
 		if (!result.success) {
