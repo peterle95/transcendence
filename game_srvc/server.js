@@ -381,6 +381,7 @@ function handleAIServiceConnection(socket, auth = {}) {
     const targetRoomId = typeof payload.roomId === 'string' ? payload.roomId : roomId;
     if (targetRoomId !== GAME_ROOM_ID) return;
     if (ROOM.state !== 'playing') return;
+    if (ROOM.slots[aiSlot] !== null) return; // human owns this slot
     ROOM.inputBuffer[aiSlot] = parseAIInput(payload);
     io.emit('ai_command', {
       roomId: targetRoomId,
@@ -415,14 +416,17 @@ function handleAIServiceConnection(socket, auth = {}) {
       (meta) => meta.slot === aiSlot && meta.roomId === roomId
     );
     if (!hasSameSlotAgent) {
+      const slotHasHuman = ROOM.slots[aiSlot] !== null;
       // Only remove from virtualSlots/gameAISlots if this AI was occupying a game slot
       if (gameAISlots.has(aiSlot)) {
         gameAISlots.delete(aiSlot);
         virtualSlots.delete(aiSlot);
       }
-      ROOM.players[aiSlot] = null;
-      delete ROOM.inputBuffer[aiSlot];
-      io.emit('player_left', { playerIdx: aiSlot });
+      if (!slotHasHuman) {
+        ROOM.players[aiSlot] = null;
+        delete ROOM.inputBuffer[aiSlot];
+        io.emit('player_left', { playerIdx: aiSlot });
+      }
     }
     console.log(`ai service disconnected: ${socket.id} slot=${aiSlot}`);
   });
