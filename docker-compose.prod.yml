@@ -153,7 +153,6 @@ services:
       - MODEL_RELOAD_INTERVAL_S=5
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
-      - HUMAN_ONLY_MODE=true
     volumes:
       - ai_models:/app/models:ro
       - ai_logs:/app/logs
@@ -176,7 +175,6 @@ services:
       - MODEL_RELOAD_INTERVAL_S=5
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
-      - HUMAN_ONLY_MODE=true
     volumes:
       - ai_models:/app/models:ro
       - ai_logs:/app/logs
@@ -199,7 +197,6 @@ services:
       - MODEL_RELOAD_INTERVAL_S=5
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
-      - HUMAN_ONLY_MODE=true
     volumes:
       - ai_models:/app/models:ro
       - ai_logs:/app/logs

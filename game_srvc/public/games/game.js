@@ -1640,8 +1640,46 @@ for (let i = 0; i < this.players.length; i++) {
     const mgr = this.socketMgr;
     if (!mgr) return;
 
-    // Send our key state to the server
-    if (mgr.playerIdx !== null && mgr.connected) {
+    // ── 1. Client-side prediction for own player ─────────────────────────
+    // Apply inputs immediately at 60 fps so the ship feels instant.
+    // The server will reconcile via soft correction in _applyWorldSnapshot.
+    const ownIdx = mgr.playerIdx;
+    if (ownIdx !== null && mgr.connected && mgr.serverGameState === 'playing') {
+      const ownPlayer = this.players[ownIdx];
+      if (ownPlayer && ownPlayer.alive) {
+        const ship = ownPlayer.currentShip;
+        if (ship && ship.alive) {
+          if (this.input.isDown('ArrowUp'))    ship.thrustForward(dt);
+          if (this.input.isDown('ArrowDown'))  ship.thrustBackward(dt);
+          if (this.input.isDown('ArrowLeft'))  ship.rotateLeft(dt);
+          if (this.input.isDown('ArrowRight')) ship.rotateRight(dt);
+          ship.update(dt);
+        }
+      }
+    }
+
+    // ── 2. Interpolate remote players toward their authoritative targets ──
+    // Frame-rate-independent lerp: alpha = 1 - 0.65^(dt/16)
+    // At 60 fps each frame closes ~35 % of remaining gap → smooth without lag.
+    const LERP = 1 - Math.pow(0.65, dt / 16);
+    this.players.forEach((p, i) => {
+      if (i === ownIdx || !p || !p._remoteTarget) return;
+      const ship   = p.currentShip;
+      const target = p._remoteTarget;
+      if (!ship || !target) return;
+
+      ship.x += (target.x - ship.x) * LERP;
+      ship.y += (target.y - ship.y) * LERP;
+
+      // Angle: shortest-path interpolation to handle 0°/360° wrap
+      let da = target.angle - ship.angle;
+      while (da >  180) da -= 360;
+      while (da < -180) da += 360;
+      ship.angle += da * LERP;
+    });
+
+    // ── 3. Send inputs to server ──────────────────────────────────────────
+    if (ownIdx !== null && mgr.connected) {
       mgr.emitInput({
         forward:  this.input.isDown('ArrowUp'),
         backward: this.input.isDown('ArrowDown'),
@@ -1651,13 +1689,13 @@ for (let i = 0; i < this.players.length; i++) {
       });
     }
 
-    // Apply latest world snapshot from server
+    // ── 4. Apply latest server snapshot (with reconciliation) ─────────────
     if (mgr.pendingWorld) {
       this._applyWorldSnapshot(mgr.pendingWorld);
       mgr.pendingWorld = null;
     }
 
-    // Server-initiated game-over
+    // ── 5. Server-initiated game-over ─────────────────────────────────────
     if (mgr.pendingGameOver && this.state !== STATE.GAME_OVER) {
       const data = mgr.pendingGameOver;
       mgr.pendingGameOver = null;
@@ -1668,20 +1706,18 @@ for (let i = 0; i < this.players.length; i++) {
       this._gameOverCooldown = 800;
       if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
         window.showRankingScreen(this.players, this.winner, 'online', () => {
-          // Server will auto-restart; just flip back to PLAYING so we render the
-          // world snapshots when the new game arrives.
           this.state = STATE.PLAYING;
         });
       }
     }
 
-    // Server started a new game (auto-restart after game-over)
+    // ── 6. Server started a new game ──────────────────────────────────────
     if (mgr.gameRestarted) {
       mgr.gameRestarted = false;
       this._resetOnlineGame();
     }
 
-    // Particles are purely visual — update client-side only
+    // ── 7. Client-side particles (purely visual) ──────────────────────────
     this.particles.forEach(p => p.update(dt));
     this.particles = this.particles.filter(p => p.alive);
   }
@@ -1702,7 +1738,6 @@ for (let i = 0; i < this.players.length; i++) {
    * Spawns client-side particles for visual events in the snapshot.
    */
   _applyWorldSnapshot(world) {
-    // Sync every player slot
     world.players.forEach((ps, i) => {
       if (!ps) return;
       const player = this.players[i];
@@ -1713,28 +1748,43 @@ for (let i = 0; i < this.players.length; i++) {
       player.displayName = ps.displayName;
       if (ps.stats) player.stats = ps.stats;
 
+      const ownPlayer = this.socketMgr && i === this.socketMgr.playerIdx;
       const ship = player.currentShip;
+
       if (ship && ps.ship) {
-        ship.x          = ps.ship.x;
-        ship.y          = ps.ship.y;
-        ship.vx         = ps.ship.vx;
-        ship.vy         = ps.ship.vy;
-        ship.angle      = ps.ship.angle;
-        ship.angularVel = ps.ship.angularVel;
-        ship.hp         = ps.ship.hp;
-        ship.energy     = ps.ship.energy;
-        ship.alive      = ps.ship.alive;
-        // Keep invuln blink alive for a brief window
+        if (ownPlayer) {
+          // Own player: soft reconciliation — preserve local prediction, nudge toward server truth.
+          // Hard-sync authoritative state (HP, energy, alive) immediately.
+          if (!ps.ship.alive) {
+            ship.alive = false;
+            ship.hp    = 0;
+          } else {
+            const CORRECTION = 0.2;
+            ship.x      += (ps.ship.x     - ship.x)     * CORRECTION;
+            ship.y      += (ps.ship.y     - ship.y)     * CORRECTION;
+            ship.vx     += (ps.ship.vx    - ship.vx)    * CORRECTION;
+            ship.vy     += (ps.ship.vy    - ship.vy)    * CORRECTION;
+            ship.hp      = ps.ship.hp;
+            ship.energy  = ps.ship.energy;
+            ship.alive   = ps.ship.alive;
+          }
+        } else {
+          // Remote players: store authoritative target, lerp toward it each frame.
+          player._remoteTarget = ps.ship;
+          // Hard-sync HP/alive immediately so health bars and death are responsive.
+          ship.hp    = ps.ship.hp;
+          ship.alive = ps.ship.alive;
+        }
         if (ps.ship.isInvulnerable) ship.invulnUntil = performance.now() + 200;
       }
     });
 
-    // Replace laser list with server's authoritative list
+    // Server-authoritative lasers (replace client list entirely)
     this.lasers = world.lasers.map(l =>
       new Laser(l.x, l.y, l.angle, l.ownerIdx, this.assets)
     );
 
-    // Sync meteor positions/state (meteors already exist from _setupPlayers)
+    // Sync meteor positions/state
     world.meteors.forEach((ms, i) => {
       const m = this.meteors[i];
       if (!m) return;
@@ -1746,7 +1796,6 @@ for (let i = 0; i < this.players.length; i++) {
       m.radius   = ms.radius;
     });
 
-    // Visual events (sparks / explosions) determined by the server
     (world.events || []).forEach(ev => {
       if (ev.type === 'spark')     this._spawnSparks(ev.x, ev.y, ev.color);
       if (ev.type === 'explosion') this._spawnExplosion(ev.x, ev.y);

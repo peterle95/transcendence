@@ -17,7 +17,7 @@ const ENABLE_TRAINING_ROOM = process.env.ENABLE_TRAINING_ROOM === 'true';
 const REMOTE_MULTIPLAYER_ENABLED = process.env.REMOTE_MULTIPLAYER_ENABLED !== 'false';
 const MAX_SLOTS         = 4;
 const PHYSICS_HZ        = 60;
-const BROADCAST_EVERY   = 3;           // broadcast every N ticks  → 20 Hz
+const BROADCAST_EVERY   = 2;           // broadcast every N ticks  → 30 Hz (was 3 → 20 Hz)
 const TICK_MS           = 1000 / PHYSICS_HZ;
 const COUNTDOWN_SECS    = 5;
 const RESTART_AFTER_MS  = 6000;        // pause after game-over before new game
@@ -250,6 +250,7 @@ const ROOM = {
 const displayNames = {};   // playerIdx → string set by client
 const aiServiceSockets = new Map(); // socket.id -> { slot, roomId }
 const virtualSlots = new Set(); // slot indexes reserved for AI-only training sessions
+const gameAISlots     = new Set(); // slot indexes filled by AI inference during a live game
 
 function isSlotActive(slotIdx) {
   return ROOM.slots[slotIdx] !== null || virtualSlots.has(slotIdx);
@@ -322,7 +323,6 @@ function startTrainingSession(aiSlots = [1, 2]) {
   const uniqueSlots = [...new Set(aiSlots.filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < MAX_SLOTS))];
   if (uniqueSlots.length === 0) return { ok: false, error: 'No valid AI slots provided' };
 
-  // Training instance is isolated; disconnect any human sockets before bootstrapping AI-only room.
   ROOM.slots.forEach((socketId) => {
     if (!socketId) return;
     const socket = io.sockets.sockets.get(socketId);
@@ -331,16 +331,21 @@ function startTrainingSession(aiSlots = [1, 2]) {
 
   ROOM.slots = new Array(MAX_SLOTS).fill(null);
   Object.keys(displayNames).forEach((key) => delete displayNames[key]);
+
+  // Clear both game AI slots and training slots
+  gameAISlots.clear();
   virtualSlots.clear();
-  uniqueSlots.forEach((slot) => {
-    virtualSlots.add(slot);
-    displayNames[slot] = `AI_${slot}`;
-  });
 
   if (countdownTimer) {
     clearInterval(countdownTimer);
     countdownTimer = null;
   }
+
+  // Pre-add training slots before resetGame so fillAISlots sees humanCount=0 and skips
+  uniqueSlots.forEach((slot) => {
+    virtualSlots.add(slot);
+    displayNames[slot] = `AI_${slot}`;
+  });
 
   resetGame();
   io.emit('training_started', { roomId: GAME_ROOM_ID, aiSlots: uniqueSlots });
@@ -363,8 +368,10 @@ function handleAIServiceConnection(socket, auth = {}) {
     return;
   }
 
+  // Register for relay routing only — do NOT add to virtualSlots here.
+  // Slots are claimed dynamically in fillAISlots() when a game starts,
+  // so humans can join any of the 4 slots in online multiplayer.
   aiServiceSockets.set(socket.id, { slot: aiSlot, roomId });
-  virtualSlots.add(aiSlot);
   if (!displayNames[aiSlot]) displayNames[aiSlot] = `AI_${aiSlot}`;
   if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = {};
   socket.emit('ai_service_connected', { roomId, aiSlot });
@@ -404,17 +411,50 @@ function handleAIServiceConnection(socket, auth = {}) {
 
   socket.on('disconnect', () => {
     aiServiceSockets.delete(socket.id);
-    const hasSameSlotAgent = [...aiServiceSockets.values()].some((meta) => meta.slot === aiSlot && meta.roomId === roomId);
+    const hasSameSlotAgent = [...aiServiceSockets.values()].some(
+      (meta) => meta.slot === aiSlot && meta.roomId === roomId
+    );
     if (!hasSameSlotAgent) {
-      virtualSlots.delete(aiSlot);
+      // Only remove from virtualSlots/gameAISlots if this AI was occupying a game slot
+      if (gameAISlots.has(aiSlot)) {
+        gameAISlots.delete(aiSlot);
+        virtualSlots.delete(aiSlot);
+      }
       ROOM.players[aiSlot] = null;
       delete ROOM.inputBuffer[aiSlot];
       io.emit('player_left', { playerIdx: aiSlot });
     }
     console.log(`ai service disconnected: ${socket.id} slot=${aiSlot}`);
   });
+}
 
-  if (ROOM.state === 'lobby' && humanCount() > 0 && connectedCount() >= 2) startCountdown();
+/**
+ * Fill empty game slots with available AI inference services.
+ * Called at the start of each game. Only fills slots that have no human player.
+ * Does nothing if there are no human players (prevents pure-AI auto-games).
+ */
+function fillAISlots() {
+  // Clear previous game's AI slot reservations
+  gameAISlots.forEach(slot => virtualSlots.delete(slot));
+  gameAISlots.clear();
+
+  if (humanCount() === 0) return;
+
+  // Index available AI services by slot (first connected service per slot wins)
+  const aiBySlot = new Map();
+  aiServiceSockets.forEach((meta) => {
+    if (meta.roomId === GAME_ROOM_ID && !aiBySlot.has(meta.slot)) {
+      aiBySlot.set(meta.slot, meta);
+    }
+  });
+
+  aiBySlot.forEach((_meta, aiSlot) => {
+    if (!ROOM.slots[aiSlot]) {        // slot not taken by a human
+      virtualSlots.add(aiSlot);
+      gameAISlots.add(aiSlot);
+      console.log(`AI filling slot ${aiSlot}`);
+    }
+  });
 }
 
 function resetGame() {
@@ -425,6 +465,9 @@ function resetGame() {
   ROOM.events    = [];
   ROOM.players   = new Array(MAX_SLOTS).fill(null);
   ROOM.tickNum   = 0;
+
+  // Auto-fill empty slots with AI services (only when humans are present)
+  fillAISlots();
 
   for (let i = 0; i < MAX_SLOTS; i++) {
     if (isSlotActive(i)) {
