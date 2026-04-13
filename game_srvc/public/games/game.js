@@ -1668,8 +1668,14 @@ for (let i = 0; i < this.players.length; i++) {
       const target = p._remoteTarget;
       if (!ship || !target) return;
 
-      ship.x += (target.x - ship.x) * LERP;
-      ship.y += (target.y - ship.y) * LERP;
+      const dx = target.x - ship.x;
+      const dy = target.y - ship.y;
+      ship.x = Math.abs(dx) > CFG.WIDTH / 2
+        ? target.x
+        : ship.x + dx * LERP;
+      ship.y = Math.abs(dy) > CFG.HEIGHT / 2
+        ? target.y
+        : ship.y + dy * LERP;
 
       // Angle: shortest-path interpolation to handle 0°/360° wrap
       let da = target.angle - ship.angle;
