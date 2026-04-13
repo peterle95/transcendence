@@ -1,3 +1,6 @@
+// Before Bearer support for service-to-service calls, this file only imported:
+//   getServerSession from 'next-auth/next'
+// and exported requireAuth + requireAuthWithUserId (unchanged below).
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { getToken } from 'next-auth/jwt';
