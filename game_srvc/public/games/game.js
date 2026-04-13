@@ -88,6 +88,165 @@ function wrapPos(obj, w, h, margin = 40) {
   if (obj.y > h + margin) obj.y = -margin;
 }
 
+const ONLINE_CFG = Object.freeze({
+  STEP_MS: 1000 / 60,
+  LOCAL_RENDER_BASE: 0.18,
+  LOCAL_SNAP_DISTANCE: 180,
+  REMOTE_RENDER_DELAY_MS: 100,
+  REMOTE_MAX_EXTRAPOLATION_MS: 100,
+  WORLD_QUEUE_MAX: 90,
+  REMOTE_BUFFER_MAX: 40,
+});
+
+function normalizeAngle(angle) {
+  let out = angle;
+  while (out > 180) out -= 360;
+  while (out < -180) out += 360;
+  return out;
+}
+
+function shortestAngleDelta(target, current) {
+  let diff = target - current;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return diff;
+}
+
+function wrapCoordinate(value, size, margin = CFG.SHIP_RADIUS) {
+  const span = size + margin * 2;
+  return ((value + margin) % span + span) % span - margin;
+}
+
+function unwrapCoordinate(rawValue, previousRawValue, previousUnwrappedValue, size) {
+  let delta = rawValue - previousRawValue;
+  if (delta > size / 2) delta -= size;
+  if (delta < -size / 2) delta += size;
+  return previousUnwrappedValue + delta;
+}
+
+function createContinuousState(x, y, angle = 0) {
+  return {
+    rawX: x,
+    rawY: y,
+    unwrappedX: x,
+    unwrappedY: y,
+    angle: normalizeAngle(angle),
+  };
+}
+
+function advanceContinuousState(state, x, y, angle = 0) {
+  if (!state) return createContinuousState(x, y, angle);
+  return {
+    rawX: x,
+    rawY: y,
+    unwrappedX: unwrapCoordinate(x, state.rawX, state.unwrappedX, CFG.WIDTH),
+    unwrappedY: unwrapCoordinate(y, state.rawY, state.unwrappedY, CFG.HEIGHT),
+    angle: normalizeAngle(angle),
+  };
+}
+
+function applyForwardThrust(state, dt) {
+  const rad = degToRad(state.angle);
+  const thrust = CFG.SHIP_SPEED * dt / 16;
+  state.vx += Math.sin(rad) * thrust;
+  state.vy -= Math.cos(rad) * thrust;
+}
+
+function applyBackwardThrust(state, dt) {
+  const rad = degToRad(state.angle);
+  const thrust = CFG.SHIP_SPEED * dt / 16;
+  state.vx -= Math.sin(rad) * thrust;
+  state.vy += Math.cos(rad) * thrust;
+}
+
+function applyRotateLeft(state, dt) {
+  state.angularVel -= 0.4 * dt / 16;
+}
+
+function applyRotateRight(state, dt) {
+  state.angularVel += 0.4 * dt / 16;
+}
+
+function rechargeShipEnergy(state, nowMs) {
+  if (!Number.isFinite(state.lastRechargeTime)) state.lastRechargeTime = nowMs;
+  if (state.energy < CFG.WEAPON_MAX_ENERGY &&
+      nowMs - state.lastRechargeTime >= CFG.WEAPON_RECHARGE_MS) {
+    state.energy = Math.min(state.energy + CFG.WEAPON_RECHARGE, CFG.WEAPON_MAX_ENERGY);
+    state.lastRechargeTime = nowMs;
+  }
+}
+
+function updateShipPhysics(state, dt, nowMs = performance.now()) {
+  const maxAngular = CFG.SHIP_ROT_SPEED * 0.8;
+  state.angularVel = clamp(state.angularVel, -maxAngular, maxAngular);
+  state.angle = normalizeAngle(state.angle + state.angularVel * dt / 16);
+  state.angularVel *= 0.95;
+
+  state.x += state.vx * dt / 16;
+  state.y += state.vy * dt / 16;
+
+  state.vx *= 0.98;
+  state.vy *= 0.98;
+
+  const maxSpeed = CFG.SHIP_SPEED * 2;
+  const speed = Math.sqrt(state.vx ** 2 + state.vy ** 2);
+  if (speed > maxSpeed) {
+    state.vx = (state.vx / speed) * maxSpeed;
+    state.vy = (state.vy / speed) * maxSpeed;
+  }
+
+  wrapPos(state, CFG.WIDTH, CFG.HEIGHT, state.radius || CFG.SHIP_RADIUS);
+  rechargeShipEnergy(state, nowMs);
+}
+
+function applyShipInput(state, input, dt) {
+  if (!state || !state.alive) return;
+  if (input.forward) applyForwardThrust(state, dt);
+  if (input.backward) applyBackwardThrust(state, dt);
+  if (input.left) applyRotateLeft(state, dt);
+  if (input.right) applyRotateRight(state, dt);
+}
+
+function stepShipState(state, input, dt, nowMs = performance.now()) {
+  if (!state || !state.alive) return;
+  applyShipInput(state, input, dt);
+  updateShipPhysics(state, dt, nowMs);
+}
+
+function createShipStateFromSnapshot(snapshot, nowMs = performance.now()) {
+  return {
+    x: snapshot.x,
+    y: snapshot.y,
+    vx: snapshot.vx,
+    vy: snapshot.vy,
+    angle: normalizeAngle(snapshot.angle),
+    angularVel: snapshot.angularVel,
+    hp: snapshot.hp,
+    energy: snapshot.energy,
+    alive: snapshot.alive,
+    radius: CFG.SHIP_RADIUS,
+    spawnSeq: snapshot.spawnSeq || 0,
+    lastRechargeTime: nowMs,
+  };
+}
+
+function createShipStateFromShip(ship, nowMs = performance.now()) {
+  return {
+    x: ship.x,
+    y: ship.y,
+    vx: ship.vx,
+    vy: ship.vy,
+    angle: normalizeAngle(ship.angle),
+    angularVel: ship.angularVel,
+    hp: ship.hp,
+    energy: ship.energy,
+    alive: ship.alive,
+    radius: ship.radius,
+    spawnSeq: ship.spawnSeq || 0,
+    lastRechargeTime: nowMs,
+  };
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    SOCKET MANAGER  (server-authoritative online multiplayer)
    ═══════════════════════════════════════════════════════════════════════ */
@@ -100,10 +259,9 @@ class SocketManager {
     this.connected        = false;
     this.serverGameState  = 'lobby'; // 'lobby'|'countdown'|'playing'|'gameOver'
     this.countdown        = null;   // seconds remaining, or null
-    this.pendingWorld     = null;   // latest world snapshot waiting to be applied
+    this.worldQueue       = [];     // ordered authoritative snapshots
     this.pendingGameOver  = null;   // latest game_over payload
     this.gameRestarted    = false;  // flipped true when server sends game_start
-    this._lastInputEmit   = 0;
 
     if (typeof io === 'undefined') {
       console.warn('[SocketManager] socket.io client not loaded – online mode unavailable');
@@ -124,6 +282,7 @@ class SocketManager {
 
     this.socket.on('disconnect', () => {
       this.connected = false;
+      this.worldQueue = [];
       console.log('[SocketManager] disconnected');
     });
 
@@ -142,11 +301,19 @@ class SocketManager {
       this.serverGameState = 'playing';
       this.countdown       = null;
       this.gameRestarted   = true;
+      this.worldQueue      = [];
     });
 
     this.socket.on('world', (world) => {
-      this.pendingWorld    = world;
-      this.serverGameState = world.state;
+      const snapshot = {
+        ...world,
+        receivedAtMs: performance.now(),
+      };
+      this.worldQueue.push(snapshot);
+      if (this.worldQueue.length > ONLINE_CFG.WORLD_QUEUE_MAX) {
+        this.worldQueue.splice(0, this.worldQueue.length - ONLINE_CFG.WORLD_QUEUE_MAX);
+      }
+      this.serverGameState = snapshot.state;
     });
 
     this.socket.on('game_over', (data) => {
@@ -168,18 +335,21 @@ class SocketManager {
   }
 
   /**
-   * Send raw key-press state to the server (~60 Hz, de-duped).
-   * @param {{ forward, backward, left, right, shoot }} inputs
+   * Send a fixed-step input packet to the server.
+   * @param {{ seq, forward, backward, left, right, shoot }} inputs
    */
   emitInput(inputs) {
     if (!this.socket || !this.connected || this.playerIdx === null) return;
-    const now = performance.now();
-    if (now - this._lastInputEmit < 16) return;  // ~60 Hz cap
-    this._lastInputEmit = now;
     this.socket.emit('input', inputs);
   }
 
+  drainWorldQueue() {
+    if (this.worldQueue.length === 0) return [];
+    return this.worldQueue.splice(0, this.worldQueue.length);
+  }
+
   disconnect() {
+    this.worldQueue = [];
     if (this.socket) this.socket.disconnect();
   }
 }
@@ -439,6 +609,7 @@ class Ship {
     // weapon energy
     this.energy = CFG.WEAPON_MAX_ENERGY;
     this.lastRechargeTime = 0;
+    this.spawnSeq = 0;
 
     // sprite key
     const color = CFG.PLAYER_NAMES[playerIdx];
@@ -454,6 +625,8 @@ class Ship {
     this.alive = true;
     this.vx = 0;
     this.vy = 0;
+    this.angularVel = 0;
+    this.spawnSeq += 1;
     this.invulnUntil = performance.now() + CFG.SHIP_INVULN_TIME;
     this.lastRechargeTime = performance.now();
   }
@@ -488,34 +661,24 @@ class Ship {
 
 
 thrustForward(dt) {
-  const rad = degToRad(this.angle);
-  const thrust = CFG.SHIP_SPEED * dt / 16;
-  this.vx += Math.sin(rad) * thrust;
-  this.vy -= Math.cos(rad) * thrust;
+  applyForwardThrust(this, dt);
 }
 
 thrustBackward(dt) {
-  const rad = degToRad(this.angle);
-  const thrust = CFG.SHIP_SPEED * dt / 16;
-  this.vx -= Math.sin(rad) * thrust;
-  this.vy += Math.cos(rad) * thrust;
+  applyBackwardThrust(this, dt);
 }
 
 
 rotateLeft(dt) {
-  this.angularVel -= 0.4 * dt / 16;
+  applyRotateLeft(this, dt);
 }
 
 rotateRight(dt) {
-  this.angularVel += 0.4 * dt / 16;
+  applyRotateRight(this, dt);
 }
 
   rechargeWeapon(now) {
-    if (this.energy < CFG.WEAPON_MAX_ENERGY &&
-        now - this.lastRechargeTime >= CFG.WEAPON_RECHARGE_MS) {
-      this.energy = Math.min(this.energy + CFG.WEAPON_RECHARGE, CFG.WEAPON_MAX_ENERGY);
-      this.lastRechargeTime = now;
-    }
+    rechargeShipEnergy(this, now);
   }
 
   canShoot() {
@@ -527,34 +690,7 @@ rotateRight(dt) {
   }
 
 update(dt) {
-	// Rotational Inertia
-  const MAX_ANGULAR = CFG.SHIP_ROT_SPEED * 0.8;
-  this.angularVel = clamp(this.angularVel, -MAX_ANGULAR, MAX_ANGULAR);
-  this.angle += this.angularVel * dt / 16;
-  this.angularVel *= 0.95; // rotational friction
-  
-  // Apply speed to position
-  this.x += this.vx * dt / 16;
-  this.y += this.vy * dt / 16;
-
-  // Deceleration (light space drag)
-  const DRAG = 0.98; // 1.0 = no friction, 0.95 = fast break
-  this.vx *= DRAG;
-  this.vy *= DRAG;
-
-  // Clamp max speed
-  const MAX_SPEED = CFG.SHIP_SPEED * 2;
-  const speed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
-  if (speed > MAX_SPEED) {
-    this.vx = (this.vx / speed) * MAX_SPEED;
-    this.vy = (this.vy / speed) * MAX_SPEED;
-  }
-
-  // Wrap at edges (margin = radius ship icon)
-  wrapPos(this, CFG.WIDTH, CFG.HEIGHT, this.radius);
-
-  // Recharge weapon
-  this.rechargeWeapon(performance.now());
+  updateShipPhysics(this, dt, performance.now());
 }
 
   draw(ctx) {
@@ -622,6 +758,20 @@ class Player {
     for (let i = 1; i <= CFG.FLEET_SIZE; i++) {
       this.ships.push(new Ship(idx, i, assets));
     }
+
+    this.resetOnlineState();
+  }
+
+  resetOnlineState() {
+    this._pendingInputs = [];
+    this._nextInputSeq = 0;
+    this._predictedShipState = null;
+    this._predictedContinuous = null;
+    this._renderContinuous = null;
+    this._remoteSnapshots = [];
+    this._onlineMeta = null;
+    this._latestServerTimeMs = 0;
+    this._latestReceiptTimeMs = 0;
   }
 
   applyNetworkState(state) {
@@ -943,6 +1093,7 @@ class Game {
 
     /** @type {SocketManager|null} Active in 'online' mode only. */
     this.socketMgr = null;
+    this._onlineInputAccumulator = 0;
 
     // Local AI bridge (client local physics + ai_srvc commands over socket relay)
     this.networkSocket = null;
@@ -1097,6 +1248,7 @@ class Game {
     this.meteors = [];
     this.particles = [];
     this.winner  = null;
+    this._onlineInputAccumulator = 0;
     this._disconnectAIBridge();
 
     const p1Controls = {
@@ -1636,32 +1788,342 @@ for (let i = 0; i < this.players.length; i++) {
    * Called by _update() instead of the local physics block when in online mode.
    * Sends raw inputs to server; applies pending world snapshots; handles events.
    */
+  _getOnlineInputState() {
+    return {
+      forward: this.input.isDown('ArrowUp'),
+      backward: this.input.isDown('ArrowDown'),
+      left: this.input.isDown('ArrowLeft'),
+      right: this.input.isDown('ArrowRight'),
+      shoot: this.input.isDown('Space'),
+    };
+  }
+
+  _applyAuthoritativeShipState(ship, snapshot) {
+    if (!ship || !snapshot) return;
+    ship.vx = snapshot.vx;
+    ship.vy = snapshot.vy;
+    ship.angularVel = snapshot.angularVel;
+    ship.hp = snapshot.hp;
+    ship.energy = snapshot.energy;
+    ship.alive = snapshot.alive;
+    ship.spawnSeq = snapshot.spawnSeq || 0;
+    if (snapshot.isInvulnerable) ship.invulnUntil = performance.now() + 200;
+  }
+
+  _snapShipToContinuous(ship, continuous) {
+    if (!ship || !continuous) return;
+    ship.x = wrapCoordinate(continuous.unwrappedX, CFG.WIDTH, ship.radius);
+    ship.y = wrapCoordinate(continuous.unwrappedY, CFG.HEIGHT, ship.radius);
+    ship.angle = normalizeAngle(continuous.angle);
+  }
+
+  _clearOnlinePlayerState(player) {
+    if (!player) return;
+    player.resetOnlineState();
+    player.fleetIndex = 0;
+    player.alive = false;
+    player.ships.forEach((ship) => {
+      ship.alive = false;
+      ship.vx = 0;
+      ship.vy = 0;
+      ship.angularVel = 0;
+    });
+  }
+
+  _ensureLocalPrediction(player) {
+    const ship = player && player.currentShip;
+    if (!player || !ship || !ship.alive || player._predictedShipState) return;
+    player._predictedShipState = createShipStateFromShip(ship);
+    player._predictedContinuous = createContinuousState(ship.x, ship.y, ship.angle);
+    if (!player._renderContinuous) {
+      player._renderContinuous = createContinuousState(ship.x, ship.y, ship.angle);
+    }
+    player._onlineMeta = {
+      fleetIndex: player.fleetIndex,
+      alive: ship.alive,
+      spawnSeq: ship.spawnSeq || 0,
+    };
+  }
+
+  _replayPendingLocalInputs(player) {
+    if (!player || !player._predictedShipState || !player._predictedContinuous) return;
+    let replayNow = performance.now() - player._pendingInputs.length * ONLINE_CFG.STEP_MS;
+    player._pendingInputs.forEach((input) => {
+      stepShipState(player._predictedShipState, input, ONLINE_CFG.STEP_MS, replayNow);
+      player._predictedContinuous = advanceContinuousState(
+        player._predictedContinuous,
+        player._predictedShipState.x,
+        player._predictedShipState.y,
+        player._predictedShipState.angle
+      );
+      replayNow += ONLINE_CFG.STEP_MS;
+    });
+  }
+
+  _applyOwnSnapshot(player, ps) {
+    const ship = player.currentShip;
+    if (!ship || !ps.ship) return;
+
+    const snapshot = ps.ship;
+    const nextMeta = {
+      fleetIndex: ps.fleetIndex,
+      alive: snapshot.alive,
+      spawnSeq: snapshot.spawnSeq || 0,
+    };
+    const previousMeta = player._onlineMeta;
+    const discontinuity =
+      !previousMeta ||
+      previousMeta.fleetIndex !== nextMeta.fleetIndex ||
+      previousMeta.alive !== nextMeta.alive ||
+      previousMeta.spawnSeq !== nextMeta.spawnSeq;
+
+    const ackSeq = Number.isFinite(ps.lastProcessedInputSeq) ? ps.lastProcessedInputSeq : 0;
+    player._pendingInputs = player._pendingInputs.filter((input) => input.seq > ackSeq);
+    player._predictedShipState = createShipStateFromSnapshot(snapshot);
+    player._predictedContinuous = createContinuousState(snapshot.x, snapshot.y, snapshot.angle);
+    this._replayPendingLocalInputs(player);
+
+    this._applyAuthoritativeShipState(ship, snapshot);
+
+    const target = player._predictedContinuous;
+    if (!player._renderContinuous || discontinuity) {
+      player._renderContinuous = { ...target };
+      this._snapShipToContinuous(ship, player._renderContinuous);
+    } else {
+      const dx = target.unwrappedX - player._renderContinuous.unwrappedX;
+      const dy = target.unwrappedY - player._renderContinuous.unwrappedY;
+      if (Math.hypot(dx, dy) > ONLINE_CFG.LOCAL_SNAP_DISTANCE) {
+        player._renderContinuous = { ...target };
+        this._snapShipToContinuous(ship, player._renderContinuous);
+      }
+    }
+
+    player._onlineMeta = nextMeta;
+  }
+
+  _applyRemoteSnapshot(player, ps, world) {
+    const ship = player.currentShip;
+    if (!ship || !ps.ship) return;
+
+    const snapshot = ps.ship;
+    const nextMeta = {
+      fleetIndex: ps.fleetIndex,
+      alive: snapshot.alive,
+      spawnSeq: snapshot.spawnSeq || 0,
+    };
+    const previousMeta = player._onlineMeta;
+    const discontinuity =
+      !previousMeta ||
+      previousMeta.fleetIndex !== nextMeta.fleetIndex ||
+      previousMeta.alive !== nextMeta.alive ||
+      previousMeta.spawnSeq !== nextMeta.spawnSeq;
+
+    if (discontinuity) {
+      player._remoteSnapshots = [];
+      player._renderContinuous = createContinuousState(snapshot.x, snapshot.y, snapshot.angle);
+      this._snapShipToContinuous(ship, player._renderContinuous);
+    }
+
+    const previousSample = player._remoteSnapshots[player._remoteSnapshots.length - 1];
+    const continuous = previousSample
+      ? advanceContinuousState(previousSample, snapshot.x, snapshot.y, snapshot.angle)
+      : createContinuousState(snapshot.x, snapshot.y, snapshot.angle);
+
+    player._remoteSnapshots.push({
+      rawX: snapshot.x,
+      rawY: snapshot.y,
+      unwrappedX: continuous.unwrappedX,
+      unwrappedY: continuous.unwrappedY,
+      angle: normalizeAngle(snapshot.angle),
+      vx: snapshot.vx,
+      vy: snapshot.vy,
+      angularVel: snapshot.angularVel,
+      serverTimeMs: Number(world.serverTimeMs) || Date.now(),
+      receivedAtMs: Number(world.receivedAtMs) || performance.now(),
+    });
+    player._remoteSnapshots = player._remoteSnapshots
+      .filter((sample) => sample.serverTimeMs >= (Number(world.serverTimeMs) || 0) - 1000);
+    if (player._remoteSnapshots.length > ONLINE_CFG.REMOTE_BUFFER_MAX) {
+      player._remoteSnapshots.splice(0, player._remoteSnapshots.length - ONLINE_CFG.REMOTE_BUFFER_MAX);
+    }
+
+    player._latestServerTimeMs = Number(world.serverTimeMs) || Date.now();
+    player._latestReceiptTimeMs = Number(world.receivedAtMs) || performance.now();
+    player._onlineMeta = nextMeta;
+    this._applyAuthoritativeShipState(ship, snapshot);
+  }
+
+  _sampleRemoteRenderTarget(player, nowMs) {
+    if (!player || player._remoteSnapshots.length === 0) return null;
+
+    const samples = player._remoteSnapshots;
+    const latest = samples[samples.length - 1];
+    const renderServerTime =
+      latest.serverTimeMs +
+      Math.max(0, nowMs - latest.receivedAtMs) -
+      ONLINE_CFG.REMOTE_RENDER_DELAY_MS;
+
+    if (renderServerTime <= samples[0].serverTimeMs) {
+      const first = samples[0];
+      return {
+        unwrappedX: first.unwrappedX,
+        unwrappedY: first.unwrappedY,
+        angle: first.angle,
+      };
+    }
+
+    for (let i = 0; i < samples.length - 1; i++) {
+      const current = samples[i];
+      const next = samples[i + 1];
+      if (renderServerTime >= current.serverTimeMs && renderServerTime <= next.serverTimeMs) {
+        const span = Math.max(1, next.serverTimeMs - current.serverTimeMs);
+        const t = clamp((renderServerTime - current.serverTimeMs) / span, 0, 1);
+        return {
+          unwrappedX: current.unwrappedX + (next.unwrappedX - current.unwrappedX) * t,
+          unwrappedY: current.unwrappedY + (next.unwrappedY - current.unwrappedY) * t,
+          angle: normalizeAngle(current.angle + shortestAngleDelta(next.angle, current.angle) * t),
+        };
+      }
+    }
+
+    const extraMs = Math.min(
+      Math.max(0, renderServerTime - latest.serverTimeMs),
+      ONLINE_CFG.REMOTE_MAX_EXTRAPOLATION_MS
+    );
+    return {
+      unwrappedX: latest.unwrappedX + latest.vx * extraMs / 16,
+      unwrappedY: latest.unwrappedY + latest.vy * extraMs / 16,
+      angle: normalizeAngle(latest.angle + latest.angularVel * extraMs / 16),
+    };
+  }
+
+  _updateRemoteRenders(nowMs, ownIdx) {
+    this.players.forEach((player, idx) => {
+      if (!player || idx === ownIdx) return;
+      const ship = player.currentShip;
+      const target = this._sampleRemoteRenderTarget(player, nowMs);
+      if (!ship || !target) return;
+      player._renderContinuous = {
+        rawX: target.unwrappedX,
+        rawY: target.unwrappedY,
+        unwrappedX: target.unwrappedX,
+        unwrappedY: target.unwrappedY,
+        angle: target.angle,
+      };
+      this._snapShipToContinuous(ship, player._renderContinuous);
+    });
+  }
+
+  _updateLocalRender(player, dt) {
+    const ship = player && player.currentShip;
+    const target = player && player._predictedContinuous;
+    if (!ship || !target) return;
+
+    if (!player._renderContinuous) {
+      player._renderContinuous = { ...target };
+      this._snapShipToContinuous(ship, player._renderContinuous);
+      return;
+    }
+
+    const dx = target.unwrappedX - player._renderContinuous.unwrappedX;
+    const dy = target.unwrappedY - player._renderContinuous.unwrappedY;
+    if (Math.hypot(dx, dy) > ONLINE_CFG.LOCAL_SNAP_DISTANCE) {
+      player._renderContinuous = { ...target };
+    } else {
+      const alpha = 1 - Math.pow(ONLINE_CFG.LOCAL_RENDER_BASE, dt / 16);
+      player._renderContinuous.unwrappedX += dx * alpha;
+      player._renderContinuous.unwrappedY += dy * alpha;
+      player._renderContinuous.angle = normalizeAngle(
+        player._renderContinuous.angle + shortestAngleDelta(target.angle, player._renderContinuous.angle) * alpha
+      );
+    }
+
+    this._snapShipToContinuous(ship, player._renderContinuous);
+  }
+
   _handleOnlineUpdate(dt) {
     const mgr = this.socketMgr;
     if (!mgr) return;
+    if (mgr.gameRestarted) {
+      mgr.gameRestarted = false;
+      this._resetOnlineGame();
+    }
+
+    mgr.drainWorldQueue().forEach((world) => this._applyWorldSnapshot(world));
+
+    const ownIdx = mgr.playerIdx;
+    const ownPlayer = ownIdx !== null ? this.players[ownIdx] : null;
+    if (ownPlayer) this._ensureLocalPrediction(ownPlayer);
+
+    if (ownPlayer && mgr.connected && mgr.serverGameState === 'playing') {
+      this._onlineInputAccumulator += dt;
+      while (this._onlineInputAccumulator >= ONLINE_CFG.STEP_MS) {
+        const input = {
+          seq: ownPlayer._nextInputSeq + 1,
+          ...this._getOnlineInputState(),
+        };
+        ownPlayer._nextInputSeq = input.seq;
+        ownPlayer._pendingInputs.push(input);
+        if (ownPlayer._pendingInputs.length > ONLINE_CFG.WORLD_QUEUE_MAX * 2) {
+          ownPlayer._pendingInputs.shift();
+        }
+        if (ownPlayer._predictedShipState) {
+          stepShipState(ownPlayer._predictedShipState, input, ONLINE_CFG.STEP_MS);
+          ownPlayer._predictedContinuous = advanceContinuousState(
+            ownPlayer._predictedContinuous,
+            ownPlayer._predictedShipState.x,
+            ownPlayer._predictedShipState.y,
+            ownPlayer._predictedShipState.angle
+          );
+        }
+        mgr.emitInput(input);
+        this._onlineInputAccumulator -= ONLINE_CFG.STEP_MS;
+      }
+      this._updateLocalRender(ownPlayer, dt);
+    } else {
+      this._onlineInputAccumulator = 0;
+    }
+
+    this._updateRemoteRenders(performance.now(), ownIdx);
+
+    if (mgr.pendingGameOver && this.state !== STATE.GAME_OVER) {
+      const data = mgr.pendingGameOver;
+      mgr.pendingGameOver = null;
+      this.winner = (data.winner !== null && data.winner !== undefined)
+        ? (this.players[data.winner] || null)
+        : null;
+      this.state = STATE.GAME_OVER;
+      this._gameOverCooldown = 800;
+      if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
+        window.showRankingScreen(this.players, this.winner, 'online', () => {
+          this.state = STATE.PLAYING;
+        });
+      }
+    }
+
+    this.particles.forEach((particle) => particle.update(dt));
+    this.particles = this.particles.filter((particle) => particle.alive);
+    return;
+    /*
 
     // ── 1. Client-side prediction for own player ─────────────────────────
     // Apply inputs immediately at 60 fps so the ship feels instant.
     // The server will reconcile via soft correction in _applyWorldSnapshot.
-    const ownIdx = mgr.playerIdx;
-    if (ownIdx !== null && mgr.connected && mgr.serverGameState === 'playing') {
-      const ownPlayer = this.players[ownIdx];
-      if (ownPlayer && ownPlayer.alive) {
-        const ship = ownPlayer.currentShip;
-        if (ship && ship.alive) {
-          if (this.input.isDown('ArrowUp'))    ship.thrustForward(dt);
-          if (this.input.isDown('ArrowDown'))  ship.thrustBackward(dt);
-          if (this.input.isDown('ArrowLeft'))  ship.rotateLeft(dt);
-          if (this.input.isDown('ArrowRight')) ship.rotateRight(dt);
-          ship.update(dt);
-        }
-      }
+    if (mgr.gameRestarted) {
+      mgr.gameRestarted = false;
+      this._resetOnlineGame();
     }
+
+    mgr.drainWorldQueue().forEach((world) => this._applyWorldSnapshot(world));
+
+    const ownIdx = mgr.playerIdx;
+    const ownPlayer = ownIdx !== null ? this.players[ownIdx] : null;
+    if (ownPlayer) this._ensureLocalPrediction(ownPlayer);
 
     // ── 2. Interpolate remote players toward their authoritative targets ──
     // Frame-rate-independent lerp: alpha = 1 - 0.65^(dt/16)
     // At 60 fps each frame closes ~35 % of remaining gap → smooth without lag.
-    const LERP = 1 - Math.pow(0.65, dt / 16);
+    if (ownPlayer && mgr.connected && mgr.serverGameState === 'playing') {
     this.players.forEach((p, i) => {
       if (i === ownIdx || !p || !p._remoteTarget) return;
       const ship   = p.currentShip;
@@ -1726,10 +2188,29 @@ for (let i = 0; i < this.players.length; i++) {
     // ── 7. Client-side particles (purely visual) ──────────────────────────
     this.particles.forEach(p => p.update(dt));
     this.particles = this.particles.filter(p => p.alive);
+    */
   }
 
   /** Reset local view state between online rounds. */
   _resetOnlineGame() {
+    this.winner = null;
+    this.lasers = [];
+    this.particles = [];
+    this._onlineInputAccumulator = 0;
+    this.players.forEach((player) => {
+      player.fleetIndex = 0;
+      player.alive = true;
+      player.resetOnlineState();
+      player.ships.forEach((ship) => {
+        ship.alive = false;
+        ship.vx = 0;
+        ship.vy = 0;
+        ship.angularVel = 0;
+      });
+    });
+    if (this.state === STATE.GAME_OVER) this.state = STATE.PLAYING;
+    return;
+
     this.winner      = null;
     this.lasers      = [];
     this.particles   = [];
@@ -1744,6 +2225,59 @@ for (let i = 0; i < this.players.length; i++) {
    * Spawns client-side particles for visual events in the snapshot.
    */
   _applyWorldSnapshot(world) {
+    this.players.forEach((player, i) => {
+      const ps = world.players[i];
+      if (!player) return;
+      if (!ps) {
+        this._clearOnlinePlayerState(player);
+        return;
+      }
+
+      player.fleetIndex = ps.fleetIndex;
+      player.alive = ps.alive;
+      player.displayName = ps.displayName;
+      if (ps.stats) player.stats = ps.stats;
+
+      const ship = player.currentShip;
+      if (!ship || !ps.ship) {
+        player.resetOnlineState();
+        if (ship) ship.alive = false;
+        player._onlineMeta = {
+          fleetIndex: ps.fleetIndex,
+          alive: ps.alive,
+          spawnSeq: 0,
+        };
+        return;
+      }
+
+      if (this.socketMgr && i === this.socketMgr.playerIdx) {
+        this._applyOwnSnapshot(player, ps);
+      } else {
+        this._applyRemoteSnapshot(player, ps, world);
+      }
+    });
+
+    this.lasers = world.lasers.map((laser) =>
+      new Laser(laser.x, laser.y, laser.angle, laser.ownerIdx, this.assets)
+    );
+
+    world.meteors.forEach((meteorState, i) => {
+      const meteor = this.meteors[i];
+      if (!meteor) return;
+      meteor.x = meteorState.x;
+      meteor.y = meteorState.y;
+      meteor.rot = meteorState.rot;
+      meteor.alive = meteorState.alive;
+      meteor.spriteKey = meteorState.spriteKey;
+      meteor.radius = meteorState.radius;
+    });
+
+    (world.events || []).forEach((event) => {
+      if (event.type === 'spark') this._spawnSparks(event.x, event.y, event.color);
+      if (event.type === 'explosion') this._spawnExplosion(event.x, event.y);
+    });
+    return;
+
     world.players.forEach((ps, i) => {
       if (!ps) return;
       const player = this.players[i];

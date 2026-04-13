@@ -49,6 +49,26 @@ const rand     = (a, b) => Math.random() * (b - a) + a;
 const randInt  = (a, b) => Math.floor(rand(a, b + 1));
 const clamp    = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const dist2    = (a, b) => { const dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx*dx + dy*dy); };
+const DEFAULT_INPUT = Object.freeze({
+  seq: 0,
+  forward: false,
+  backward: false,
+  left: false,
+  right: false,
+  shoot: false,
+});
+
+function sanitizeInputState(payload = {}, fallbackSeq = 0) {
+  const rawSeq = Number(payload.seq);
+  return {
+    seq: Number.isFinite(rawSeq) ? Math.max(0, Math.floor(rawSeq)) : fallbackSeq,
+    forward: payload.forward === true,
+    backward: payload.backward === true,
+    left: payload.left === true,
+    right: payload.right === true,
+    shoot: payload.shoot === true,
+  };
+}
 
 function wrapPos(obj, margin = 40) {
   if (obj.x < -margin)            obj.x = CFG.WIDTH  + margin;
@@ -72,6 +92,7 @@ class Ship {
     this.energy = CFG.WEAPON_MAX_ENERGY;
     this.invulnUntil      = 0;
     this.lastRechargeTime = 0;
+    this.spawnSeq = 0;
   }
 
   spawn(x, y, angle = 0) {
@@ -80,6 +101,7 @@ class Ship {
       vx: 0, vy: 0, angularVel: 0,
       hp: CFG.SHIP_MAX_HP, energy: CFG.WEAPON_MAX_ENERGY, alive: true,
     });
+    this.spawnSeq += 1;
     this.invulnUntil      = Date.now() + CFG.SHIP_INVULN_TIME;
     this.lastRechargeTime = Date.now();
   }
@@ -202,6 +224,7 @@ class ServerPlayer {
     this.fleetIndex  = 0;
     this.displayName = displayName || CFG.PLAYER_NAMES[idx].toUpperCase();
     this.shootCooldown = 0;
+    this.lastProcessedInputSeq = 0;
     this.stats = { shotsFired: 0, shotsHit: 0, shipsLost: 0, shipsDestroyed: 0, wins: 0 };
     this.ships = [];
     for (let i = 1; i <= CFG.FLEET_SIZE; i++) this.ships.push(new Ship(idx, i));
@@ -271,6 +294,7 @@ function parseAIInput(payload = {}) {
   const rotate = Number(payload.rotazione || 0);
   const shoot = Number(payload.sparo || 0);
   return {
+    seq: Number.isFinite(Number(payload.seq)) ? Math.max(0, Math.floor(Number(payload.seq))) : 0,
     forward: move === 1,
     backward: move === 2,
     left: rotate === 1,
@@ -373,7 +397,7 @@ function handleAIServiceConnection(socket, auth = {}) {
   // so humans can join any of the 4 slots in online multiplayer.
   aiServiceSockets.set(socket.id, { slot: aiSlot, roomId });
   if (!displayNames[aiSlot]) displayNames[aiSlot] = `AI_${aiSlot}`;
-  if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = {};
+  if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = { ...DEFAULT_INPUT };
   socket.emit('ai_service_connected', { roomId, aiSlot });
   console.log(`ai service connected: ${socket.id} room=${roomId} slot=${aiSlot}`);
 
@@ -477,7 +501,7 @@ function resetGame() {
     if (isSlotActive(i)) {
       ROOM.players[i] = new ServerPlayer(i, displayNames[i] || '');
       ROOM.players[i].spawnCurrent();
-      ROOM.inputBuffer[i] = {};
+      ROOM.inputBuffer[i] = { ...DEFAULT_INPUT };
     }
   }
   for (let i = 0; i < CFG.METEOR_COUNT; i++) ROOM.meteors.push(new Meteor());
@@ -587,7 +611,7 @@ io.on('connection', (socket) => {
   if (ROOM.state === 'playing') {
     ROOM.players[playerIdx] = new ServerPlayer(playerIdx, displayNames[playerIdx] || '');
     ROOM.players[playerIdx].spawnCurrent();
-    ROOM.inputBuffer[playerIdx] = {};
+    ROOM.inputBuffer[playerIdx] = { ...DEFAULT_INPUT };
   }
 
   socket.broadcast.emit('player_joined', { playerIdx });
@@ -597,7 +621,9 @@ io.on('connection', (socket) => {
 
   // ── events from client ──────────────────────────────────────────────
   socket.on('input', (inp) => {
-    if (ROOM.state === 'playing') ROOM.inputBuffer[playerIdx] = inp;
+    if (ROOM.state !== 'playing') return;
+    const fallbackSeq = ROOM.inputBuffer[playerIdx]?.seq || ROOM.players[playerIdx]?.lastProcessedInputSeq || 0;
+    ROOM.inputBuffer[playerIdx] = sanitizeInputState(inp, fallbackSeq);
   });
 
   socket.on('ai_game_state', (payload = {}) => {
@@ -644,11 +670,13 @@ function serializeWorld() {
     roomId:  GAME_ROOM_ID,
     state:   ROOM.state,
     winner:  ROOM.winner,
+    serverTimeMs: Date.now(),
     players: ROOM.players.map(p => p ? {
       idx:         p.idx,
       alive:       p.alive,
       fleetIndex:  p.fleetIndex,
       displayName: p.displayName,
+      lastProcessedInputSeq: p.lastProcessedInputSeq,
       stats:       p.stats,
       ship: p.currentShip ? {
         x: p.currentShip.x, y: p.currentShip.y,
@@ -657,6 +685,7 @@ function serializeWorld() {
         hp: p.currentShip.hp, energy: p.currentShip.energy,
         alive: p.currentShip.alive,
         isInvulnerable: p.currentShip.isInvulnerable,
+        spawnSeq: p.currentShip.spawnSeq,
       } : null,
     } : null),
     lasers:  ROOM.lasers.filter(l => l.alive).map(l => ({ x: l.x, y: l.y, angle: l.angle, ownerIdx: l.ownerIdx })),
@@ -694,14 +723,10 @@ function checkGameEnd() {
 /* ═══════════════════════════════════════════════════════════════════════
    PHYSICS GAME LOOP  (60 Hz)
    ═══════════════════════════════════════════════════════════════════════ */
-let lastTickTime = Date.now();
-
 function gameTick() {
   if (ROOM.state !== 'playing') return;
 
-  const now = Date.now();
-  const dt  = Math.min(now - lastTickTime, 50);
-  lastTickTime = now;
+  const dt = TICK_MS;
   ROOM.tickNum++;
   ROOM.events = [];
 
@@ -710,7 +735,8 @@ function gameTick() {
     if (!p || !p.alive) return;
     const ship = p.currentShip;
     if (!ship || !ship.alive) return;
-    const inp = ROOM.inputBuffer[p.idx] || {};
+    const inp = ROOM.inputBuffer[p.idx] || DEFAULT_INPUT;
+    p.lastProcessedInputSeq = Number.isFinite(inp.seq) ? inp.seq : p.lastProcessedInputSeq;
 
     if (inp.forward)  ship.thrustForward(dt);
     if (inp.backward) ship.thrustBackward(dt);
@@ -827,6 +853,5 @@ function gameTick() {
 }
 
 setInterval(gameTick, TICK_MS);
-lastTickTime = Date.now();
 
 httpServer.listen(PORT, () => console.log(`socket server running on port ${PORT}`));
