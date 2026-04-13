@@ -1,5 +1,5 @@
 /**
- * GET /api/auth/me
+ * GET /game/api/auth/me (Next.js basePath '/game')
  * Server-side proxy to auth_srvc session endpoint.
  * Avoids CORS (Cross Origin Resources Sharing) issues when the browser 
  * (on port 3002) would try to fetch
