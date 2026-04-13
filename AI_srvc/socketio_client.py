@@ -31,6 +31,12 @@ from model import (
 
 log = logging.getLogger("socketio_client")
 
+HUMAN_ONLY_MODE = os.getenv("HUMAN_ONLY_MODE", "false").lower() == "true"
+if HUMAN_ONLY_MODE:
+    log.info("HUMAN_ONLY_MODE=true – AI service will not auto-connect to lobby slots.")
+    import sys
+    sys.exit(0)
+
 GAME_SVC_URL    = os.getenv("GAME_SVC_URL",    "http://game_srvc:4000")
 SERVICE_SECRET  = os.getenv("SERVICE_SECRET",  "inter-service-shared-secret-change-in-production")
 MODEL_PATH      = os.getenv("MODEL_PATH",      "/app/models/dqn_latest.pt")

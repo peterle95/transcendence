@@ -27,6 +27,17 @@
         // Fetch the logged-in user via same-origin proxy (avoids CORS - Cross Origin Resources Sharing - with auth_srvc)
         (async function () {
             try {
+                // Fetch capability flags
+                try {
+                    const cfgRes = await fetch('/game/api/config');
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        window.REMOTE_MULTIPLAYER_ENABLED = cfg.remoteMultiplayerEnabled === true;
+                    }
+                } catch (_) {
+                    window.REMOTE_MULTIPLAYER_ENABLED = false;
+                }
+
                 const res = await fetch('/api/auth/me', { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();

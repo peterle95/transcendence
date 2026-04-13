@@ -14,6 +14,7 @@ const PORT              = Number(process.env.SOCKET_PORT) || 4000;
 const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
 const GAME_ROOM_ID      = process.env.GAME_ROOM_ID || 'gameplay-room';
 const ENABLE_TRAINING_ROOM = process.env.ENABLE_TRAINING_ROOM === 'true';
+const REMOTE_MULTIPLAYER_ENABLED = process.env.REMOTE_MULTIPLAYER_ENABLED !== 'false';
 const MAX_SLOTS         = 4;
 const PHYSICS_HZ        = 60;
 const BROADCAST_EVERY   = 3;           // broadcast every N ticks  → 20 Hz
@@ -506,6 +507,16 @@ io.on('connection', (socket) => {
     return;
   }
 
+  // Reject human connections when remote multiplayer is disabled (e.g. local dev)
+  if (!REMOTE_MULTIPLAYER_ENABLED) {
+    socket.emit('remote_multiplayer_disabled', {
+      message: 'Remote multiplayer is not enabled on this server.',
+    });
+    socket.disconnect(true);
+    console.log('connection rejected – REMOTE_MULTIPLAYER_ENABLED=false');
+    return;
+  }
+
   const playerIdx = findFreeSlot();
   if (playerIdx === -1) {
     socket.emit('room_full');
@@ -534,8 +545,8 @@ io.on('connection', (socket) => {
 
   socket.broadcast.emit('player_joined', { playerIdx });
 
-  // Kick off countdown after first connection
-  if (ROOM.state === 'lobby' && connectedCount() >= 2) startCountdown();
+  // Kick off countdown only when ≥2 HUMAN players are connected (not AI bots)
+  if (ROOM.state === 'lobby' && humanCount() >= 2) startCountdown();
 
   // ── events from client ──────────────────────────────────────────────
   socket.on('input', (inp) => {

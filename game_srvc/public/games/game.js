@@ -1760,7 +1760,10 @@ for (let i = 0; i < this.players.length; i++) {
     if (!mgr.connected)                        return this._drawWaitMessage('Connecting to server…');
     if (mgr.serverGameState === 'countdown' && mgr.countdown !== null)
                                                return this._drawWaitMessage(`Game starts in  ${mgr.countdown}s`);
-    if (mgr.serverGameState === 'lobby')       return this._drawWaitMessage('Waiting for players…');
+    if (mgr.serverGameState === 'lobby') {
+       const hCount = mgr.humanCount ?? 1; // can be enhanced by server later
+       return this._drawWaitMessage(`Waiting for players… (${hCount}/2 needed)`);
+    }
   }
 
   _drawWaitMessage(msg) {

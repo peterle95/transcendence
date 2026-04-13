@@ -140,6 +140,7 @@ services:
       - SOCKET_PATH=/game/socket.io/
       - GAME_ROOM_ID=gameplay-room
       - ENABLE_TRAINING_ROOM=false
+      - REMOTE_MULTIPLAYER_ENABLED=false
       - NODE_ENV=production
     command: sh -c "npm run start:socket & npx next start -H 0.0.0.0 -p 3002"
     depends_on:
