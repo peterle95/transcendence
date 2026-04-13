@@ -24,10 +24,11 @@
         }
     </style>
     <script>
-        // Fetch the logged-in user via same-origin proxy (avoids CORS - Cross Origin Resources Sharing - with auth_srvc)
+        // Fetch the logged-in user via same-origin proxy (avoids CORS with auth_srvc).
+        // Path must include Next.js basePath '/game' (see game_srvc/next.config.js).
         (async function () {
             try {
-                const res = await fetch('/api/auth/me', { credentials: 'include' });
+                const res = await fetch('/game/api/auth/me', { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.user && data.user.id) {
