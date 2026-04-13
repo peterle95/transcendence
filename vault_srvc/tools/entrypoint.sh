@@ -48,10 +48,12 @@ try_vault_unseal		()	{	stage "UNSEAL VAULT" "backtrack"
 	if check_vault_seal; then
 		if ! find_vault_keys; then
 			if vault operator init -status; then
-				echo 	"FATAL_ERROR: VAULT INITIALIZED BUT"	\
-					"NO KEYSHARES FOUND"
+				echo -e	"FATAL_ERROR: VAULT INITIALIZED BUT"	\
+					"NO KEYSHARES FOUND"			\
+					"$(( $GRACE_PERIOD * 42 ))""s UNTIL"	\
+					"SHUTDOWN\nPLEASE UNLOCK MANUALLY"
 				sleep $(( $GRACE_PERIOD * 42 ))
-				find_vault_keys || exit 3
+				find_vault_keys || exit 1337
 			else
 				&>/dev/null generate_initial_secrets
 			fi
@@ -112,24 +114,25 @@ start_and_unseal_vault		()	{
 }
 
 create_vault_intermediate_pki	()	{	stage "GENERATING INTERMEDIATE \
-CERTIFICATE FOR  $(echo $1 | tr '[:lower:]' '[:upper:]') NAMESPACE" "backtrack"
+CERTIFICATE FOR $(echo $1 | tr '[:lower:]' '[:upper:]') NAMESPACE" "backtrack"
 
 	vault secrets enable -path="pki_""$1""_int" "pki"
 	vault secrets tune -max-lease-ttl="43800h" "pki_""$1""_int"
 
-	vault write -format=json "pki_""$1""_int/intermediate/generate/internal"\
+	2>/dev/null vault write -format=json			 		\
+		"pki_""$1""_int/intermediate/generate/internal"			\
 		common_name="$2""-""$1"" Intermediate Authority"		\
-		issuer_name="$2""-""$1""-intermediate"				\
-		| jq -r '.data.csr' > "pki_""$1""_intermediate.csr"
+		issuer_name="$2""-""$1""-intermediate" ttl="43800h"		\
+		key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT| jq -r '.data.csr' > 			\
+		"pki_""$1""_intermediate.csr"
 
-	vault write -format=json "pki/root/sign-intermediate"			\
-		issuer_ref="root-""$2"						\
-		csr="@pki_""$1""_intermediate.csr"				\
-		format=pem_bundle ttl="43800h"					\
+	2>/dev/null vault write -format=json "pki/root/sign-intermediate"	\
+		issuer_ref="root-""$2" csr="@pki_""$1""_intermediate.csr"	\
+		format=pem_bundle ttl="43800h"	key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT		\
 		| jq -r '.data.certificate' > "$1""_intermediate.cert.pem"
 
-	vault write "pki_""$1""_int/intermediate/set-signed"			\
-		"certificate=@""$1""_intermediate.cert.pem"
+ 	&>/dev/null vault write "pki_""$1""_int/intermediate/set-signed"	\
+	key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT "certificate=@""$1""_intermediate.cert.pem"
 
 	onion=""
 	if [ "$1" = "$VAULT_NAMESPACE" ]; then
@@ -140,31 +143,31 @@ CERTIFICATE FOR  $(echo $1 | tr '[:lower:]' '[:upper:]') NAMESPACE" "backtrack"
 		onion=",""$(cat /vault/secret/ca_root/main_onion)"
 	fi
 
-	vault write "pki_""$1""_int/roles/""$2""-""$1"				\
+	&>/dev/null vault write "pki_""$1""_int/roles/""$2""-""$1"		\
 	issuer_ref="$(vault read -field=default pki_$1_int/config/issuers)"	\
-		allowed_domains="$2""-""$1"",""$DOMAIN""$onion"			\
-		allow_bare_domains=true						\
-		allow_subdomains=true						\
-		max_ttl="21900h"
+		allowed_domains="$2""-""$1"",""$DOMAIN""$onion" ttl="21900h"	\
+		allow_bare_domains=true	allow_subdomains=true max_ttl="21900h"	\
+		key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 
 
 	mkdir -p "/vault/secret/ca_root/bundles/""$2""/""$1"
 }
 
 create_vault_root_pki		()	{	stage "GENERATING ROOT CA"
 
-	vault policy write ca_root /vault/policies/ca_root.hcl
+	&>/dev/null vault policy write ca_root /vault/policies/ca_root.hcl
 
 	vault secrets enable pki
 	vault secrets tune -max-lease-ttl=87600h pki
 
-	vault write -field=certificate "pki/root/generate/internal"		\
-	     common_name="$PROJECT_NAME"					\
-	     issuer_name="root-""$PROJECT_NAME"					\
-	     ttl="87600h" > "/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"
+	&>/dev/null vault write -field=certificate "pki/root/generate/internal"	\
+		ttl="87600h" key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT common_name="$PROJECT_NAME" \
+		issuer_name="root-""$PROJECT_NAME"				\
+		> "/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"
 
-	vault write "pki/roles/""$PROJECT_NAME""-servers" allow_any_name=true
+	&>/dev/null vault write 	"pki/roles/""$PROJECT_NAME""-servers" 	\
+			ttl="87600h" allow_any_name=true key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 
 
-	vault write "pki/config/urls"						\
+	&>/dev/null vault write "pki/config/urls"				\
 	issuing_certificates="$HTTP""127.0.0.1""$VAULT_PORT""/v1/pki/ca"	\
 	crl_distribution_points="$HTTP""127.0.0.1""$VAULT_PORT""/v1/pki/crl"
 
@@ -183,19 +186,36 @@ vault_reload_config		()	{	stage "RELOADING CONFIG"
 	kill -s HUP $server_pid
 }
 
-generate_vault_certificate	()	{	stage "GENERATING VAULTS CERT"
+generate_domain_certificate	()	{	stage "GENERATING DOMAIN CERT"
+	set +eu
+	onion="$([ -n "$ONION_ADDRESS_MAIN" ] && echo -n ,)$ONION_ADDRESS_MAIN"
+	set -eu
+
+	vault write 	-format=json 						\
+			"pki_""$DOMAIN""_int/issue/""$PROJECT_NAME""-""$DOMAIN"	\
+			common_name="$DOMAIN" alt_names="$onion" ttl="21000h"	\
+			client_flag=false server_flag=true format="pem_bundle"	\
+			key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT > tmp.pem.json
+
+	cat tmp.pem.json | jq -r '.data.certificate' > 	"$DOMAIN"".crt"
+	cat tmp.pem.json | jq -r '.data.private_key' > 	"$DOMAIN"".key"
+
+	mv "$DOMAIN"* "/vault/share/""$NGINX_CODENAME""_""$REV_PROXY_NAMESPACE"
+}
+
+generate_vault_certificate	()	{	stage "GENERATING VAULT CERT"
 	cd /vault/secret/ca_root
 	set +eu
 	onion="$([ -n "$ONION_ADDRESS_VAULT" ] && echo -n ,)$ONION_ADDRESS_VAULT"
 	set -eu
 
 	vault write -format=json 						\
-		"pki_secret_int/issue/""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
+"pki_""$VAULT_NAMESPACE""_int/issue/""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
+		key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 						\
 		common_name="vault.""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
 		alt_names="vault_srvc,vault_service""$onion" ttl="21000h"	\
-		ip_sans="127.0.0.1,10.133.7.12,10.133.7.17"			\
-		client_flag=true server_flag=true				\
-		format="pem_bundle" > tmp.pem.json
+		client_flag=true server_flag=true format="pem_bundle"		\
+	       	ip_sans="127.0.0.1,10.133.7.12,10.133.7.17" > tmp.pem.json
 
 	cat tmp.pem.json | jq -r '.data.certificate' > 				\
 	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"
@@ -216,14 +236,14 @@ setup_vault_ca_root		()	{	stage "SETTING UP CA AUTHORITY"
 
 	start_and_unseal_vault init
 
-	&>/dev/null create_vault_root_pki
+	create_vault_root_pki
 
 	export NAMESPACES="$(for nskv in $(env | grep "NAMESPACE")
 					do echo "${nskv#*=}";done)"
 
 	for namespace in $NAMESPACES $DOMAIN; do
 		create_vault_intermediate_pki "$namespace" "$PROJECT_NAME"
-	done &>/dev/null
+	done
 
 	mkdir /vault/secret/ca_root/int
 	mv *.csr *.pem /vault/secret/ca_root/int
@@ -231,7 +251,7 @@ setup_vault_ca_root		()	{	stage "SETTING UP CA AUTHORITY"
 	generate_vault_certificate
 }
 
-setup_pw			()	{
+setup_pw			()	{	stage "SETTING UP PASSWORDS"
 	vault write	"sys/policies/password/""$1""_pw"			\
 	policy="@/vault/policies/pw/""$1""_pw.hcl"
 
@@ -242,7 +262,7 @@ setup_pw			()	{
 	done
 }
 
-setup_un			()	{
+setup_un			()	{	stage "SETTING UP USERNAMES"
 	vault write	"sys/policies/password/""$1""_un"			\
 	policy="@/vault/policies/pw/""$1""_un.hcl"
 	for un in $(cat "/vault/policies/env/""$1""_wants.env" | grep 'USER'); do
@@ -252,7 +272,7 @@ setup_un			()	{
 	export "$(echo $1 | tr '[:lower:]' '[:upper:]')_USER=""$1"
 }
 
-setup_jwt			()	{
+setup_jwt			()	{	stage "GENERATING JWT SECRETS"
 	generate_jwt="vault write -field=random_bytes \
 	sys/tools/random bytes=64 format=base64"
 
@@ -261,7 +281,7 @@ setup_jwt			()	{
 	export "NEXTAUTH_SECRET=""$AUTH_SECRET"
 }
 
-setup_share			()	{
+setup_share			()	{	stage "DISTRIBUTING SCRIPT"
 	mkdir -p 	"/vault/share/trust/me/bro"
 	cd		"/vault/share/trust/me/bro"
 
@@ -332,12 +352,7 @@ find_namespace			()	{
 
 create_vault_policies		()	{	stage "CREATING POLICIES"
 
-
-	stage "CREATING JWT SECRETS"
-
 	setup_jwt
-
-	stage "DISTRIBUTING SCRIPT"
 
 	setup_share
 
@@ -356,13 +371,15 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 
 		cn="$subdomain"".""$PROJECT_NAME""-""$net"
 		san="$(2>/dev/null generate_san $net $subdomain)"
+		san=${san#,}
+		san=${san%,}
 
 		vault write -format=json					\
 			"pki_""$net""_int/issue/""$PROJECT_NAME""-""$net"	\
-			common_name="$cn" alt_names="$san"			\
-			key_type="ed25519" signature_bits=512			\
+			common_name="$cn" alt_names="$san" format="pem_bundle"	\
+					key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 			\
 			ttl="21000h" client_flag=true server_flag=true		\
-			format="pem_bundle" > pem.json
+			> pem.json
 
 		cat pem.json | jq -r '.data.certificate' > "$service""/cert.pem"
 		cat pem.json | jq -r '.data.private_key' > "$service""/key.pem"
@@ -391,7 +408,7 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 			fi
 			while [ $i -ne 0 ]; do
 				env_bundle=$(create_env_bundle "$tmp" $i)
-				&>/dev/null vault kv put -mount "secret"	\
+				2>/dev/null vault kv put -mount "secret"	\
 				"$subdomain""/env" "env""=""$env_bundle"
 				i=$(( $i - 1 ))
 				subdomain="$tmp""-""$i"
@@ -400,19 +417,20 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 	done
 }
 
-try_vanity_address		()	{
-	sleep $(( $GRACE_PERIOD * 3 + 2))
-	if [ ! -d /tor/x* ]; then
-		return
-	fi
+try_vanity_address		()	{	stage "TRYING TO GET V3 ADDRESS"
+	i=0;
+	while :; do
+		[ -d /tor/x* ] && break || [ ! -d /tor/x* ] && \
+		[ $i -ge $(($GRACE_PERIOD)) ]&&return;i=$(($i+1));
+		sleep $(($GRACE_PERIOD)); [ -d /tor/x* ] && break
+	done
 	set +e
 	i=0
 	while [ ! -d "/tor/onion_service" ]; do
 		echo "waiting for address ""$VANITY_ADDRESS_MAIN""...d.onion"	\
 		"to be generated... ""$i""s"
-		sleep $(( $GRACE_PERIOD ))
-		i=$(( i + $GRACE_PERIOD ))
-
+		[ ! -d "/tor/""$VANITY_ADDRESS_MAIN"* ] && 			\
+		sleep $(( $GRACE_PERIOD )) && i=$(( $i + $GRACE_PERIOD ))
 		mv "/tor/""$VANITY_ADDRESS_MAIN"* /tor/onion_service
 		cp /tor/onion_service/hostname /vault/secret/ca_root/main_onion
 		chmod -R 700 /tor
@@ -422,8 +440,8 @@ try_vanity_address		()	{
 	while [ ! -d "/tor/other_onion_service" ]; do
 		echo "waiting for address ""$VANITY_ADDRESS_VAULT""...d.onion)"	\
 		"to be generated... ""$i""s"
-		sleep $(( $GRACE_PERIOD ))
-		i=$(( i + $GRACE_PERIOD ))
+		[ ! -d "/tor/""$VANITY_ADDRESS_VAULT"* ] &&			\
+		sleep $(( $GRACE_PERIOD )) && i=$(( $i + $GRACE_PERIOD ))
 		mv "/tor/""$VANITY_ADDRESS_VAULT"* /tor/other_onion_service
 		mkdir -p /tor/other_onion_service/authorized_clients
 		cp /tor/onion_service/hostname /vault/secret/ca_root/vault_onion
@@ -479,10 +497,12 @@ setup_postgres_db		()	{	stage "SETTING UP POSTGRES"
 
 	vault secrets enable database
 
+	health="incoming"
+
 	i=0
 	while [ "$(vault kv get -mount secret -field init postgres/init)"	\
 		!= "true" ]; do i=$(( $i + $GRACE_PERIOD ))
-		echo "waiting for postgres to setup database... (""$i""s)"
+		echo "waiting for postgres to initialize database... (""$i""s)"
 		sleep $(( $GRACE_PERIOD ))
 	done 2>/dev/null
 
@@ -526,6 +546,7 @@ setup_postgres_db		()	{	stage "SETTING UP POSTGRES"
 }
 
 create_env_bundle		()	{
+	echo " NEXT_TELEMETRY_DISABLED=1"
 	if [ "$1" = "ai" ]; then
 		echo " AI_SLOT=""$(( $2 ))"
 	fi
@@ -570,7 +591,7 @@ create_env_bundle		()	{
 			" $key""=""$CA_ROOT_DIR""/root_""$PROJECT_NAME""_ca.crt"
 				;;
 			"NEXTAUTH_URL")
-				echo " $key""=""http://""$DOMAIN""$AUTH_PATH"
+				echo " $key""=""https://""$DOMAIN""$AUTH_PATH"
 				;;
 			"NEXT_PUBLIC_AUTH_SERVICE_URL")
 				echo " $key""=""$AUTH_PATH"
@@ -618,6 +639,7 @@ generate_bootstrap_cert	()	{	stage "GENERATING BOOTSTRAP CERTIFICATE"
 			"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
 
 	&>/dev/null cd -
+	clear
 }
 
 bootstrap_vault		()	{	stage "STARTING BOOTSTRAP"
@@ -630,6 +652,8 @@ bootstrap_vault		()	{	stage "STARTING BOOTSTRAP"
 	generate_bootstrap_cert
 
 	try_vanity_address
+
+	health=""
 
 	if ! find_vault_ca_root; then
 		setup_vault_ca_root
@@ -651,6 +675,8 @@ init_secrets		()	{	stage "INITIALIZING SECRETS"
 	export	VAULT_ADDR="https://127.0.0.1""$VAULT_PORT"
 	start_and_unseal_vault bootstrap-db
 
+	generate_domain_certificate
+
 	setup_postgres_db
 
 	kill $server_pid
@@ -661,10 +687,13 @@ stage				()	{
 	current_time=$(date +%s)
 	if [ ! -f "/vault/.stage" ]; then
 		echo -n "0" > "/vault/.stage"
+		last_clear=$current_time
 	elif [ "$try_continue" = "1" ]; then
 		export STAGE="$(cat "/vault/.stage")"
 		echo "[ LAST STAGE: ""$STAGE""/""$STAGE_AMOUNT"" ]==[ ""$1"" ]"
 	else
+		[ $(( $current_time-$last_clear )) -ge $(( $GRACE_PERIOD*2 )) ] \
+		&& [ -z "$health" ] && clear -x && last_clear=$current_time
 		total_time=$(( $current_time - $last_time + $total_time ))
 		echo -e "\n\t+DONE\t""$(( $current_time - $last_time ))""s\t"	\
 			"(""$total_time""s total)\n"
@@ -684,7 +713,9 @@ stage				()	{
 }
 
 check_done			()	{
-	if [ -f "/vault/.stage" ]; then
+	if [ -f "/vault/.done" ]; then
+		echo "VAULT ALREADY SETUP"
+	elif [ -f "/vault/.stage" ]; then
 	       	if [ "$(cat "/vault/.stage")" != "$STAGE_AMOUNT" ]; then
 			if [ -f "/vault/.no" ]; then
 				echo "UNRECOVERABLE ERROR ""$(cat /vault/.no)"
@@ -693,8 +724,7 @@ check_done			()	{
 			try_continue=1
 			echo 	"DETECTED PREVIOUS FAILURE IN SETUP --"\
 				"TRYING TO CONTINUE -- [EXPERIMENTAL]"
-			eval 'awk	"/$(cat /vault/.stage.txt)/ \
-					{print substr{\$1, 0, 22}}"'
+			eval 'awk	"/$(cat /vault/.stage.txt)/" {print $1}'
 		else
 			echo "VAULT ALREADY SETUP"
 		fi
@@ -706,12 +736,16 @@ check_done			()	{
 }
 
 setup_vars			()	{
+	health="maybe"
 
-	export CA_ROOT_DIR=/usr/local/share/ca-certificates
-	export CERT_PATH=/certs/cert.pem
-	export KEY_PATH=/certs/key.pem
+	export CA_ROOT_DIR="/usr/local/share/ca-certificates"
+	export CERT_PATH="/certs/cert.pem"
+	export KEY_PATH="/certs/key.pem"
+	export MAIN_CERT_PATH="/certs/""$DOMAIN"".crt"
+	export MAIN_KEY_PATH="/certs/""$DOMAIN"".key"
 
-	export STAGE_AMOUNT=$(cat /tools/entrypoint.sh | grep "stage \"" | wc -l)
+	export STAGE_AMOUNT=$(( $(cat /tools/entrypoint.sh | grep "stage \"" | \
+	wc -l) + $(ls -l /vault/config | wc -l )))
 
 	vault_dirs="	/vault/file /vault/logs /vault/secret /vault/config	\
 			/policies"
@@ -743,9 +777,11 @@ setup_vars			()	{
 main				()	{
 	setup_vars
 
-	set -euo pipefail
+	set -Euo pipefail
 
 	check_done
+
+	touch /vault/.done
 
 	set +u
 
@@ -760,7 +796,13 @@ main				()	{
 		chown -R vault:vault						\
 			/vault/file /vault/logs /vault/secret /vault/config
 
-		(&>/dev/null set -m;						\
+		cp -a	"/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"	\
+			"$CA_ROOT_DIR""/"
+
+		update-ca-certificates
+
+		wait
+		(set -m;						\
 		start_and_unseal_vault default &&				\
 		cd /vault/secret &&						\
 		[ "SAVE_KEY" != "1" ] &&					\
@@ -768,8 +810,9 @@ main				()	{
 		unset VAULT_TOKEN &&						\
 		exit) &
 
-		unset VAULT_TOKEN && su-exec vault vault server			\
-			-config="/vault/config/""$PROJECT_NAME"".hcl"
+		unset VAULT_TOKEN
+
+		su-exec vault vault server -config="/vault/config/""$PROJECT_NAME"".hcl"
 	else
 		set +eo pipefail
 		exec "$@"
