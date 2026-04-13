@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -euo pipefail
-
 check_vault_seal		()	{
 	if vault status -non-interactive &>/dev/null; then
 		echo "Vault unsealed!"
@@ -46,24 +44,45 @@ generate_initial_secrets	()	{
 	chmod 400 "/vault/secret/.keys" "/vault/secret/.token"
 }
 
-try_vault_unseal		()	{
+try_vault_unseal		()	{	stage "UNSEAL VAULT" "backtrack"
 	if check_vault_seal; then
 		if ! find_vault_keys; then
 			if vault operator init -status; then
 				echo 	"FATAL_ERROR: VAULT INITIALIZED BUT"	\
 					"NO KEYSHARES FOUND"
-				exit 1
+				sleep $(( $GRACE_PERIOD * 42 ))
+				find_vault_keys || exit 3
 			else
 				&>/dev/null generate_initial_secrets
 			fi
 		fi
-
+		i=0
 		while read keyshare; do
-			vault operator unseal "$keyshare"
-		done < /vault/secret/.keys &>/dev/null
+			i=$(( $i + 1 )); echo "USING KEY ""$i""/""$key_count"
+			&>/dev/null vault operator unseal "$keyshare"
+		done < /vault/secret/.keys
 	fi
 
 	&>/dev/null export VAULT_TOKEN=$(cat /vault/secret/.token)
+}
+
+## 1 = ui	// only last
+## 2 = api	// 127.0.0.1 then hostname
+## 3 = api port	//first default then 443
+## 4 = mlock	//true
+## 5 = cache	// true
+## 6 = storage	// file
+## 7 = address ip
+## 8 address port
+## 9 config name
+
+generate_config			()	{
+v_certpath="\"/vault/secret/ca_root/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault"
+2>/dev/null echo -en "ui\t\t= ""$1""\napi_addr\t= \"https://""$2""$3""\"\n
+disable_mlock = ""$4""\ndisable_cache = ""$5""\n
+storage\t\"""$6""\"\t\{\tpath\t\= \"/vault/file/\"\n\}\nlistener\t\"tcp\"\t\{
+\taddress\t\t\= \"""$7""$8""\"\n\n\ttls_cert_file\t\= ""$v_certpath"".crt\"
+\ttls_key_file\t\= ""$v_certpath"".key\"\n\}" > "/vault/config/""$9"".hcl"
 }
 
 start_and_unseal_vault		()	{
@@ -78,11 +97,10 @@ start_and_unseal_vault		()	{
 	fi
 
 	i=0;	set +e
-	while :; do
-		&>/dev/null vault status -non-interactive; exit_status=$?
-		[ $exit_status -eq 1 ] || break
-
-		echo "Waiting for startup... (""$i""s)"
+	while :;do
+	&>/dev/null vault status -non-interactive; exit_status=$?
+	[ $exit_status -eq 1 ] || break
+		echo "waiting for startup... (""$i""s)"
 
 		i=$(( $i + $GRACE_PERIOD ))
 		sleep $(( $GRACE_PERIOD ))
@@ -93,7 +111,9 @@ start_and_unseal_vault		()	{
 	try_vault_unseal
 }
 
-create_vault_intermediate_pki	()	{
+create_vault_intermediate_pki	()	{	stage "GENERATING INTERMEDIATE \
+CERTIFICATE FOR  $(echo $1 | tr '[:lower:]' '[:upper:]') NAMESPACE" "backtrack"
+
 	vault secrets enable -path="pki_""$1""_int" "pki"
 	vault secrets tune -max-lease-ttl="43800h" "pki_""$1""_int"
 
@@ -130,7 +150,8 @@ create_vault_intermediate_pki	()	{
 	mkdir -p "/vault/secret/ca_root/bundles/""$2""/""$1"
 }
 
-create_vault_root_pki		()	{
+create_vault_root_pki		()	{	stage "GENERATING ROOT CA"
+
 	vault policy write ca_root /vault/policies/ca_root.hcl
 
 	vault secrets enable pki
@@ -144,29 +165,26 @@ create_vault_root_pki		()	{
 	vault write "pki/roles/""$PROJECT_NAME""-servers" allow_any_name=true
 
 	vault write "pki/config/urls"						\
-	issuing_certificates="$HTTP""127.0.0.1:""$VAULT_PORT""/v1/pki/ca"	\
-	crl_distribution_points="$HTTP""127.0.0.1:""$VAULT_PORT""/v1/pki/crl"
+	issuing_certificates="$HTTP""127.0.0.1""$VAULT_PORT""/v1/pki/ca"	\
+	crl_distribution_points="$HTTP""127.0.0.1""$VAULT_PORT""/v1/pki/crl"
 
 	mkdir -p "/vault/secret/ca_root/bundles/""$PROJECT_NAME"
 }
 
-create_vault_ca_root		()	{
-	export VAULT_ADDR="http://127.0.0.1:8200"
+vault_reload_config		()	{	stage "RELOADING CONFIG"
+	unset VAULT_SKIP_VERIFY VAULT_ADDR
 
-	start_and_unseal_vault bootstrap
+	cp -a	"/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"		\
+		"$CA_ROOT_DIR""/"
 
-	create_vault_root_pki
+	update-ca-certificates
 
-	export NAMESPACES="$(for nskv in $(env | grep "NAMESPACE")
-					do echo "${nskv#*=}";done)"
+	#export VAULT_CAPATH="/vault/secret/ca_root"
+	kill -s HUP $server_pid
+}
 
-	for namespace in $NAMESPACES; do
-		create_vault_intermediate_pki "$namespace" "$PROJECT_NAME"
-	done &>/dev/null
-
-	mkdir /vault/secret/ca_root/int
-	mv *.csr *.pem /vault/secret/ca_root/int
-
+generate_vault_certificate	()	{	stage "GENERATING VAULTS CERT"
+	cd /vault/secret/ca_root
 	set +eu
 	onion="$([ -n "$ONION_ADDRESS_VAULT" ] && echo -n ,)$ONION_ADDRESS_VAULT"
 	set -eu
@@ -180,22 +198,37 @@ create_vault_ca_root		()	{
 		format="pem_bundle" > tmp.pem.json
 
 	cat tmp.pem.json | jq -r '.data.certificate' > 				\
-	"/vault/secret/ca_root/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"
+	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"
 	cat tmp.pem.json | jq -r '.data.private_key' > 				\
-	"/vault/secret/ca_root/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
+	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
 
-	chmod 444								\
-	"/vault/secret/ca_root/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"	\
-	"/vault/secret/ca_root/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
-
+	chmod 444	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"	\
+			"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
 	chown -R vault:vault /vault/secret/ca_root
+	cd -
+	vault_reload_config
+}
 
-	vault operator seal
 
-	kill $server_pid
-	wait $server_pid
+setup_vault_ca_root		()	{	stage "SETTING UP CA AUTHORITY"
 
-	unset	VAULT_ADDR
+	export VAULT_SKIP_VERIFY=1
+
+	start_and_unseal_vault init
+
+	&>/dev/null create_vault_root_pki
+
+	export NAMESPACES="$(for nskv in $(env | grep "NAMESPACE")
+					do echo "${nskv#*=}";done)"
+
+	for namespace in $NAMESPACES $DOMAIN; do
+		create_vault_intermediate_pki "$namespace" "$PROJECT_NAME"
+	done &>/dev/null
+
+	mkdir /vault/secret/ca_root/int
+	mv *.csr *.pem /vault/secret/ca_root/int
+
+	generate_vault_certificate
 }
 
 setup_pw			()	{
@@ -234,7 +267,7 @@ setup_share			()	{
 
 	armored_http="${HTTP::-3}"":\/\/"
 	base64 -dw 0 /tools/inject.sh | \
-	sed "s/CHANGE_ME/$armored_http$(hostname)\/v1/g" > "inject.sh"
+	sed "s/CHANGE_ME/$armored_http$(hostname)$VAULT_PORT\/v1/g" > "inject.sh"
 			
 	chmod	100	"inject.sh"
 
@@ -247,7 +280,6 @@ setup_share			()	{
 
 generate_san			()	{
 	set +eu
-
 	amt="$(printenv $(echo $2 | tr '[:lower:]' '[:upper:]')_AMOUNT)"
 
 	[ "$amt" = 0 ] && amt=1
@@ -269,12 +301,43 @@ generate_san			()	{
 	onion="$([ -n "$ONION_ADDRESS_MAIN" ] && echo -n ,)$ONION_ADDRESS_MAIN"
 
 	echo -n "$san"",""$DOMAIN""$onion"
-
 	set -eu
 }
 
-create_vault_policies		()	{
+write_policy			()	{
+	vault policy write "$1" "/vault/policies/""$2"
+	vault write 	"auth/token/roles/""$1"	allowed_entity_aliases="$1"	\
+			orphan=true	role_name="$1"	renewable=false		\
+			allowed_policies="$1"	token_no_default_policy=true	\
+			token_explicit_max_ttls="$(($GRACE_PERIOD * 5))s"	\
+			use_limit=1
+}
+
+find_namespace			()	{
+	if [ "${1: -5}" = "proxy" ]; then
+		net="$REV_PROXY_NAMESPACE"
+		subdomain=${1%_proxy}
+	elif [ "${1: -2}" = "db" ]; then
+		net="$DATABASE_NAMESPACE"
+		subdomain=${1%_db}
+	else
+		if [ "${1::2}" = "ai" ]; then
+			net="$AI_NAMESPACE"
+		else
+			net="$SERVICE_NAMESPACE"
+		fi
+		subdomain=${1%_srvc}
+	fi
+}
+
+create_vault_policies		()	{	stage "CREATING POLICIES"
+
+
+	stage "CREATING JWT SECRETS"
+
 	setup_jwt
+
+	stage "DISTRIBUTING SCRIPT"
 
 	setup_share
 
@@ -287,38 +350,17 @@ create_vault_policies		()	{
 		cut -b 58-); do	service=${policy%.hcl}; mkdir -p "$service"
 		[ "$policy" = "ca_root.hcl" ] && continue
 
+		write_policy "$service" "$policy"
 
-		vault policy write "$service" "/vault/policies/""$policy"
-		vault write "auth/token/roles/""$service"			\
-			role_name="$service"					\
-			allowed_entity_aliases="$service"			\
-			allowed_policies="$service"				\
-			orphan=true						\
-			renewable=false	use-limit=1				\
-			token_no_default_policy=true				\
-			token_explicit_max_ttls="$(($GRACE_PERIOD * 5))s"
-
-		if [ "${service: -5}" = "proxy" ]; then
-			net="$REV_PROXY_NAMESPACE"
-			subdomain=${service%_proxy}
-		elif [ "${service: -2}" = "db" ]; then
-			net="$DATABASE_NAMESPACE"
-			subdomain=${service%_db}
-		else
-			net="$SERVICE_NAMESPACE"
-			subdomain=${service%_srvc}
-		fi
-		if [ "${service::2}" = "ai" ]; then
-			net="$AI_NAMESPACE"
-		fi
+		find_namespace "$service"
 
 		cn="$subdomain"".""$PROJECT_NAME""-""$net"
-		san="$(generate_san $net $subdomain)"
+		san="$(2>/dev/null generate_san $net $subdomain)"
 
 		vault write -format=json					\
 			"pki_""$net""_int/issue/""$PROJECT_NAME""-""$net"	\
 			common_name="$cn" alt_names="$san"			\
-			key_type="ed25519" signature_bits=512		\
+			key_type="ed25519" signature_bits=512			\
 			ttl="21000h" client_flag=true server_flag=true		\
 			format="pem_bundle" > pem.json
 
@@ -349,11 +391,10 @@ create_vault_policies		()	{
 			fi
 			while [ $i -ne 0 ]; do
 				env_bundle=$(create_env_bundle "$tmp" $i)
-				vault kv put -mount "secret"	\
+				&>/dev/null vault kv put -mount "secret"	\
 				"$subdomain""/env" "env""=""$env_bundle"
 				i=$(( $i - 1 ))
 				subdomain="$tmp""-""$i"
-				echo $env_bundle
 			done
 		fi
 	done
@@ -401,16 +442,54 @@ try_vanity_address		()	{
 	set -e
 }
 
-setup_postgres_db		()	{
+setup_postgres_role		()	{
+	vault write "database/roles/""$1""_""$2" db_name="$1"	\
+		creation_statements="						\
+		CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}';	\
+		GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"{{name}}\";	\
+		GRANT DELETE ON ALL TABLES IN SCHEMA public TO \"{{name}}\";	\
+		GRANT CREATE ON SCHEMA public TO \"{{name}}\";"
+}
+
+## 1 db name
+## 2 username
+## 3 db type
+## 4 protocol
+## 5 list of roles
+create_database_endpoint	()	{
+	i=0
+	rolelist=$(for role in $5; do
+	[ $i -ne 0 ] && echo -n ", " || i=1; echo -n " $1""_""$role"; done)
+
+	vault write "database/config/""$(printenv $1)"				\
+		plugin_name="$4""-database-plugin"			\
+		allowed_roles="$1""_""$2"				\
+		connection_url="$4""://{{username}}:{{password}}@""$3"".""$PROJECT_NAME""-""$DATABASE_NAMESPACE"":""$(printenv "$3""_PORT")""/""$(printenv $1)"\
+		username="$(printenv "$3""_USER_VAULT_""${1:%_DB}")"		\
+		password="$(printenv "$3""_PASSWORD_VAULT_""${1%_DB}")"		\
+		password_authentication="scram-sha-256"				\
+		password_policy="$3""_pw"
+
+	if [ "$3" = "postgres" ]; then
+		for user in $5; do setup_postgres_role "$1" "$user"; done
+	fi
+}
+
+setup_postgres_db		()	{	stage "SETTING UP POSTGRES"
+
 	vault secrets enable database
 
+	i=0
 	while [ "$(vault kv get -mount secret -field init postgres/init)"	\
-	!= "true" ]; do
-		echo "waiting for postgres to setup the initial database..."
+		!= "true" ]; do i=$(( $i + $GRACE_PERIOD ))
+		echo "waiting for postgres to setup database... (""$i""s)"
 		sleep $(( $GRACE_PERIOD ))
 	done 2>/dev/null
 
 	sleep $(( $GRACE_PERIOD * 4 ))
+
+	stage "CREATING POSTGRES DATABASE ENDPOINTS"
+
 	vault write "database/config/""$GAME_DB"				\
 		plugin_name="postgresql-database-plugin"			\
 		allowed_roles="$GAME_DB""_game"					\
@@ -428,6 +507,8 @@ setup_postgres_db		()	{
 		password="$POSTGRES_PASSWORD_VAULT_AUTH"			\
 		password_authentication="scram-sha-256"				\
 		password_policy="postgres_pw"
+
+	stage "DEFINING DATABASE ROLES"
 
 	vault write "database/roles/""$AUTH_DB""_auth" db_name="$AUTH_DB"	\
 		creation_statements="						\
@@ -523,38 +604,39 @@ create_env_bundle		()	{
 	done
 }
 
+generate_bootstrap_cert	()	{	stage "GENERATING BOOTSTRAP CERTIFICATE"
+	&>/dev/null apk add --no-cache openssl
 
+	cd /vault/secret/ca_root
 
-bootstrap_vault		()	{
+	openssl req	 -x509	-nodes	-days 1	-newkey "rsa:8192"		\
+		-keyout "$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"	\
+		-out "$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"		\
+		-subj "/CN=vault-""$PROJECT_NAME""-""$VAULT_NAMESPACE"
+
+	&>/dev/null chmod 444 "$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"	\
+			"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
+
+	&>/dev/null cd -
+}
+
+bootstrap_vault		()	{	stage "STARTING BOOTSTRAP"
+
 	if [ ! -d "/vault/secret" ]; then
 		mkdir -p /vault/secret/ca_root /vault/logs
 		chown -R vault:vault /vault/secret /vault/logs
 	fi
 
-	if [ -f "/operator_list.txt" ]; then
-		key_count=$(wc -l /operator_list.txt)
-	else
-		key_count=9
-	fi
+	generate_bootstrap_cert
 
 	try_vanity_address
 
 	if ! find_vault_ca_root; then
-		create_vault_ca_root
+		setup_vault_ca_root
 	fi
-
-	unset	VAULT_ADDR
-
-	cp -a	"/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"		\
-		"$CA_ROOT_DIR""/"
-
-	update-ca-certificates
 }
 
-init_secrets		()	{
-
-	start_and_unseal_vault init 
-
+init_secrets		()	{	stage "INITIALIZING SECRETS"
 	set +eu
 	httponion="$([ -n "$ONION_ADDRESS_MAIN" ] && \
 	echo -n ,$HTTP)$ONION_ADDRESS_MAIN"
@@ -566,40 +648,102 @@ init_secrets		()	{
 	kill $server_pid
 	wait $server_pid
 
-	export	VAULT_ADDR="https://127.0.0.1:""$VAULT_PORT"
+	export	VAULT_ADDR="https://127.0.0.1""$VAULT_PORT"
 	start_and_unseal_vault bootstrap-db
 
 	setup_postgres_db
 
 	kill $server_pid
 	wait $server_pid
+}
 
-	touch "/vault/.done"
+stage				()	{
+	current_time=$(date +%s)
+	if [ ! -f "/vault/.stage" ]; then
+		echo -n "0" > "/vault/.stage"
+	elif [ "$try_continue" = "1" ]; then
+		export STAGE="$(cat "/vault/.stage")"
+		echo "[ LAST STAGE: ""$STAGE""/""$STAGE_AMOUNT"" ]==[ ""$1"" ]"
+	else
+		total_time=$(( $current_time - $last_time + $total_time ))
+		echo -e "\n\t+DONE\t""$(( $current_time - $last_time ))""s\t"	\
+			"(""$total_time""s total)\n"
+	fi
+	last_time=$current_time
+
+	set +eu
+	&>/dev/null [ -n "$2" ] && echo "$2">>"/vault/.no" || rm -f "/vault/.no"
+	set -eu
+
+	export STAGE="$(cat "/vault/.stage")"
+
+	echo "[ CURRENT STAGE: ""$STAGE""/""$STAGE_AMOUNT"" ]==[ ""$1"" ]"
+
+	echo -n $(( $STAGE + 1 )) > "/vault/.stage"
+	echo -n "$1"  > "/vault/.stage.txt"
 }
 
 check_done			()	{
-	if [ ! -f "/vault/.done" ]; then
-		if [ -f "/vault/.started" ]; then
-			echo 	"FATAL ERROR: vault previously failed to"	\
-			       	"setup, please delete volume and rebuild"
-			exit 42
+	if [ -f "/vault/.stage" ]; then
+	       	if [ "$(cat "/vault/.stage")" != "$STAGE_AMOUNT" ]; then
+			if [ -f "/vault/.no" ]; then
+				echo "UNRECOVERABLE ERROR ""$(cat /vault/.no)"
+				exit $(( $(cat /vault/.stage) ))
+			fi
+			try_continue=1
+			echo 	"DETECTED PREVIOUS FAILURE IN SETUP --"\
+				"TRYING TO CONTINUE -- [EXPERIMENTAL]"
+			eval 'awk	"/$(cat /vault/.stage.txt)/ \
+					{print substr{\$1, 0, 22}}"'
+		else
+			echo "VAULT ALREADY SETUP"
 		fi
-
-		touch "/vault/.started"
-
+	else
 		bootstrap_vault
 
 		init_secrets
 	fi
 }
 
+setup_vars			()	{
 
-main				()	{
-
-	###	paths to certificates, will break if changed	###
 	export CA_ROOT_DIR=/usr/local/share/ca-certificates
 	export CERT_PATH=/certs/cert.pem
 	export KEY_PATH=/certs/key.pem
+
+	export STAGE_AMOUNT=$(cat /tools/entrypoint.sh | grep "stage \"" | wc -l)
+
+	vault_dirs="	/vault/file /vault/logs /vault/secret /vault/config	\
+			/policies"
+
+	[ -n "$GLOBAL_LOG_LEVEL_OVERRIDE" ] && for log_level in $(for		\
+	log_level_env in $(env | grep LOG_LEVEL); do echo "${log_level_env#*=}";\
+	done); do export "$loglevel"="$GLOBAL_LOG_LEVEL_OVERRIDE"; done
+
+	[ -n "$OPERATOR_LIST" ] && key_count=0 && for i in $OPERATOR_LIST
+	do key_count=$(( $keycount + 1 )); done || key_count=9;
+
+	vault_cmd='vault server	-non-interactive				\
+				-log-file=/vault/logs/vault-""$STAGE"".log	\
+				-log-format=json				\
+				-log-rotate-duration=24h			\
+				-log-rotate-max-files=14'
+
+	set -u
+
+	export	VAULT_PORT="$([ "$VAULT_PORT" = "443" ] &&			\
+	[ "$HTTP" = "https://" ] || echo -n ":""$VAULT_PORT")"
+
+	try_continue=0
+
+	total_time=0
+}
+
+
+main				()	{
+	setup_vars
+
+	set -euo pipefail
 
 	check_done
 
@@ -607,23 +751,27 @@ main				()	{
 
 	if [ -z $1 ]; then
 
-		cp -a	"/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"	\
-			"$CA_ROOT_DIR""/"
+		set -u
 
-		update-ca-certificates
-
-		export VAULT_ADDR="https://127.0.0.1:""$VAULT_PORT"
+		export	VAULT_ADDR="https://127.0.0.1""$VAULT_PORT"
 
 		setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
 
 		chown -R vault:vault						\
 			/vault/file /vault/logs /vault/secret /vault/config
 
-		(set -m; start_and_unseal_vault default &>/dev/null; exit) &
+		(&>/dev/null set -m;						\
+		start_and_unseal_vault default &&				\
+		cd /vault/secret &&						\
+		[ "SAVE_KEY" != "1" ] &&					\
+		rm -f .token .keys &&						\
+		unset VAULT_TOKEN &&						\
+		exit) &
 
-		su-exec vault vault server					\
+		unset VAULT_TOKEN && su-exec vault vault server			\
 			-config="/vault/config/""$PROJECT_NAME"".hcl"
 	else
+		set +eo pipefail
 		exec "$@"
 	fi
 }
