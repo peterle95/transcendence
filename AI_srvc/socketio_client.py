@@ -32,10 +32,6 @@ from model import (
 log = logging.getLogger("socketio_client")
 
 HUMAN_ONLY_MODE = os.getenv("HUMAN_ONLY_MODE", "false").lower() == "true"
-if HUMAN_ONLY_MODE:
-    log.info("HUMAN_ONLY_MODE=true – AI service will not auto-connect to lobby slots.")
-    import sys
-    sys.exit(0)
 
 GAME_SVC_URL    = os.getenv("GAME_SVC_URL",    "http://game_srvc:4000")
 SERVICE_SECRET  = os.getenv("SERVICE_SECRET",  "inter-service-shared-secret-change-in-production")
@@ -427,6 +423,13 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
     model.eval()
 
     sio = create_client(model, ai_slot, room_id)
+
+    if HUMAN_ONLY_MODE:
+        log.info("HUMAN_ONLY_MODE=true - AI service idle (no auto-join). Inference ready.")
+        # Keep the process alive indefinitely to prevent container restarts.
+        # This keeps the model loaded and allows other background tasks (like hot-reloading) to persist.
+        while True:
+            await asyncio.sleep(3600)
 
     await sio.connect(
         GAME_SVC_URL,

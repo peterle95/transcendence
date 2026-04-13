@@ -199,6 +199,7 @@ services:
       - MODEL_RELOAD_INTERVAL_S=5
       - TRAINING_MODE=false   # true = training contro bot, false = inference live
       - LOG_LEVEL=INFO
+      - HUMAN_ONLY_MODE=true
     volumes:
       - ai_models:/app/models:ro  # inference reads stable model only
       - ai_logs:/app/logs
