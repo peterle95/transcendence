@@ -9,7 +9,8 @@
 
 import type { AuthResult } from '@/types';
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
+// Must include auth_srvc Next.js basePath `/auth` (see auth_srvc/next.config.js).
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth';
 
 interface VerifiedUser {
   userId: number;

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { CHAT_PUBLIC_BASE } from '@/lib/chatPublicBase';
+import { CHAT_PUBLIC_BASE, CHAT_SOCKET_PATH } from '@/lib/chatPublicBase';
 import type { Message } from '@/types';
 
 interface ChatInterfaceProps {
@@ -64,15 +64,18 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
 
   // Socket lifecycle — only recreated when authToken changes, not on every friend switch.
   useEffect(() => {
-    const opts: any = { auth: { token: authToken } };
+    // Must pass (origin, options). io(options-only) can fall back to default path /socket.io on
+    // the site root — nginx sends that to the frontend → HTML 404 and broken polling.
+    const origin = window.location.origin;
+    const socketOptions: Record<string, unknown> = {
+      path: CHAT_SOCKET_PATH,
+      auth: { token: authToken },
+      transports: ['websocket', 'polling'],
+    };
     if (process.env.NODE_ENV === 'development') {
-      opts.rejectUnauthorized = false;
+      (socketOptions as any).rejectUnauthorized = false;
     }
-    if (typeof window !== 'undefined') {
-      // Connect specifically to /chat/socket.io/ to allow Nginx to route to the chat container
-      opts.path = '/chat/socket.io/';
-    }
-    const socket = io(opts);
+    const socket = io(origin, socketOptions as any);
     socketRef.current = socket;
 
     socket.on('receive_message', (message: Message) => {
