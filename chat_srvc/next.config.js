@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
+const basePath = '/chat';
+
 const nextConfig = {
   reactStrictMode: true,
-  basePath: '/chat',
+  basePath,
   env: {
+    // Client fetch() uses absolute paths from the site origin; basePath is not applied automatically.
+    NEXT_PUBLIC_CHAT_BASE_PATH: basePath,
     // NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || 'http://localhost:3000',
     NEXT_PUBLIC_AUTH_SERVICE_URL: process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '/auth',
   },

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { CHAT_PUBLIC_BASE } from '@/lib/chatPublicBase';
 import type { Message } from '@/types';
 
 interface ChatInterfaceProps {
@@ -31,7 +32,7 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
 
   const fetchHistory = useCallback(async () => {
     try {
-      const res = await fetch(`/api/chat/history?friend_id=${friendId}`, {
+      const res = await fetch(`${CHAT_PUBLIC_BASE}/api/chat/history?friend_id=${friendId}`, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
@@ -122,7 +123,7 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/chat/send', {
+      const res = await fetch(`${CHAT_PUBLIC_BASE}/api/chat/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ receiver_id: friendId, content: messageContent }),
