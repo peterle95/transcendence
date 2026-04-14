@@ -20,6 +20,30 @@ interface Friend {
 	points: number
 }
 
+interface GameOpponent {
+	playerName: string
+	playerColor: string
+	isWinner: boolean
+	placement: number
+	shipsDestroyed: number
+}
+
+interface GameHistoryEntry {
+	sessionId: string
+	gameMode: string
+	duration: number
+	playedAt: string
+	result: 'win' | 'loss'
+	placement: number | null
+	shotsFired: number
+	shotsHit: number
+	shipsLost: number
+	shipsDestroyed: number
+	accuracy: number | null
+	playerColor: string | null
+	opponents: GameOpponent[]
+}
+
 export default function ProfilePage() {
 	const params = useParams()
 	const router = useRouter()
@@ -29,6 +53,10 @@ export default function ProfilePage() {
 	const [error, setError] = useState('')
 	const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 	const [removingFriendId, setRemovingFriendId] = useState<number | null>(null)
+	const [gameHistory, setGameHistory] = useState<GameHistoryEntry[]>([])
+	const [historyTotal, setHistoryTotal] = useState(0)
+	const [historyOffset, setHistoryOffset] = useState(0)
+	const HISTORY_LIMIT = 10
 
 	const userId = params.id as string
 
@@ -57,7 +85,7 @@ export default function ProfilePage() {
 
 				if (sessionResponse.ok) {
 					const sessionData = await sessionResponse.json()
-					setCurrentUserId(sessionData?.user?.id || null)
+					setCurrentUserId(sessionData?.user?.id != null ? String(sessionData.user.id) : null)
 
 					// Only fetch friends if viewing own profile
 					if (String(sessionData?.user?.id) === userId) {
@@ -74,6 +102,20 @@ export default function ProfilePage() {
 						}
 					}
 				}
+
+
+				try {
+					const historyResponse = await fetch(
+						`${process.env.NEXT_PUBLIC_GAME_SERVICE_URL}/api/stats/history?userId=${userId}&limit=${HISTORY_LIMIT}&offset=0`
+					)
+					if (historyResponse.ok) {
+						const historyData = await historyResponse.json()
+						setGameHistory(historyData.data || [])
+						setHistoryTotal(historyData.total || 0)
+					}
+				} catch {
+					
+				}
 			} catch (err) {
 				setError((err as Error).message)
 			} finally {
@@ -83,6 +125,22 @@ export default function ProfilePage() {
 
 		fetchProfile()
 	}, [userId, router])
+
+	const loadMoreHistory = async () => {
+		const nextOffset = historyOffset + HISTORY_LIMIT
+		try {
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_GAME_SERVICE_URL}/api/stats/history?userId=${userId}&limit=${HISTORY_LIMIT}&offset=${nextOffset}`
+			)
+			if (response.ok) {
+				const data = await response.json()
+				setGameHistory(prev => [...prev, ...(data.data || [])])
+				setHistoryOffset(nextOffset)
+			}
+		} catch {
+			
+		}
+	}
 
 	const isOwnProfile = currentUserId === userId
 
@@ -383,6 +441,94 @@ export default function ProfilePage() {
 						)}
 					</div>
 				</div>}
+
+				{/* Game History */}
+				<div
+					style={{
+						background: 'rgba(255,255,255,0.06)',
+						border: '1px solid rgba(255,255,255,0.12)',
+						borderRadius: '20px',
+						backdropFilter: 'blur(20px)',
+						overflow: 'hidden',
+					}}
+				>
+					<div className="px-4 py-5 sm:px-6 bg-black/20 border-b border-white/10">
+						<h3 className="text-xl leading-6 font-bold text-white">
+							Game History {historyTotal > 0 && <span className="text-sm font-normal text-gray-400">({historyTotal} games)</span>}
+						</h3>
+					</div>
+					<div>
+						{gameHistory.length === 0 ? (
+							<div className="px-4 py-12 text-center">
+								<p className="text-sm text-blue-200">No game history yet</p>
+							</div>
+						) : (
+							<>
+								<ul className="divide-y divide-white/10">
+									{gameHistory.map((game) => (
+										<li key={game.sessionId} className="px-4 py-4 hover:bg-white/5 transition-colors">
+											<div className="flex items-center justify-between gap-4">
+												<div className="flex items-center gap-3 min-w-0">
+													{game.playerColor && (
+														<div
+															className="flex-shrink-0 rounded-full"
+															style={{ width: '10px', height: '10px', background: game.playerColor }}
+														/>
+													)}
+													<div className="min-w-0">
+														<div className="flex items-center gap-2 flex-wrap">
+															<span
+																className="text-xs font-bold px-2 py-0.5 rounded"
+																style={{
+																	background: game.result === 'win' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)',
+																	color: game.result === 'win' ? '#4ade80' : '#f87171',
+																}}
+															>
+																{game.result === 'win' ? 'WIN' : 'LOSS'}
+															</span>
+															<span className="text-xs text-gray-400 uppercase tracking-wide">{game.gameMode}</span>
+															{game.placement != null && (
+																<span className="text-xs text-gray-500">#{game.placement}</span>
+															)}
+														</div>
+														<div className="mt-1 flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+															<span>Accuracy: <span className="text-gray-200">{game.accuracy != null ? `${game.accuracy}%` : '--'}</span></span>
+															<span>Ships destroyed: <span className="text-gray-200">{game.shipsDestroyed}</span></span>
+															<span>Ships lost: <span className="text-gray-200">{game.shipsLost}</span></span>
+															{game.opponents.length > 0 && (
+																<span className="text-gray-500">
+																	vs {game.opponents.map(o => o.playerName).join(', ')}
+																</span>
+															)}
+														</div>
+													</div>
+												</div>
+												<div className="flex-shrink-0 text-right">
+													<p className="text-xs text-gray-500">
+														{new Date(game.playedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+													</p>
+													<p className="text-xs text-gray-600 mt-0.5">
+														{Math.floor(game.duration / 1000 / 60)}m {Math.round((game.duration / 1000) % 60)}s
+													</p>
+												</div>
+											</div>
+										</li>
+									))}
+								</ul>
+								{gameHistory.length < historyTotal && (
+									<div className="px-4 py-4 text-center border-t border-white/10">
+										<button
+											onClick={loadMoreHistory}
+											className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium"
+										>
+											Load more
+										</button>
+									</div>
+								)}
+							</>
+						)}
+					</div>
+				</div>
 			</div>
 		</div>
 	)
