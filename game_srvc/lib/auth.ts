@@ -21,7 +21,8 @@ export interface AuthToken {
  */
 export async function verifySessionWithAuthService(request: NextRequest): Promise<AuthToken | null> {
   try {
-    const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
+    // Must include auth_srvc Next.js basePath `/auth` (see auth_srvc/next.config.js).
+    const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth';
     const cookieHeader = request.headers.get('cookie') || '';
 
     const response = await fetch(`${authServiceUrl}/api/auth/session`, {

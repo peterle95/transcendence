@@ -83,7 +83,7 @@ services:
       - "3001:3001"
     environment:
       - MONGODB_URI=mongodb://mongo:27017/chat-service
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - NEXT_PUBLIC_GAME_SERVICE_URL=/game
       - SOCKET_IO_ALLOWLIST=http://localhost:8080
@@ -109,7 +109,7 @@ services:
     ports:
       - "3003:3003"
     environment:
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - CHAT_SERVICE_URL=http://chat_srvc:3001
       - NEXT_PUBLIC_CHAT_SERVICE_URL=/chat
@@ -132,7 +132,7 @@ services:
       - "4000:4000"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - SOCKET_CORS_ORIGIN=http://localhost:8080
       - SOCKET_PORT=4000
@@ -158,7 +158,7 @@ services:
     container_name: game_train_service
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - SOCKET_CORS_ORIGIN=http://localhost:8080
       - SOCKET_PORT=4000

@@ -76,7 +76,7 @@ services:
       - "127.0.0.1:3001:3001"
     environment:
       - MONGODB_URI=mongodb://mongo:27017/chat-service
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3001}
       - SOCKET_PATH=/socket.io
@@ -100,7 +100,7 @@ services:
     ports:
       - "127.0.0.1:3003:3003"
     environment:
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - NODE_ENV=production
     depends_on:
@@ -123,7 +123,7 @@ services:
       - "127.0.0.1:4000:4000"
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/game_db
-      - AUTH_SERVICE_URL=http://auth_srvc:3000
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3002}
       - SOCKET_PATH=/socket.io

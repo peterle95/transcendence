@@ -16,31 +16,54 @@ export default function PrivacyPolicy() {
 				}}
 			>
 				<h1 className="text-4xl font-bold text-white mb-2">Privacy Policy</h1>
-				<p className="text-gray-400 mb-10">Last updated: March 2026</p>
+				<p className="text-gray-400 mb-10">Last updated: April 2026</p>
 
 				<section className="mb-8">
-					<h2 className="text-xl font-semibold text-white mb-3">1. Information We Collect</h2>
-					<p>We collect information you provide when creating an account, such as your username and password. We also collect basic usage data to keep the platform running.</p>
+					<h2 className="text-xl font-semibold text-white mb-3">1. What We Collect</h2>
+					<p className="mb-3">When you create an account, we store your username, email address, and a hashed version of your password — the raw password is never stored. If you upload a profile picture, the image file is stored on our server (JPEG or PNG, up to 2 MB).</p>
+					<p>As you use the platform, we also accumulate gameplay data tied to your account: match history, wins and losses, shots fired and hit, ships destroyed and lost, and overall placement across games. Your friend list and the status of each relationship (pending, accepted, or blocked) are stored as well.</p>
 				</section>
 
 				<section className="mb-8">
-					<h2 className="text-xl font-semibold text-white mb-3">2. How We Use Your Information</h2>
-					<p>Your information is used solely to operate and improve the platform — managing your account, enabling gameplay, and facilitating chat between users.</p>
+					<h2 className="text-xl font-semibold text-white mb-3">2. Messages</h2>
+					<p>Direct messages you send to other users are stored in our database and are not deleted when a conversation ends. Each message includes the sender, the recipient, the content (up to 2,000 characters), and a timestamp. Messages are only accessible to the two people in the conversation.</p>
 				</section>
 
 				<section className="mb-8">
-					<h2 className="text-xl font-semibold text-white mb-3">3. Data Sharing</h2>
-					<p>We do not sell or share your personal data with third parties. Your data stays within the platform.</p>
+					<h2 className="text-xl font-semibold text-white mb-3">3. How We Use Your Data</h2>
+					<p className="mb-3">Your data exists to make the platform work — logging you in, showing your profile and stats, running games, delivering messages in real time, and managing your friendships. We do not use it for advertising, profiling, or any purpose beyond operating the platform itself.</p>
+					<p>Game statistics are used to build the public leaderboard. Your username and stats will be visible there to all users. Your avatar is served publicly by URL; no login is required to view it.</p>
 				</section>
 
 				<section className="mb-8">
-					<h2 className="text-xl font-semibold text-white mb-3">4. Data Retention</h2>
-					<p>Your data is retained as long as your account is active. You may request account deletion at any time, after which your data will be permanently removed.</p>
+					<h2 className="text-xl font-semibent text-white mb-3">4. Authentication and Sessions</h2>
+					<p>When you log in, a signed JWT session token is created and stored in an HTTP-only cookie — it cannot be read by JavaScript in the browser. Sessions expire after 24 hours. There is no server-side session store; the token itself carries your identity. It is verified on every API request and WebSocket connection.</p>
 				</section>
 
 				<section className="mb-8">
-					<h2 className="text-xl font-semibold text-white mb-3">5. Contact</h2>
-					<p>If you have any questions about this policy, please reach out through the platform.</p>
+					<h2 className="text-xl font-semibold text-white mb-3">5. How Data Is Stored</h2>
+					<p>Account data, game sessions, and friend relationships are stored in PostgreSQL databases. Chat messages are stored in a separate MongoDB database. Avatar images are stored as files on the server. All databases run within our own infrastructure — we do not use any external cloud storage or third-party data processors.</p>
+				</section>
+
+				<section className="mb-8">
+					<h2 className="text-xl font-semibold text-white mb-3">6. Third Parties</h2>
+					<p>We do not share, sell, or transmit your personal data to any third party. There are no external analytics services, advertising networks, or OAuth providers involved. All services (authentication, game, chat) run entirely within our own infrastructure and communicate only with each other.</p>
+				</section>
+
+				<section className="mb-8">
+					<h2 className="text-xl font-semibold text-white mb-3">7. Data Retention and Deletion</h2>
+					<p className="mb-3">Your data is kept for as long as your account exists. You can delete your account at any time from your profile settings. Doing so permanently removes your username, email, hashed password, avatar, friend list, and chat messages from our systems.</p>
+					<p>Game session records (match history, scores, placements) may be retained after deletion to preserve the integrity of the leaderboard history.</p>
+				</section>
+
+				<section className="mb-8">
+					<h2 className="text-xl font-semibold text-white mb-3">8. Your Rights</h2>
+					<p>You can update your username, email, and avatar at any time from your profile. You can block other users, remove friends, and delete your account yourself — no need to contact us. If you have questions about your data that aren't covered here, reach out through the platform.</p>
+				</section>
+
+				<section className="mb-8">
+					<h2 className="text-xl font-semibold text-white mb-3">9. Contact</h2>
+					<p>Questions about this policy? Send us a message through the platform.</p>
 				</section>
 			</div>
 		</div>

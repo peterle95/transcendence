@@ -19,7 +19,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
-    const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000'
+    // Must include auth_srvc Next.js basePath `/auth`.
+    const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth'
     const cookieHeader = request.headers.get('cookie') || ''
 
     const res = await fetch(`${authServiceUrl}/api/auth/session`, {
