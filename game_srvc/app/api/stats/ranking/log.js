@@ -59,7 +59,7 @@ function buildReportTable(users) {
 }
 
 export async function logAuthUsersStatsSummary(meta = {}) {
-  const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000'
+  const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth'
   const token = process.env.AUTH_INTERNAL_API_TOKEN || process.env.SERVICE_SECRET
 
   try {

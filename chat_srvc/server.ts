@@ -55,8 +55,8 @@ app.prepare().then(() => {
         : defaultOrigins; // if env variable not available it defaults back to localhost
 
     const io = new SocketIOServer(server, {
-        // Custom path injected via docker-compose to align with Nginx's path-routing
-        path: process.env.SOCKET_PATH || '/socket.io',
+        // Default matches nginx `/chat/socket.io` and client `CHAT_SOCKET_PATH` (see chatPublicBase.ts).
+        path: process.env.SOCKET_PATH || '/chat/socket.io/',
         cors: {
             origin: allowedOrigins,
             methods: ["GET", "POST"]
