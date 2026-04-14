@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import random
 from dataclasses import dataclass
 from typing import Dict, Optional
@@ -15,11 +16,11 @@ from replay_buffer import ReplayBuffer
 class AgentConfig:
     device: str = "cpu"
     gamma: float = 0.99
-    lr: float = 1e-3
-    batch_size: int = 64
-    epsilon_start: float = 1.0
-    epsilon_end: float = 0.20
-    epsilon_decay_steps: int = 150_000
+    lr: float = 5e-4
+    batch_size: int = 64 #specifies the number of transitions (state, action, reward, next state tuples) sampled from the replay buffer for each gradient update.
+    epsilon_start: Optional[float] = None
+    epsilon_end: Optional[float] = None
+    epsilon_decay_steps: Optional[int] = None
     target_update_every: int = 1_000
     replay_capacity: int = 100_000
 
@@ -27,6 +28,13 @@ class AgentConfig:
 class DQNAgent:
     def __init__(self, config: Optional[AgentConfig] = None) -> None:
         self.cfg = config or AgentConfig()
+        self._apply_env_overrides()
+        assert self.cfg.epsilon_start is not None
+        assert self.cfg.epsilon_end is not None
+        assert self.cfg.epsilon_decay_steps is not None
+        self._epsilon_start = float(self.cfg.epsilon_start)
+        self._epsilon_end = float(self.cfg.epsilon_end)
+        self._epsilon_decay_steps = int(self.cfg.epsilon_decay_steps)
         self.device = self.cfg.device
 
         self.online, self.target = build_model_pair(device=self.device)
@@ -34,14 +42,42 @@ class DQNAgent:
         self.replay = ReplayBuffer(self.cfg.replay_capacity)
 
         self.train_steps = 0
-        self.epsilon = self.cfg.epsilon_start
+        self.epsilon: float = self._epsilon_start
+
+    def _apply_env_overrides(self) -> None:
+        """Allow container/runtime overrides without editing source defaults."""
+        if (v := os.getenv("DQN_DEVICE")):
+            self.cfg.device = v
+        if (v := os.getenv("DQN_GAMMA")):
+            self.cfg.gamma = float(v)
+        if (v := os.getenv("DQN_LR")):
+            self.cfg.lr = float(v)
+        if (v := os.getenv("DQN_BATCH_SIZE")):
+            self.cfg.batch_size = int(v)
+        if (v := os.getenv("DQN_EPSILON_START")):
+            self.cfg.epsilon_start = float(v)
+        if (v := os.getenv("DQN_EPSILON_END")):
+            self.cfg.epsilon_end = float(v)
+        if (v := os.getenv("DQN_EPSILON_DECAY_STEPS")):
+            self.cfg.epsilon_decay_steps = int(v)
+        if (v := os.getenv("DQN_TARGET_UPDATE_EVERY")):
+            self.cfg.target_update_every = int(v)
+        if (v := os.getenv("DQN_REPLAY_CAPACITY")):
+            self.cfg.replay_capacity = int(v)
+
+        if self.cfg.epsilon_start is None:
+            raise RuntimeError("Missing required DQN epsilon config: set DQN_EPSILON_START or pass AgentConfig.epsilon_start")
+        if self.cfg.epsilon_end is None:
+            raise RuntimeError("Missing required DQN epsilon config: set DQN_EPSILON_END or pass AgentConfig.epsilon_end")
+        if self.cfg.epsilon_decay_steps is None:
+            raise RuntimeError("Missing required DQN epsilon config: set DQN_EPSILON_DECAY_STEPS or pass AgentConfig.epsilon_decay_steps")
 
     def _update_epsilon(self) -> None:
-        t = min(self.train_steps, self.cfg.epsilon_decay_steps)
-        frac = t / max(1, self.cfg.epsilon_decay_steps)
-        self.epsilon = self.cfg.epsilon_start + frac * (self.cfg.epsilon_end - self.cfg.epsilon_start)
+        t = min(self.train_steps, self._epsilon_decay_steps)
+        frac = t / max(1, self._epsilon_decay_steps)
+        self.epsilon = self._epsilon_start + frac * (self._epsilon_end - self._epsilon_start)
 
-    def select_action(self, state: torch.Tensor, explore: bool = True) -> Dict[str, int]:
+    def select_action(self, state: torch.Tensor, explore: bool = False) -> Dict[str, int]:
         if explore and random.random() < self.epsilon:
             return {k: random.randrange(v) for k, v in ACTION_CHANNELS.items()}
         return self.online.get_action(state.to(self.device))
@@ -70,6 +106,7 @@ class DQNAgent:
             "epsilon": float(self.epsilon),
             "train_steps": int(self.train_steps),
             "replay": self.replay.to_serializable(),
+            "applied_runtime_config_updates": {},
         }
 
     def restore_from_checkpoint(self, state: dict) -> None:
@@ -83,8 +120,12 @@ class DQNAgent:
         if "optimizer_state_dict" in state:
             self.optimizer.load_state_dict(state["optimizer_state_dict"])
 
-        self.epsilon = float(state.get("epsilon", self.cfg.epsilon_start))
         self.train_steps = int(state.get("train_steps", 0))
+
+        # Keep checkpoint train progress but always derive epsilon from the
+        # currently active schedule (typically env-driven) to avoid stale
+        # epsilon values after config changes.
+        self._update_epsilon()
 
         replay_data = state.get("replay", [])
         if isinstance(replay_data, list):
@@ -104,7 +145,7 @@ class DQNAgent:
         online_q = self.online(states)
         target_q_next = self.target(next_states)
 
-        total_loss = 0.0
+        total_loss = torch.tensor(0.0, dtype=torch.float32, device=self.device)
         for channel_name in ACTION_CHANNELS.keys():
             actions = torch.tensor([t.action[channel_name] for t in batch], dtype=torch.long, device=self.device)
             chosen_q = online_q[channel_name].gather(1, actions.unsqueeze(1)).squeeze(1)

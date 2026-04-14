@@ -17,6 +17,9 @@ Combinazioni possibili: 3 × 3 × 2 = 18, con soli 8 output totali.
 
 import torch
 import torch.nn as nn
+import logging
+
+log = logging.getLogger("model")
 
 
 # ─── Descrizione dello spazio di azione ──────────────────────────────────────
@@ -210,13 +213,20 @@ def build_model_pair(
     return online, target
 
 
-def save_model(network: DQNNetwork, path: str):
-    torch.save({
+def save_model(network: DQNNetwork, path: str, metadata: dict | None = None):
+    payload = {
         "state_dict":      network.state_dict(),
         "state_size":      network.state_size,
         "action_channels": network.action_channels,
-    }, path)
-    print(f"[model] salvato → {path}")
+    }
+    if metadata:
+        payload["metadata"] = metadata
+
+    torch.save(payload, path)
+    if metadata:
+        log.info("model saved -> %s metadata=%s", path, metadata)
+    else:
+        log.info("model saved -> %s", path)
 
 
 def load_model(path: str, device: str = "cpu") -> DQNNetwork:
@@ -227,7 +237,11 @@ def load_model(path: str, device: str = "cpu") -> DQNNetwork:
     ).to(device)
     net.load_state_dict(checkpoint["state_dict"])
     net.eval()
-    print(f"[model] caricato ← {path}")
+    metadata = checkpoint.get("metadata")
+    if metadata:
+        log.info("model loaded <- %s metadata=%s", path, metadata)
+    else:
+        log.info("model loaded <- %s", path)
     return net
 
 

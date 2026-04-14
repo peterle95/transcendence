@@ -16,7 +16,7 @@ class Transition:
 
 
 class ReplayBuffer:
-    def __init__(self, capacity: int = 100_000) -> None:
+    def __init__(self, capacity: int = 50_000) -> None:
         self._buffer: Deque[Transition] = deque(maxlen=capacity)
 
     def push(

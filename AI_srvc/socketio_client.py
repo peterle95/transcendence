@@ -38,6 +38,7 @@ AI_SLOT         = int(os.getenv("AI_SLOT",     "1"))
 ROOM_ID         = os.getenv("ROOM_ID",         "local")
 MODEL_AUTO_RELOAD = os.getenv("MODEL_AUTO_RELOAD", "true").lower() == "true"
 MODEL_RELOAD_INTERVAL_S = float(os.getenv("MODEL_RELOAD_INTERVAL_S", "5"))
+BOT_MODE = os.getenv("BOT_MODE", "model").lower()
 
 CANVAS_W  = 1280
 CANVAS_H  = 720
@@ -238,6 +239,54 @@ class ShipState:
 
 # ─── State builder ────────────────────────────────────────────────────────────
 
+def extract_damage_metrics(data: dict, my_slot: int) -> dict:
+    """
+    Extract damage metrics from payload damage_events for reward calculation.
+    
+    Returns {
+        'player_inflicted_damage': sum of damage caused by player's laser hits,
+        'total_damage_received': sum of all damage received (any source),
+        'player_laser_hits': count of successful laser hits by player,
+        'meteor_damage_received': sum of damage from meteors,
+        'collision_damage_received': sum of damage from ship collisions,
+    }
+    """
+    damage_events = data.get("damage_events", []) or []
+    
+    player_inflicted = 0.0
+    total_received = 0.0
+    laser_hits = 0
+    meteor_dmg = 0.0
+    collision_dmg = 0.0
+    
+    for event in damage_events:
+        amount = float(event.get("amount", 0))
+        target_slot = event.get("target_slot", -1)
+        source_slot = event.get("source_slot", -1)
+        damage_source = event.get("damage_source", "unknown")
+        
+        # Count damage player inflicted (player_laser only)
+        if damage_source == "player_laser" and source_slot == my_slot:
+            player_inflicted += amount
+            laser_hits += 1
+        
+        # Count damage player received
+        if target_slot == my_slot:
+            total_received += amount
+            if damage_source == "meteor":
+                meteor_dmg += amount
+            elif damage_source == "ship_collision":
+                collision_dmg += amount
+    
+    return {
+        "player_inflicted_damage": player_inflicted,
+        "total_damage_received": total_received,
+        "player_laser_hits": laser_hits,
+        "meteor_damage_received": meteor_dmg,
+        "collision_damage_received": collision_dmg,
+    }
+
+
 def build_state_vector(data: dict, my_ship_override: Optional[dict] = None) -> torch.Tensor:
     """Converte il payload Socket.io in un tensore da STATE_SIZE float."""
     features = []
@@ -309,9 +358,89 @@ def build_state_vector(data: dict, my_ship_override: Optional[dict] = None) -> t
     return torch.tensor(features, dtype=torch.float32)
 
 
+def _angle_to_target_deg(src_x: float, src_y: float, dst_x: float, dst_y: float) -> float:
+    dx = dst_x - src_x
+    dy = dst_y - src_y
+    return math.degrees(math.atan2(dx, -dy))
+
+
+def _choose_scripted_action(data: dict, ship_state: ShipState) -> dict:
+    my_ship = data.get("my_ship") or {}
+    enemies = [e for e in data.get("enemies", []) if e.get("alive", True)]
+    meteors = [m for m in data.get("meteors", []) if m.get("alive", True)]
+
+    ship_x = float(my_ship.get("x", ship_state.x))
+    ship_y = float(my_ship.get("y", ship_state.y))
+    ship_angle = float(my_ship.get("angle", ship_state.angle))
+    ship_energy = float(my_ship.get("energy", ship_state.energy))
+
+    def _dist_sq(obj: dict) -> float:
+        dx = float(obj.get("x", 0.0)) - ship_x
+        dy = float(obj.get("y", 0.0)) - ship_y
+        return dx * dx + dy * dy
+
+    target = min(enemies, key=_dist_sq) if enemies else None
+    nearest_meteor = min(meteors, key=_dist_sq) if meteors else None
+
+    move = 0
+    rot = 0
+    shoot = 0
+
+    if nearest_meteor is not None:
+        meteor_dx = ship_x - float(nearest_meteor.get("x", 0.0))
+        meteor_dy = ship_y - float(nearest_meteor.get("y", 0.0))
+        meteor_dist = math.sqrt(meteor_dx * meteor_dx + meteor_dy * meteor_dy)
+    else:
+        meteor_dist = float("inf")
+
+    if target is not None:
+        target_x = float(target.get("x", 0.0))
+        target_y = float(target.get("y", 0.0))
+        target_dist = math.sqrt((target_x - ship_x) ** 2 + (target_y - ship_y) ** 2)
+        desired_angle = _angle_to_target_deg(ship_x, ship_y, target_x, target_y)
+
+        if meteor_dist < 170.0 and nearest_meteor is not None:
+            desired_angle = _angle_to_target_deg(
+                float(nearest_meteor.get("x", 0.0)),
+                float(nearest_meteor.get("y", 0.0)),
+                ship_x,
+                ship_y,
+            )
+            move = 1
+        else:
+            if target_dist > 260.0:
+                move = 1
+            elif target_dist < 110.0:
+                move = 2
+
+            if abs(_angle_diff_deg(desired_angle, ship_angle)) < 12.0 and target_dist < 600.0 and ship_energy >= 2.0:
+                shoot = 1
+
+        angle_delta = _angle_diff_deg(desired_angle, ship_angle)
+        if angle_delta > 12.0:
+            rot = 2
+        elif angle_delta < -12.0:
+            rot = 1
+    elif nearest_meteor is not None:
+        desired_angle = _angle_to_target_deg(
+            float(nearest_meteor.get("x", 0.0)),
+            float(nearest_meteor.get("y", 0.0)),
+            ship_x,
+            ship_y,
+        )
+        angle_delta = _angle_diff_deg(desired_angle, ship_angle)
+        move = 1
+        if angle_delta > 12.0:
+            rot = 2
+        elif angle_delta < -12.0:
+            rot = 1
+
+    return {"movimento": move, "rotazione": rot, "sparo": shoot}
+
+
 # ─── Client Socket.io ─────────────────────────────────────────────────────────
 
-def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.AsyncClient:
+def create_client(model: Optional[DQNNetwork], ai_slot: int, room_id: str, bot_mode: str = "model") -> socketio.AsyncClient:
     """
     Crea e configura il client Socket.io.
     Restituisce il client già decorato con gli event handler.
@@ -328,6 +457,9 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
           last_model_mtime = os.path.getmtime(MODEL_PATH)
       except OSError:
           last_model_mtime = None
+
+    if bot_mode == "scripted":
+        log.info("scripted opponent mode active (room=%s slot=%d)", room_id, ai_slot)
 
     @sio.event
     async def connect():
@@ -352,21 +484,22 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
         dt_ms = _extract_dt_ms(data, now_ms, last_tick_ms)
         last_tick_ms = now_ms
 
-        # Hot-reload promoted model in live inference mode.
-        now_s = now_ms / 1000.0
-        if MODEL_AUTO_RELOAD and now_s - last_reload_check_s >= MODEL_RELOAD_INTERVAL_S:
-            last_reload_check_s = now_s
-            if os.path.exists(MODEL_PATH):
-                try:
-                    current_mtime = os.path.getmtime(MODEL_PATH)
-                    if last_model_mtime is None or current_mtime > last_model_mtime:
-                        reloaded = load_model(MODEL_PATH)
-                        reloaded.eval()
-                        active_model = reloaded
-                        last_model_mtime = current_mtime
-                        log.info("live model hot-reloaded from %s", MODEL_PATH)
-                except Exception as e:
-                    log.warning("model hot-reload skipped: %s", e)
+        if bot_mode != "scripted":
+            # Hot-reload promoted model in live inference mode.
+            now_s = now_ms / 1000.0
+            if MODEL_AUTO_RELOAD and now_s - last_reload_check_s >= MODEL_RELOAD_INTERVAL_S:
+                last_reload_check_s = now_s
+                if os.path.exists(MODEL_PATH):
+                    try:
+                        current_mtime = os.path.getmtime(MODEL_PATH)
+                        if last_model_mtime is None or current_mtime > last_model_mtime:
+                            reloaded = load_model(MODEL_PATH)
+                            reloaded.eval()
+                            active_model = reloaded
+                            last_model_mtime = current_mtime
+                            log.info("live model hot-reloaded from %s", MODEL_PATH)
+                    except Exception as e:
+                        log.warning("model hot-reload skipped: %s", e)
 
         # Aggiorna lo stato locale con l'ultima snapshot autorevole.
         my_ship = data.get("my_ship") or {}
@@ -384,9 +517,13 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
             return
 
         try:
-            # Usa lo stato locale predetto come input della rete.
-            state = build_state_vector(data, my_ship_override=ship_state.as_dict())
-            action  = active_model.get_action(state)
+            if bot_mode == "scripted":
+                action = _choose_scripted_action(data, ship_state)
+            else:
+                # Usa lo stato locale predetto come input della rete.
+                state = build_state_vector(data, my_ship_override=ship_state.as_dict())
+                assert active_model is not None
+                action = active_model.get_action(state)
 
             # Replica del tick JS: applica comando e integra fisica localmente.
             ship_state.apply_command(action, dt_ms)
@@ -412,15 +549,19 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
     Entry point: carica il modello e mantiene la connessione attiva.
     Chiamato da main.py in modalità TRAINING_MODE=false.
     """
-    if os.path.exists(MODEL_PATH):
+    if BOT_MODE == "scripted":
+        log.info("starting scripted opponent, no model load")
+        model = None
+    elif os.path.exists(MODEL_PATH):
         model = load_model(MODEL_PATH)
         log.info("modello caricato da %s", MODEL_PATH)
+        model.eval()
     else:
         log.warning("modello non trovato — uso rete non addestrata")
         model = DQNNetwork()
-    model.eval()
+        model.eval()
 
-    sio = create_client(model, ai_slot, room_id)
+    sio = create_client(model, ai_slot, room_id, bot_mode=BOT_MODE)
 
     await sio.connect(
         GAME_SVC_URL,

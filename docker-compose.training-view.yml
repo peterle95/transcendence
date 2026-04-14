@@ -1,0 +1,24 @@
+services:
+  game_srvc_train:
+    ports:
+      - "3004:3002"
+      - "4004:4000"
+
+  ai_train_spectator:
+    build: ./AI_srvc
+    container_name: ai_train_spectator_service
+    command: ["python", "tools/training_spectator.py"]
+    environment:
+      - GAME_SVC_URL=http://game_srvc_train:4000
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - ROOM_ID=training-room
+      - AI_SLOT=1
+      - SPECTATOR_PRINT_INTERVAL_S=1.0
+      - LOG_LEVEL=INFO
+    depends_on:
+      - game_srvc_train
+    profiles:
+      - training
+    networks:
+      - app_network
+    restart: unless-stopped
