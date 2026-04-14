@@ -14,7 +14,8 @@
         { label: '2 Players (Local)', mode: 'local2' },
         { label: '3 Players (2 Local + 1 ML AI)', mode: 'local3' },
         { label: '4 Players (2 Local + 2 ML AI)', mode: 'local4' },
-        { label: 'Multiplayer (coming soon)', mode: 'online' },
+        // Multiplayer label text gets updated immediately before rendering
+        { label: 'Multiplayer (Online)', mode: 'online' },
         { label: '← Back to Home', mode: 'home' },
       ];
 
@@ -64,10 +65,86 @@
       }
     }
 
+    showRemoteMultiplayerUnavailableModal() {
+      const existing = document.getElementById('remote-mp-unavailable-overlay');
+      if (existing) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'remote-mp-unavailable-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.inset = '0';
+      overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '1000';
+
+      const panel = document.createElement('div');
+      panel.style.background = '#1a1d36';
+      panel.style.border = '2px solid #ff4400';
+      panel.style.padding = '40px';
+      panel.style.borderRadius = '16px';
+      panel.style.maxWidth = '600px';
+      panel.style.textAlign = 'center';
+      panel.style.color = '#fff';
+      panel.style.fontFamily = 'monospace';
+      panel.style.boxShadow = '0 10px 40px rgba(255, 68, 0, 0.3)';
+
+      const title = document.createElement('h2');
+      title.textContent = 'MODE UNAVAILABLE';
+      title.style.margin = '0 0 20px';
+      title.style.color = '#ffaa00';
+      title.style.fontSize = '32px';
+
+      const desc = document.createElement('p');
+      desc.textContent = 'Remote Multiplayer is disabled in this environment (local development). Use the local modes or test on production.';
+      desc.style.fontSize = '18px';
+      desc.style.lineHeight = '1.6';
+      desc.style.color = '#ccc';
+      desc.style.margin = '0 0 30px';
+
+      const btn = document.createElement('button');
+      btn.textContent = 'OK';
+      btn.style.background = '#ff4400';
+      btn.style.color = '#fff';
+      btn.style.border = 'none';
+      btn.style.padding = '12px 40px';
+      btn.style.fontSize = '20px';
+      btn.style.fontFamily = 'monospace';
+      btn.style.fontWeight = 'bold';
+      btn.style.borderRadius = '8px';
+      btn.style.cursor = 'pointer';
+
+      btn.addEventListener('click', () => {
+        overlay.remove();
+        this.cooldown = 300;
+      });
+
+      overlay.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'Escape' || e.key === ' ') {
+          overlay.remove();
+          this.cooldown = 300;
+        }
+      });
+
+      panel.appendChild(title);
+      panel.appendChild(desc);
+      panel.appendChild(btn);
+      overlay.appendChild(panel);
+      document.body.appendChild(overlay);
+
+      btn.focus();
+    }
+
     activateOption(index) {
       const selectedOption = this.options[index];
       if (!selectedOption || selectedOption.mode === 'multiplayer') {
         this.cooldown = 300;
+        return;
+      }
+
+      if (selectedOption.mode === 'online' && window.REMOTE_MULTIPLAYER_ENABLED === false) {
+        this.showRemoteMultiplayerUnavailableModal();
         return;
       }
 
@@ -107,8 +184,14 @@
       this.options.forEach((opt, i) => {
         const y = this.startY + i * this.itemSpacing;
         const selected = i === this.selection;
+        let displayLabel = opt.label;
+        if (opt.mode === 'online') {
+            displayLabel = window.REMOTE_MULTIPLAYER_ENABLED === false
+                ? 'Multiplayer (Not Available Locally)'
+                : 'Multiplayer (Online)';
+        }
         ctx.fillStyle = selected ? '#ffcc00' : '#ccc';
-        ctx.fillText((selected ? '▸ ' : '  ') + opt.label, width / 2, y);
+        ctx.fillText((selected ? '▸ ' : '  ') + displayLabel, width / 2, y);
       });
 
       ctx.font = '14px monospace';

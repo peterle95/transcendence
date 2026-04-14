@@ -59,7 +59,7 @@ export default function Home() {
         {/* Main Cards Grid */}
         <div className="grid md:grid-cols-2 gap-8 mx-auto max-w-4xl">
           {/* Chat Card */}
-          <Link href="/chat/">
+          <a href="/chat/"> {/* Link is not working because chat and game are effectively separate NextJS applications */}
             <div
               onMouseEnter={() => setHoveredCard('chat')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -91,10 +91,10 @@ export default function Home() {
                 Enter Chat →
               </div>
             </div>
-          </Link>
+          </a>
 
           {/* Game Card */}
-          <Link href="/game/">
+          <a href="/game/">
             <div
               onMouseEnter={() => setHoveredCard('game')}
               onMouseLeave={() => setHoveredCard(null)}
@@ -126,7 +126,7 @@ export default function Home() {
                 Play Now →
               </div>
             </div>
-          </Link>
+          </a>
         </div>
 
         {/* Stats */}

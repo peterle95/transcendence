@@ -14,9 +14,10 @@ const PORT              = Number(process.env.SOCKET_PORT) || 4000;
 const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
 const GAME_ROOM_ID      = process.env.GAME_ROOM_ID || 'gameplay-room';
 const ENABLE_TRAINING_ROOM = process.env.ENABLE_TRAINING_ROOM === 'true';
+const REMOTE_MULTIPLAYER_ENABLED = process.env.REMOTE_MULTIPLAYER_ENABLED !== 'false';
 const MAX_SLOTS         = 4;
 const PHYSICS_HZ        = 60;
-const BROADCAST_EVERY   = 3;           // broadcast every N ticks  → 20 Hz
+const BROADCAST_EVERY   = 2;           // broadcast every N ticks  → 30 Hz (was 3 → 20 Hz)
 const TICK_MS           = 1000 / PHYSICS_HZ;
 const COUNTDOWN_SECS    = 5;
 const RESTART_AFTER_MS  = 6000;        // pause after game-over before new game
@@ -48,6 +49,26 @@ const rand     = (a, b) => Math.random() * (b - a) + a;
 const randInt  = (a, b) => Math.floor(rand(a, b + 1));
 const clamp    = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const dist2    = (a, b) => { const dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx*dx + dy*dy); };
+const DEFAULT_INPUT = Object.freeze({
+  seq: 0,
+  forward: false,
+  backward: false,
+  left: false,
+  right: false,
+  shoot: false,
+});
+
+function sanitizeInputState(payload = {}, fallbackSeq = 0) {
+  const rawSeq = Number(payload.seq);
+  return {
+    seq: Number.isFinite(rawSeq) ? Math.max(0, Math.floor(rawSeq)) : fallbackSeq,
+    forward: payload.forward === true,
+    backward: payload.backward === true,
+    left: payload.left === true,
+    right: payload.right === true,
+    shoot: payload.shoot === true,
+  };
+}
 
 function wrapPos(obj, margin = 40) {
   if (obj.x < -margin)            obj.x = CFG.WIDTH  + margin;
@@ -71,6 +92,7 @@ class Ship {
     this.energy = CFG.WEAPON_MAX_ENERGY;
     this.invulnUntil      = 0;
     this.lastRechargeTime = 0;
+    this.spawnSeq = 0;
   }
 
   spawn(x, y, angle = 0) {
@@ -79,6 +101,7 @@ class Ship {
       vx: 0, vy: 0, angularVel: 0,
       hp: CFG.SHIP_MAX_HP, energy: CFG.WEAPON_MAX_ENERGY, alive: true,
     });
+    this.spawnSeq += 1;
     this.invulnUntil      = Date.now() + CFG.SHIP_INVULN_TIME;
     this.lastRechargeTime = Date.now();
   }
@@ -201,6 +224,7 @@ class ServerPlayer {
     this.fleetIndex  = 0;
     this.displayName = displayName || CFG.PLAYER_NAMES[idx].toUpperCase();
     this.shootCooldown = 0;
+    this.lastProcessedInputSeq = 0;
     this.stats = { shotsFired: 0, shotsHit: 0, shipsLost: 0, shipsDestroyed: 0, wins: 0 };
     this.ships = [];
     for (let i = 1; i <= CFG.FLEET_SIZE; i++) this.ships.push(new Ship(idx, i));
@@ -249,6 +273,7 @@ const ROOM = {
 const displayNames = {};   // playerIdx → string set by client
 const aiServiceSockets = new Map(); // socket.id -> { slot, roomId }
 const virtualSlots = new Set(); // slot indexes reserved for AI-only training sessions
+const gameAISlots     = new Set(); // slot indexes filled by AI inference during a live game
 
 function isSlotActive(slotIdx) {
   return ROOM.slots[slotIdx] !== null || virtualSlots.has(slotIdx);
@@ -269,6 +294,7 @@ function parseAIInput(payload = {}) {
   const rotate = Number(payload.rotazione || 0);
   const shoot = Number(payload.sparo || 0);
   return {
+    seq: Number.isFinite(Number(payload.seq)) ? Math.max(0, Math.floor(Number(payload.seq))) : 0,
     forward: move === 1,
     backward: move === 2,
     left: rotate === 1,
@@ -321,7 +347,6 @@ function startTrainingSession(aiSlots = [1, 2]) {
   const uniqueSlots = [...new Set(aiSlots.filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < MAX_SLOTS))];
   if (uniqueSlots.length === 0) return { ok: false, error: 'No valid AI slots provided' };
 
-  // Training instance is isolated; disconnect any human sockets before bootstrapping AI-only room.
   ROOM.slots.forEach((socketId) => {
     if (!socketId) return;
     const socket = io.sockets.sockets.get(socketId);
@@ -330,16 +355,21 @@ function startTrainingSession(aiSlots = [1, 2]) {
 
   ROOM.slots = new Array(MAX_SLOTS).fill(null);
   Object.keys(displayNames).forEach((key) => delete displayNames[key]);
+
+  // Clear both game AI slots and training slots
+  gameAISlots.clear();
   virtualSlots.clear();
-  uniqueSlots.forEach((slot) => {
-    virtualSlots.add(slot);
-    displayNames[slot] = `AI_${slot}`;
-  });
 
   if (countdownTimer) {
     clearInterval(countdownTimer);
     countdownTimer = null;
   }
+
+  // Pre-add training slots before resetGame so fillAISlots sees humanCount=0 and skips
+  uniqueSlots.forEach((slot) => {
+    virtualSlots.add(slot);
+    displayNames[slot] = `AI_${slot}`;
+  });
 
   resetGame();
   io.emit('training_started', { roomId: GAME_ROOM_ID, aiSlots: uniqueSlots });
@@ -362,10 +392,12 @@ function handleAIServiceConnection(socket, auth = {}) {
     return;
   }
 
+  // Register for relay routing only — do NOT add to virtualSlots here.
+  // Slots are claimed dynamically in fillAISlots() when a game starts,
+  // so humans can join any of the 4 slots in online multiplayer.
   aiServiceSockets.set(socket.id, { slot: aiSlot, roomId });
-  virtualSlots.add(aiSlot);
   if (!displayNames[aiSlot]) displayNames[aiSlot] = `AI_${aiSlot}`;
-  if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = {};
+  if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = { ...DEFAULT_INPUT };
   socket.emit('ai_service_connected', { roomId, aiSlot });
   console.log(`ai service connected: ${socket.id} room=${roomId} slot=${aiSlot}`);
 
@@ -373,6 +405,7 @@ function handleAIServiceConnection(socket, auth = {}) {
     const targetRoomId = typeof payload.roomId === 'string' ? payload.roomId : roomId;
     if (targetRoomId !== GAME_ROOM_ID) return;
     if (ROOM.state !== 'playing') return;
+    if (ROOM.slots[aiSlot] !== null) return; // human owns this slot
     ROOM.inputBuffer[aiSlot] = parseAIInput(payload);
     io.emit('ai_command', {
       roomId: targetRoomId,
@@ -403,17 +436,53 @@ function handleAIServiceConnection(socket, auth = {}) {
 
   socket.on('disconnect', () => {
     aiServiceSockets.delete(socket.id);
-    const hasSameSlotAgent = [...aiServiceSockets.values()].some((meta) => meta.slot === aiSlot && meta.roomId === roomId);
+    const hasSameSlotAgent = [...aiServiceSockets.values()].some(
+      (meta) => meta.slot === aiSlot && meta.roomId === roomId
+    );
     if (!hasSameSlotAgent) {
-      virtualSlots.delete(aiSlot);
-      ROOM.players[aiSlot] = null;
-      delete ROOM.inputBuffer[aiSlot];
-      io.emit('player_left', { playerIdx: aiSlot });
+      const slotHasHuman = ROOM.slots[aiSlot] !== null;
+      // Only remove from virtualSlots/gameAISlots if this AI was occupying a game slot
+      if (gameAISlots.has(aiSlot)) {
+        gameAISlots.delete(aiSlot);
+        virtualSlots.delete(aiSlot);
+      }
+      if (!slotHasHuman) {
+        ROOM.players[aiSlot] = null;
+        delete ROOM.inputBuffer[aiSlot];
+        io.emit('player_left', { playerIdx: aiSlot });
+      }
     }
     console.log(`ai service disconnected: ${socket.id} slot=${aiSlot}`);
   });
+}
 
-  if (ROOM.state === 'lobby' && humanCount() > 0 && connectedCount() >= 2) startCountdown();
+/**
+ * Fill empty game slots with available AI inference services.
+ * Called at the start of each game. Only fills slots that have no human player.
+ * Does nothing if there are no human players (prevents pure-AI auto-games).
+ */
+function fillAISlots() {
+  // Clear previous game's AI slot reservations
+  gameAISlots.forEach(slot => virtualSlots.delete(slot));
+  gameAISlots.clear();
+
+  if (humanCount() === 0) return;
+
+  // Index available AI services by slot (first connected service per slot wins)
+  const aiBySlot = new Map();
+  aiServiceSockets.forEach((meta) => {
+    if (meta.roomId === GAME_ROOM_ID && !aiBySlot.has(meta.slot)) {
+      aiBySlot.set(meta.slot, meta);
+    }
+  });
+
+  aiBySlot.forEach((_meta, aiSlot) => {
+    if (!ROOM.slots[aiSlot]) {        // slot not taken by a human
+      virtualSlots.add(aiSlot);
+      gameAISlots.add(aiSlot);
+      console.log(`AI filling slot ${aiSlot}`);
+    }
+  });
 }
 
 function resetGame() {
@@ -425,11 +494,14 @@ function resetGame() {
   ROOM.players   = new Array(MAX_SLOTS).fill(null);
   ROOM.tickNum   = 0;
 
+  // Auto-fill empty slots with AI services (only when humans are present)
+  fillAISlots();
+
   for (let i = 0; i < MAX_SLOTS; i++) {
     if (isSlotActive(i)) {
       ROOM.players[i] = new ServerPlayer(i, displayNames[i] || '');
       ROOM.players[i].spawnCurrent();
-      ROOM.inputBuffer[i] = {};
+      ROOM.inputBuffer[i] = { ...DEFAULT_INPUT };
     }
   }
   for (let i = 0; i < CFG.METEOR_COUNT; i++) ROOM.meteors.push(new Meteor());
@@ -506,6 +578,16 @@ io.on('connection', (socket) => {
     return;
   }
 
+  // Reject human connections when remote multiplayer is disabled (e.g. local dev)
+  if (!REMOTE_MULTIPLAYER_ENABLED) {
+    socket.emit('remote_multiplayer_disabled', {
+      message: 'Remote multiplayer is not enabled on this server.',
+    });
+    socket.disconnect(true);
+    console.log('connection rejected – REMOTE_MULTIPLAYER_ENABLED=false');
+    return;
+  }
+
   const playerIdx = findFreeSlot();
   if (playerIdx === -1) {
     socket.emit('room_full');
@@ -529,17 +611,19 @@ io.on('connection', (socket) => {
   if (ROOM.state === 'playing') {
     ROOM.players[playerIdx] = new ServerPlayer(playerIdx, displayNames[playerIdx] || '');
     ROOM.players[playerIdx].spawnCurrent();
-    ROOM.inputBuffer[playerIdx] = {};
+    ROOM.inputBuffer[playerIdx] = { ...DEFAULT_INPUT };
   }
 
   socket.broadcast.emit('player_joined', { playerIdx });
 
-  // Kick off countdown after first connection
-  if (ROOM.state === 'lobby' && connectedCount() >= 2) startCountdown();
+  // Kick off countdown only when ≥2 HUMAN players are connected (not AI bots)
+  if (ROOM.state === 'lobby' && humanCount() >= 2) startCountdown();
 
   // ── events from client ──────────────────────────────────────────────
   socket.on('input', (inp) => {
-    if (ROOM.state === 'playing') ROOM.inputBuffer[playerIdx] = inp;
+    if (ROOM.state !== 'playing') return;
+    const fallbackSeq = ROOM.inputBuffer[playerIdx]?.seq || ROOM.players[playerIdx]?.lastProcessedInputSeq || 0;
+    ROOM.inputBuffer[playerIdx] = sanitizeInputState(inp, fallbackSeq);
   });
 
   socket.on('ai_game_state', (payload = {}) => {
@@ -586,11 +670,13 @@ function serializeWorld() {
     roomId:  GAME_ROOM_ID,
     state:   ROOM.state,
     winner:  ROOM.winner,
+    serverTimeMs: Date.now(),
     players: ROOM.players.map(p => p ? {
       idx:         p.idx,
       alive:       p.alive,
       fleetIndex:  p.fleetIndex,
       displayName: p.displayName,
+      lastProcessedInputSeq: p.lastProcessedInputSeq,
       stats:       p.stats,
       ship: p.currentShip ? {
         x: p.currentShip.x, y: p.currentShip.y,
@@ -599,6 +685,7 @@ function serializeWorld() {
         hp: p.currentShip.hp, energy: p.currentShip.energy,
         alive: p.currentShip.alive,
         isInvulnerable: p.currentShip.isInvulnerable,
+        spawnSeq: p.currentShip.spawnSeq,
       } : null,
     } : null),
     lasers:  ROOM.lasers.filter(l => l.alive).map(l => ({ x: l.x, y: l.y, angle: l.angle, ownerIdx: l.ownerIdx })),
@@ -636,14 +723,10 @@ function checkGameEnd() {
 /* ═══════════════════════════════════════════════════════════════════════
    PHYSICS GAME LOOP  (60 Hz)
    ═══════════════════════════════════════════════════════════════════════ */
-let lastTickTime = Date.now();
-
 function gameTick() {
   if (ROOM.state !== 'playing') return;
 
-  const now = Date.now();
-  const dt  = Math.min(now - lastTickTime, 50);
-  lastTickTime = now;
+  const dt = TICK_MS;
   ROOM.tickNum++;
   ROOM.events = [];
 
@@ -652,7 +735,8 @@ function gameTick() {
     if (!p || !p.alive) return;
     const ship = p.currentShip;
     if (!ship || !ship.alive) return;
-    const inp = ROOM.inputBuffer[p.idx] || {};
+    const inp = ROOM.inputBuffer[p.idx] || DEFAULT_INPUT;
+    p.lastProcessedInputSeq = Number.isFinite(inp.seq) ? inp.seq : p.lastProcessedInputSeq;
 
     if (inp.forward)  ship.thrustForward(dt);
     if (inp.backward) ship.thrustBackward(dt);
@@ -769,6 +853,5 @@ function gameTick() {
 }
 
 setInterval(gameTick, TICK_MS);
-lastTickTime = Date.now();
 
 httpServer.listen(PORT, () => console.log(`socket server running on port ${PORT}`));

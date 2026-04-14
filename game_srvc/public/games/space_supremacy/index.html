@@ -28,7 +28,18 @@
         // Path must include Next.js basePath '/game' (see game_srvc/next.config.js).
         (async function () {
             try {
-                const res = await fetch('/game/api/auth/me', { credentials: 'include' });
+                // Fetch capability flags
+                try {
+                    const cfgRes = await fetch('/game/api/config');
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        window.REMOTE_MULTIPLAYER_ENABLED = cfg.remoteMultiplayerEnabled === true;
+                    }
+                } catch (_) {
+                    window.REMOTE_MULTIPLAYER_ENABLED = false;
+                }
+
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.user && data.user.id) {

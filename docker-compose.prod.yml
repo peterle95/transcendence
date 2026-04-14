@@ -130,6 +130,7 @@ services:
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - NEXT_PUBLIC_GAME_SERVICE_URL=/game
       - SOCKET_PORT=4000
+      - REMOTE_MULTIPLAYER_ENABLED=true
       - NODE_ENV=production
     depends_on:
       postgres:
