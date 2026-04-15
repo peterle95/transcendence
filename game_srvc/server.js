@@ -272,6 +272,7 @@ const ROOM = {
 
 const displayNames = {};   // playerIdx → string set by client
 const aiServiceSockets = new Map(); // socket.id -> { slot, roomId }
+const bridgeClients = new Map(); // socket.id -> { clientId, roomId }
 const virtualSlots = new Set(); // slot indexes reserved for AI-only training sessions
 const gameAISlots     = new Set(); // slot indexes filled by AI inference during a live game
 
@@ -288,6 +289,58 @@ function findFreeSlot() {
 
 function connectedCount() { return ROOM.slots.filter(Boolean).length + virtualSlots.size; }
 function humanCount() { return ROOM.slots.filter(Boolean).length; }
+
+function getAvailableAISlots(roomId = GAME_ROOM_ID) {
+  return [...new Set(
+    [...aiServiceSockets.values()]
+      .filter((meta) => meta.roomId === roomId)
+      .map((meta) => meta.slot)
+  )].sort((a, b) => a - b);
+}
+
+function buildAIServiceStatus(roomId = GAME_ROOM_ID) {
+  return {
+    roomId,
+    availableSlots: getAvailableAISlots(roomId),
+  };
+}
+
+function buildLobbyStatus() {
+  return {
+    roomId: GAME_ROOM_ID,
+    gameState: ROOM.state,
+    humanCount: humanCount(),
+  };
+}
+
+function emitLobbyStatus(target = io) {
+  const payload = buildLobbyStatus();
+  target.emit('lobby_status', payload);
+  return payload;
+}
+
+function emitAIServiceStatus(roomId = GAME_ROOM_ID) {
+  const payload = buildAIServiceStatus(roomId);
+  bridgeClients.forEach((meta, socketId) => {
+    if (meta.roomId !== roomId) return;
+    const bridgeSocket = io.sockets.sockets.get(socketId);
+    if (bridgeSocket) bridgeSocket.emit('ai_service_status', payload);
+  });
+  return payload;
+}
+
+function emitBridgeAICommand(payload = {}) {
+  const roomId = typeof payload.roomId === 'string' ? payload.roomId : GAME_ROOM_ID;
+  const bridgeClientId = typeof payload.bridgeClientId === 'string' ? payload.bridgeClientId : '';
+
+  bridgeClients.forEach((meta, socketId) => {
+    if (meta.roomId !== roomId) return;
+    if (bridgeClientId && meta.clientId !== bridgeClientId) return;
+
+    const bridgeSocket = io.sockets.sockets.get(socketId);
+    if (bridgeSocket) bridgeSocket.emit('ai_command', payload);
+  });
+}
 
 function parseAIInput(payload = {}) {
   const move = Number(payload.movimento || 0);
@@ -343,6 +396,74 @@ function buildAIStateForSlot(slot, dt) {
   };
 }
 
+function clearGameAISlots() {
+  gameAISlots.forEach((slot) => {
+    virtualSlots.delete(slot);
+    if (!ROOM.slots[slot]) {
+      ROOM.players[slot] = null;
+      delete ROOM.inputBuffer[slot];
+      delete displayNames[slot];
+    }
+  });
+  gameAISlots.clear();
+}
+
+function hasTrainingVirtualSlots() {
+  return [...virtualSlots].some((slot) => !gameAISlots.has(slot));
+}
+
+function hasLiveAIServiceForSlot(slot, roomId = GAME_ROOM_ID) {
+  for (const meta of aiServiceSockets.values()) {
+    if (meta.roomId === roomId && meta.slot === slot) return true;
+  }
+  return false;
+}
+
+function buildFallbackAIInput(slot) {
+  const player = ROOM.players[slot];
+  const ship = player && player.currentShip ? player.currentShip : null;
+  const nextSeq = Math.max(
+    ROOM.inputBuffer[slot]?.seq || 0,
+    player?.lastProcessedInputSeq || 0
+  ) + 1;
+  const input = { ...DEFAULT_INPUT, seq: nextSeq };
+
+  if (!player || !player.alive || !ship || !ship.alive) return input;
+
+  let bestTarget = null;
+  let bestDist = Infinity;
+  ROOM.players.forEach((other, otherSlot) => {
+    if (otherSlot === slot || !other || !other.alive) return;
+    const otherShip = other.currentShip;
+    if (!otherShip || !otherShip.alive) return;
+    const distance = dist2(ship, otherShip);
+    if (distance < bestDist) {
+      bestDist = distance;
+      bestTarget = otherShip;
+    }
+  });
+
+  if (!bestTarget) return input;
+
+  const dx = bestTarget.x - ship.x;
+  const dy = bestTarget.y - ship.y;
+  let diff = (Math.atan2(dx, -dy) * 180 / Math.PI) - ship.angle;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+
+  if (diff > 3) input.right = true;
+  else if (diff < -3) input.left = true;
+
+  if (bestDist > 250) input.forward = true;
+  else if (bestDist < 120) input.backward = true;
+
+  if (Math.abs(diff) < 12 && ship.canShoot() && player.shootCooldown <= 0) {
+    input.shoot = true;
+  }
+
+  return input;
+}
+
 function startTrainingSession(aiSlots = [1, 2]) {
   const uniqueSlots = [...new Set(aiSlots.filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < MAX_SLOTS))];
   if (uniqueSlots.length === 0) return { ok: false, error: 'No valid AI slots provided' };
@@ -377,6 +498,54 @@ function startTrainingSession(aiSlots = [1, 2]) {
   return { ok: true, aiSlots: uniqueSlots };
 }
 
+function handleLocalAIBridgeConnection(socket, auth = {}) {
+  const roomId = typeof auth.room_id === 'string' ? auth.room_id : GAME_ROOM_ID;
+  const rawClientId = typeof auth.bridge_client_id === 'string' ? auth.bridge_client_id.trim() : '';
+  const clientId = rawClientId ? rawClientId.slice(0, 64) : socket.id;
+
+  if (roomId !== GAME_ROOM_ID) {
+    socket.emit('bridge_rejected', {
+      reason: 'room_mismatch',
+      expectedRoomId: GAME_ROOM_ID,
+      receivedRoomId: roomId,
+    });
+    socket.disconnect(true);
+    return;
+  }
+
+  bridgeClients.set(socket.id, { clientId, roomId });
+
+  const statusPayload = buildAIServiceStatus(roomId);
+  socket.emit('ai_bridge_ready', { ...statusPayload, bridgeClientId: clientId });
+  socket.emit('ai_service_status', statusPayload);
+  console.log(`local ai bridge connected: ${socket.id} room=${roomId} client=${clientId}`);
+
+  socket.on('ai_game_state', (payload = {}) => {
+    const targetRoomId = typeof payload.roomId === 'string' ? payload.roomId : roomId;
+    const aiSlot = Number(payload.slot);
+    if (targetRoomId !== roomId) return;
+    if (!Number.isInteger(aiSlot) || aiSlot < 0 || aiSlot >= MAX_SLOTS) return;
+
+    const forwardedPayload = {
+      ...payload,
+      roomId: targetRoomId,
+      slot: aiSlot,
+      bridgeClientId: clientId,
+    };
+
+    aiServiceSockets.forEach((meta, socketId) => {
+      if (meta.roomId !== targetRoomId || meta.slot !== aiSlot) return;
+      const aiSocket = io.sockets.sockets.get(socketId);
+      if (aiSocket) aiSocket.emit('ai_game_state', forwardedPayload);
+    });
+  });
+
+  socket.on('disconnect', () => {
+    bridgeClients.delete(socket.id);
+    console.log(`local ai bridge disconnected: ${socket.id} room=${roomId} client=${clientId}`);
+  });
+}
+
 function handleAIServiceConnection(socket, auth = {}) {
   const roomId = typeof auth.room_id === 'string' ? auth.room_id : GAME_ROOM_ID;
   const aiSlot = Number(auth.ai_slot);
@@ -400,21 +569,32 @@ function handleAIServiceConnection(socket, auth = {}) {
   if (!ROOM.inputBuffer[aiSlot]) ROOM.inputBuffer[aiSlot] = { ...DEFAULT_INPUT };
   socket.emit('ai_service_connected', { roomId, aiSlot });
   console.log(`ai service connected: ${socket.id} room=${roomId} slot=${aiSlot}`);
+  emitAIServiceStatus(roomId);
 
   socket.on('ai_command', (payload = {}) => {
     const targetRoomId = typeof payload.roomId === 'string' ? payload.roomId : roomId;
+    const bridgeClientId = typeof payload.bridgeClientId === 'string' ? payload.bridgeClientId : '';
     if (targetRoomId !== GAME_ROOM_ID) return;
-    if (ROOM.state !== 'playing') return;
-    if (ROOM.slots[aiSlot] !== null) return; // human owns this slot
-    ROOM.inputBuffer[aiSlot] = parseAIInput(payload);
-    io.emit('ai_command', {
+
+    const relayPayload = {
       roomId: targetRoomId,
       slot: aiSlot,
+      ...(bridgeClientId ? { bridgeClientId } : {}),
       movimento: Number(payload.movimento || 0),
       rotazione: Number(payload.rotazione || 0),
       sparo: Number(payload.sparo || 0),
       shoot: Number(payload.sparo || 0) === 1,
-    });
+    };
+
+    if (bridgeClientId) {
+      emitBridgeAICommand(relayPayload);
+      return;
+    }
+
+    if (ROOM.state !== 'playing') return;
+    if (ROOM.slots[aiSlot] !== null) return; // human owns this slot
+    if (!virtualSlots.has(aiSlot)) return;
+    ROOM.inputBuffer[aiSlot] = parseAIInput(payload);
   });
 
   socket.on('training_start', (payload = {}, ack) => {
@@ -440,49 +620,36 @@ function handleAIServiceConnection(socket, auth = {}) {
       (meta) => meta.slot === aiSlot && meta.roomId === roomId
     );
     if (!hasSameSlotAgent) {
-      const slotHasHuman = ROOM.slots[aiSlot] !== null;
-      // Only remove from virtualSlots/gameAISlots if this AI was occupying a game slot
-      if (gameAISlots.has(aiSlot)) {
-        gameAISlots.delete(aiSlot);
+      const isLiveGameAI = gameAISlots.has(aiSlot);
+      if (!isLiveGameAI && virtualSlots.has(aiSlot)) {
         virtualSlots.delete(aiSlot);
-      }
-      if (!slotHasHuman) {
         ROOM.players[aiSlot] = null;
         delete ROOM.inputBuffer[aiSlot];
+        delete displayNames[aiSlot];
         io.emit('player_left', { playerIdx: aiSlot });
       }
     }
     console.log(`ai service disconnected: ${socket.id} slot=${aiSlot}`);
+    emitAIServiceStatus(roomId);
   });
 }
 
 /**
- * Fill empty game slots with available AI inference services.
- * Called at the start of each game. Only fills slots that have no human player.
- * Does nothing if there are no human players (prevents pure-AI auto-games).
+ * Fill every empty online slot with AI once at least two humans are present.
+ * External AI services can drive matching slots, otherwise fallback AI does.
  */
 function fillAISlots() {
-  // Clear previous game's AI slot reservations
-  gameAISlots.forEach(slot => virtualSlots.delete(slot));
-  gameAISlots.clear();
+  clearGameAISlots();
 
-  if (humanCount() === 0) return;
+  if (humanCount() < 2) return;
 
-  // Index available AI services by slot (first connected service per slot wins)
-  const aiBySlot = new Map();
-  aiServiceSockets.forEach((meta) => {
-    if (meta.roomId === GAME_ROOM_ID && !aiBySlot.has(meta.slot)) {
-      aiBySlot.set(meta.slot, meta);
-    }
-  });
-
-  aiBySlot.forEach((_meta, aiSlot) => {
-    if (!ROOM.slots[aiSlot]) {        // slot not taken by a human
-      virtualSlots.add(aiSlot);
-      gameAISlots.add(aiSlot);
-      console.log(`AI filling slot ${aiSlot}`);
-    }
-  });
+  for (let aiSlot = 0; aiSlot < MAX_SLOTS; aiSlot++) {
+    if (ROOM.slots[aiSlot]) continue;
+    virtualSlots.add(aiSlot);
+    gameAISlots.add(aiSlot);
+    displayNames[aiSlot] = 'AI';
+    console.log(`AI filling slot ${aiSlot}`);
+  }
 }
 
 function resetGame() {
@@ -572,7 +739,12 @@ function startCountdown() {
 
 io.on('connection', (socket) => {
   const auth = socket.handshake && socket.handshake.auth ? socket.handshake.auth : {};
+  const bridgeRole = typeof auth.bridge_role === 'string' ? auth.bridge_role : '';
   const isTrustedAIService = typeof auth.service_secret === 'string' && auth.service_secret === SERVICE_SECRET;
+  if (bridgeRole === 'local_ai_client') {
+    handleLocalAIBridgeConnection(socket, auth);
+    return;
+  }
   if (isTrustedAIService) {
     handleAIServiceConnection(socket, auth);
     return;
@@ -605,6 +777,7 @@ io.on('connection', (socket) => {
     roomId: GAME_ROOM_ID,
     existing:  ROOM.slots.map((id, i) => ({ idx: i, connected: isSlotActive(i) })),
     gameState: ROOM.state,
+    humanCount: humanCount(),
   });
 
   // If game already running add player mid-game with invulnerability
@@ -615,6 +788,7 @@ io.on('connection', (socket) => {
   }
 
   socket.broadcast.emit('player_joined', { playerIdx });
+  emitLobbyStatus();
 
   // Kick off countdown only when ≥2 HUMAN players are connected (not AI bots)
   if (ROOM.state === 'lobby' && humanCount() >= 2) startCountdown();
@@ -624,19 +798,6 @@ io.on('connection', (socket) => {
     if (ROOM.state !== 'playing') return;
     const fallbackSeq = ROOM.inputBuffer[playerIdx]?.seq || ROOM.players[playerIdx]?.lastProcessedInputSeq || 0;
     ROOM.inputBuffer[playerIdx] = sanitizeInputState(inp, fallbackSeq);
-  });
-
-  socket.on('ai_game_state', (payload = {}) => {
-    const payloadRoomId = typeof payload.roomId === 'string' ? payload.roomId : GAME_ROOM_ID;
-    const aiSlot = Number(payload.slot);
-    if (payloadRoomId !== GAME_ROOM_ID) return;
-    if (!Number.isInteger(aiSlot) || aiSlot < 0 || aiSlot >= MAX_SLOTS) return;
-
-    aiServiceSockets.forEach((meta, socketId) => {
-      if (meta.roomId !== payloadRoomId || meta.slot !== aiSlot) return;
-      const aiSocket = io.sockets.sockets.get(socketId);
-      if (aiSocket) aiSocket.emit('ai_game_state', payload);
-    });
   });
 
   socket.on('display_name', (name) => {
@@ -653,11 +814,27 @@ io.on('connection', (socket) => {
     io.emit('player_left', { playerIdx });
     console.log(`player disconnected: slot ${playerIdx}`);
 
-    if (connectedCount() === 0) {
+    if (countdownTimer && ROOM.state === 'countdown' && humanCount() < 2) {
       ROOM.state = 'lobby';
       if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-      console.log('all players left → lobby');
+      console.log('countdown cancelled: waiting for at least 2 human players');
+      console.log('countdown returned room to lobby');
     }
+
+    if (humanCount() === 0) {
+      clearGameAISlots();
+      ROOM.state = 'lobby';
+      ROOM.players = new Array(MAX_SLOTS).fill(null);
+      ROOM.lasers = [];
+      ROOM.meteors = [];
+      ROOM.inputBuffer = {};
+      ROOM.winner = null;
+      ROOM.events = [];
+      ROOM.tickNum = 0;
+      console.log('all human players left -> lobby');
+    }
+
+    emitLobbyStatus();
   });
 });
 
@@ -715,8 +892,21 @@ function checkGameEnd() {
   console.log(`game over – winner: slot ${ROOM.winner}`);
 
   setTimeout(() => {
-    if (connectedCount() > 0) resetGame();
-    else ROOM.state = 'lobby';
+    if (humanCount() >= 2 || hasTrainingVirtualSlots()) {
+      resetGame();
+      return;
+    }
+
+    clearGameAISlots();
+    ROOM.state = 'lobby';
+    ROOM.players = new Array(MAX_SLOTS).fill(null);
+    ROOM.lasers = [];
+    ROOM.meteors = [];
+    ROOM.inputBuffer = {};
+    ROOM.winner = null;
+    ROOM.events = [];
+    ROOM.tickNum = 0;
+    emitLobbyStatus();
   }, RESTART_AFTER_MS);
 }
 
@@ -729,6 +919,13 @@ function gameTick() {
   const dt = TICK_MS;
   ROOM.tickNum++;
   ROOM.events = [];
+
+  gameAISlots.forEach((slot) => {
+    if (!virtualSlots.has(slot)) return;
+    if (!ROOM.players[slot] || !ROOM.players[slot].alive) return;
+    if (hasLiveAIServiceForSlot(slot)) return;
+    ROOM.inputBuffer[slot] = buildFallbackAIInput(slot);
+  });
 
   // Apply buffered inputs → ship physics
   ROOM.players.forEach(p => {

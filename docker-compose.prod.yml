@@ -145,6 +145,7 @@ services:
     container_name: ai_service
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/socket.io
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - ROOM_ID=gameplay-room
       - AI_SLOT=1
@@ -167,6 +168,7 @@ services:
     container_name: ai_service_slot2
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/socket.io
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - ROOM_ID=gameplay-room
       - AI_SLOT=2
@@ -189,6 +191,7 @@ services:
     container_name: ai_service_slot3
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/socket.io
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - ROOM_ID=gameplay-room
       - AI_SLOT=3

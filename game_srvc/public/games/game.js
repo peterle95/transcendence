@@ -258,6 +258,7 @@ class SocketManager {
     this.playerIdx        = null;   // slot assigned by server (0-3)
     this.connected        = false;
     this.serverGameState  = 'lobby'; // 'lobby'|'countdown'|'playing'|'gameOver'
+    this.humanCount       = 0;
     this.countdown        = null;   // seconds remaining, or null
     this.worldQueue       = [];     // ordered authoritative snapshots
     this.pendingGameOver  = null;   // latest game_over payload
@@ -286,10 +287,17 @@ class SocketManager {
       console.log('[SocketManager] disconnected');
     });
 
-    this.socket.on('init', ({ playerIdx, gameState }) => {
+    this.socket.on('init', ({ playerIdx, gameState, humanCount }) => {
       this.playerIdx       = playerIdx;
       this.serverGameState = gameState || 'lobby';
+      this.humanCount      = Number.isInteger(humanCount) ? humanCount : this.humanCount;
       console.log('[SocketManager] assigned slot', playerIdx, '| serverState:', gameState);
+    });
+
+    this.socket.on('lobby_status', ({ gameState, humanCount }) => {
+      this.serverGameState = typeof gameState === 'string' ? gameState : this.serverGameState;
+      this.humanCount = Number.isInteger(humanCount) ? humanCount : this.humanCount;
+      if (this.serverGameState === 'lobby') this.countdown = null;
     });
 
     this.socket.on('countdown', ({ seconds }) => {
@@ -391,24 +399,100 @@ class AssetLoader {
 class InputManager {
   constructor() {
     this.keys = {};
+    this._gameplayKeys = new Set([
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'Space', 'Tab',
+      'KeyW', 'KeyA', 'KeyS', 'KeyD',
+    ]);
+
     this._onDown = (e) => {
-      this.keys[e.code] = true;
-      // prevent scroll on arrow keys / space / tab
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) {
+      const keys = this._getEventKeys(e);
+      keys.forEach((key) => {
+        this.keys[key] = true;
+      });
+      if (keys.some((key) => this._gameplayKeys.has(key))) {
         e.preventDefault();
       }
     };
-    this._onUp = (e) => { this.keys[e.code] = false; };
+    this._onUp = (e) => {
+      const keys = this._getEventKeys(e);
+      keys.forEach((key) => {
+        this.keys[key] = false;
+      });
+      if (keys.some((key) => this._gameplayKeys.has(key))) {
+        e.preventDefault();
+      }
+    };
+    this._onBlur = () => this.clear();
+    this._onVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        this.clear();
+      }
+    };
   }
 
   attach() {
     window.addEventListener('keydown', this._onDown);
     window.addEventListener('keyup',   this._onUp);
+    window.addEventListener('blur', this._onBlur);
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   detach() {
     window.removeEventListener('keydown', this._onDown);
     window.removeEventListener('keyup',   this._onUp);
+    window.removeEventListener('blur', this._onBlur);
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
+    this.clear();
+  }
+
+  clear() { this.keys = {}; }
+
+  _normalizeKey(value) {
+    if (typeof value !== 'string' || !value) return null;
+
+    switch (value) {
+      case ' ':
+      case 'Space':
+      case 'Spacebar':
+        return 'Space';
+      case 'Tab':
+        return 'Tab';
+      case 'ArrowUp':
+      case 'Up':
+        return 'ArrowUp';
+      case 'ArrowDown':
+      case 'Down':
+        return 'ArrowDown';
+      case 'ArrowLeft':
+      case 'Left':
+        return 'ArrowLeft';
+      case 'ArrowRight':
+      case 'Right':
+        return 'ArrowRight';
+      default:
+        if (value.length === 1) {
+          const upper = value.toUpperCase();
+          if (['W', 'A', 'S', 'D'].includes(upper)) {
+            return `Key${upper}`;
+          }
+        }
+        return value;
+    }
+  }
+
+  _getEventKeys(event) {
+    const out = [];
+    const add = (value) => {
+      const normalized = this._normalizeKey(value);
+      if (normalized && !out.includes(normalized)) {
+        out.push(normalized);
+      }
+    };
+
+    add(event.code);
+    add(event.key);
+    return out;
   }
 
   isDown(code) { return !!this.keys[code]; }
@@ -1100,6 +1184,8 @@ class Game {
     this.networkRoomId = (typeof window !== 'undefined' && window.GAME_ROOM_ID)
       ? window.GAME_ROOM_ID
       : 'gameplay-room';
+    this._aiBridgeClientId = null;
+    this._availableAISlots = new Set();
     this._lastInputSend = 0;
   }
 
@@ -1108,10 +1194,37 @@ class Game {
       this.networkSocket.disconnect();
       this.networkSocket = null;
     }
+    this._aiBridgeClientId = null;
+    this._setAvailableAISlots([]);
+  }
+
+  _createAIBridgeClientId() {
+    return `local-ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  _setAvailableAISlots(slots = []) {
+    const normalizedSlots = Array.isArray(slots)
+      ? slots
+          .map((slot) => Number(slot))
+          .filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < 4)
+      : [];
+
+    this._availableAISlots = new Set(normalizedSlots);
+    this._syncLocalAIStatusLabels();
+  }
+
+  _syncLocalAIStatusLabels() {
+    this.players.forEach((player) => {
+      if (!(player && player.type === 'remote' && player.isAI)) return;
+      player.displayName = this._availableAISlots.has(player.idx) ? 'AI' : 'AI (offline)';
+    });
   }
 
   _connectAIBridge() {
     if (this.networkSocket || typeof io === 'undefined') return;
+    if (!this._aiBridgeClientId) {
+      this._aiBridgeClientId = this._createAIBridgeClientId();
+    }
 
     const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
       ? window.GAME_SOCKET_PORT
@@ -1121,20 +1234,42 @@ class Game {
       ? window.location.origin
       : `http://localhost:${socketPort}`;
 
-    const opts = { transports: ['websocket'] };
+    const opts = {
+      transports: ['websocket'],
+      auth: {
+        bridge_role: 'local_ai_client',
+        room_id: this.networkRoomId,
+        bridge_client_id: this._aiBridgeClientId,
+      },
+    };
     if (typeof window !== 'undefined') {
       opts.path = '/game/socket.io/';
     }
 
     this.networkSocket = io(socketUrl, opts);
     this.networkSocket.on('connect', () => {
-      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId);
+      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId, '| client=', this._aiBridgeClientId);
     });
     this.networkSocket.on('disconnect', () => {
       console.log('[AIBridge] disconnected');
+      this._setAvailableAISlots([]);
+    });
+    this.networkSocket.on('ai_bridge_ready', (payload = {}) => {
+      if (payload.roomId !== this.networkRoomId) return;
+      if (typeof payload.bridgeClientId === 'string' && payload.bridgeClientId) {
+        this._aiBridgeClientId = payload.bridgeClientId;
+      }
+      this._setAvailableAISlots(payload.availableSlots);
+      console.log('[AIBridge] ready | available slots:', [...this._availableAISlots].join(',') || 'none');
+    });
+    this.networkSocket.on('ai_service_status', (payload = {}) => {
+      if (payload.roomId !== this.networkRoomId) return;
+      this._setAvailableAISlots(payload.availableSlots);
+      console.log('[AIBridge] AI service status | available slots:', [...this._availableAISlots].join(',') || 'none');
     });
     this.networkSocket.on('ai_command', (payload) => {
       if (!payload || payload.roomId !== this.networkRoomId) return;
+      if (payload.bridgeClientId && payload.bridgeClientId !== this._aiBridgeClientId) return;
       this.onAICommand(payload);
     });
   }
@@ -1268,30 +1403,19 @@ class Game {
 
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      const aiP = new Player(1, 'remote', {}, this.assets);
-      aiP.isAI = true;
-      this.players.push(aiP);
-      this._connectAIBridge();
+      this.players.push(new Player(1, 'ai', {}, this.assets));
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      const aiP = new Player(2, 'remote', {}, this.assets);
-      aiP.isAI = true;
-      this.players.push(aiP);
-      this._connectAIBridge();
+      this.players.push(new Player(2, 'ai', {}, this.assets));
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      const aiP2 = new Player(2, 'remote', {}, this.assets);
-      const aiP3 = new Player(3, 'remote', {}, this.assets);
-      aiP2.isAI = true;
-      aiP3.isAI = true;
-      this.players.push(aiP2);
-      this.players.push(aiP3);
-      this._connectAIBridge();
+      this.players.push(new Player(2, 'ai', {}, this.assets));
+      this.players.push(new Player(3, 'ai', {}, this.assets));
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1341,6 +1465,8 @@ class Game {
         p.userId = null;
       }
     });
+
+    this._syncLocalAIStatusLabels();
 
 
     // spawn first ships
@@ -1580,6 +1706,7 @@ class Game {
         this.networkSocket.emit('ai_game_state', {
           roomId: this.networkRoomId,
           slot: p.idx,
+          bridgeClientId: this._aiBridgeClientId,
           dt_ms: dt,
           my_ship: {
             x: ship.x,
