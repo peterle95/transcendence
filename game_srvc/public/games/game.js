@@ -259,6 +259,7 @@ class SocketManager {
     this.connected        = false;
     this.serverGameState  = 'lobby'; // 'lobby'|'countdown'|'playing'|'gameOver'
     this.humanCount       = 0;
+    this.hasReceivedWorld = false;
     this.countdown        = null;   // seconds remaining, or null
     this.worldQueue       = [];     // ordered authoritative snapshots
     this.pendingGameOver  = null;   // latest game_over payload
@@ -283,6 +284,7 @@ class SocketManager {
 
     this.socket.on('disconnect', () => {
       this.connected = false;
+      this.hasReceivedWorld = false;
       this.worldQueue = [];
       console.log('[SocketManager] disconnected');
     });
@@ -291,6 +293,7 @@ class SocketManager {
       this.playerIdx       = playerIdx;
       this.serverGameState = gameState || 'lobby';
       this.humanCount      = Number.isInteger(humanCount) ? humanCount : this.humanCount;
+      this.hasReceivedWorld = false;
       console.log('[SocketManager] assigned slot', playerIdx, '| serverState:', gameState);
     });
 
@@ -307,6 +310,7 @@ class SocketManager {
 
     this.socket.on('game_start', () => {
       this.serverGameState = 'playing';
+      this.hasReceivedWorld = false;
       this.countdown       = null;
       this.gameRestarted   = true;
       this.worldQueue      = [];
@@ -321,6 +325,7 @@ class SocketManager {
       if (this.worldQueue.length > ONLINE_CFG.WORLD_QUEUE_MAX) {
         this.worldQueue.splice(0, this.worldQueue.length - ONLINE_CFG.WORLD_QUEUE_MAX);
       }
+      this.hasReceivedWorld = true;
       this.serverGameState = snapshot.state;
     });
 
@@ -1187,6 +1192,8 @@ class Game {
     this._aiBridgeClientId = null;
     this._availableAISlots = new Set();
     this._lastInputSend = 0;
+    this._onlineNoticeText = '';
+    this._onlineNoticeUntil = 0;
   }
 
   _disconnectAIBridge() {
@@ -1365,6 +1372,8 @@ class Game {
     this.winner = null;
     this.selectedMode = null;
     this._isPausedByMenu = false;
+    this._onlineNoticeText = '';
+    this._onlineNoticeUntil = 0;
     if (this.socketMgr) {
       this.socketMgr.disconnect();
       this.socketMgr = null;
@@ -1434,7 +1443,7 @@ class Game {
       this.socketMgr = new SocketManager(socketUrl);
 
       if (this.socketMgr.socket) {
-        this.socketMgr.socket.once('init', ({ playerIdx }) => {
+        this.socketMgr.socket.once('init', ({ playerIdx, gameState }) => {
           // Tell server our display name
           const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
           const name = (currentUser && currentUser.username)
@@ -1444,6 +1453,12 @@ class Game {
           // Update local view
           const p = this.players[playerIdx];
           if (p) { p.displayName = name; p.userId = currentUser ? currentUser.id : null; }
+          if (gameState === 'playing') {
+            this._showOnlineNotice('Joining live match...', 2400);
+          } else {
+            this._onlineNoticeText = '';
+            this._onlineNoticeUntil = 0;
+          }
         });
       }
     }
@@ -1469,12 +1484,19 @@ class Game {
     this._syncLocalAIStatusLabels();
 
 
-    // spawn first ships
-    this.players.forEach(p => p.spawnCurrent());
+    if (mode === 'online') {
+      this.players.forEach((player) => this._clearOnlinePlayerState(player));
+    } else {
+      // spawn first ships
+      this.players.forEach(p => p.spawnCurrent());
+    }
 
     // create meteors
     for (let i = 0; i < CFG.METEOR_COUNT; i++) {
       this.meteors.push(new Meteor(this.assets));
+    }
+    if (mode === 'online') {
+      this.meteors.forEach((meteor) => { meteor.alive = false; });
     }
 
     this.hud = new HUD(this.players);
@@ -2324,6 +2346,7 @@ for (let i = 0; i < this.players.length; i++) {
     this.lasers = [];
     this.particles = [];
     this._onlineInputAccumulator = 0;
+    this.meteors.forEach((meteor) => { meteor.alive = false; });
     this.players.forEach((player) => {
       player.fleetIndex = 0;
       player.alive = true;
@@ -2480,6 +2503,9 @@ for (let i = 0; i < this.players.length; i++) {
        const hCount = mgr.humanCount ?? 1; // can be enhanced by server later
        return this._drawWaitMessage(`Waiting for players… (${hCount}/2 needed)`);
     }
+    if (mgr.serverGameState === 'playing') {
+      this._drawOnlineNotice();
+    }
   }
 
   _drawWaitMessage(msg) {
@@ -2491,6 +2517,40 @@ for (let i = 0; i < this.players.length; i++) {
     ctx.fillStyle = '#ffffff';
     ctx.font      = 'bold 34px monospace';
     ctx.fillText(msg, CFG.WIDTH / 2, CFG.HEIGHT / 2);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
+  _showOnlineNotice(msg, durationMs = 2200) {
+    this._onlineNoticeText = msg;
+    this._onlineNoticeUntil = performance.now() + durationMs;
+  }
+
+  _drawOnlineNotice() {
+    if (!this._onlineNoticeText) return;
+    if (performance.now() > this._onlineNoticeUntil) {
+      this._onlineNoticeText = '';
+      this._onlineNoticeUntil = 0;
+      return;
+    }
+
+    const ctx = this.ctx;
+    const text = this._onlineNoticeText;
+    ctx.save();
+    ctx.font = 'bold 22px monospace';
+    const textWidth = ctx.measureText(text).width;
+    const width = textWidth + 48;
+    const height = 42;
+    const x = (CFG.WIDTH - width) / 2;
+    const y = 28;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, CFG.WIDTH / 2, y + 28);
     ctx.textAlign = 'left';
     ctx.restore();
   }
@@ -2573,7 +2633,9 @@ for (let i = 0; i < this.players.length; i++) {
     this.particles.forEach(p => p.draw(ctx));
 
     // HUD
-    if (this.hud) this.hud.draw(ctx);
+    if (this.hud && (!this.socketMgr || this.socketMgr.hasReceivedWorld)) {
+      this.hud.draw(ctx);
+    }
 
     // Countdown / connecting overlay (drawn over the live game if needed)
     if (this.socketMgr) this._drawOnlineOverlay();

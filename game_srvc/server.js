@@ -464,6 +464,101 @@ function buildFallbackAIInput(slot) {
   return input;
 }
 
+function spawnFreshParticipant(slot, displayName = '') {
+  ROOM.players[slot] = new ServerPlayer(slot, displayName);
+  ROOM.players[slot].spawnCurrent();
+  ROOM.inputBuffer[slot] = { ...DEFAULT_INPUT };
+  return ROOM.players[slot];
+}
+
+function removeLiveAISlot(slot) {
+  gameAISlots.delete(slot);
+  virtualSlots.delete(slot);
+  if (ROOM.slots[slot] === null) {
+    ROOM.players[slot] = null;
+    delete ROOM.inputBuffer[slot];
+    delete displayNames[slot];
+  }
+}
+
+function activateLiveAISlot(slot) {
+  if (ROOM.slots[slot] !== null) return false;
+  virtualSlots.add(slot);
+  gameAISlots.add(slot);
+  displayNames[slot] = 'AI';
+  if (ROOM.state === 'playing') {
+    spawnFreshParticipant(slot, displayNames[slot]);
+  }
+  return true;
+}
+
+function rebalanceLiveAISlots(options = {}) {
+  const { allowPreGame = false } = options;
+  if ((!allowPreGame && ROOM.state !== 'playing') || humanCount() < 2) return false;
+
+  let changed = false;
+  const desiredAISlots = new Set();
+  for (let slot = 0; slot < MAX_SLOTS; slot++) {
+    if (ROOM.slots[slot] === null) desiredAISlots.add(slot);
+  }
+
+  [...gameAISlots]
+    .sort((a, b) => a - b)
+    .forEach((slot) => {
+      if (desiredAISlots.has(slot)) return;
+      removeLiveAISlot(slot);
+      changed = true;
+    });
+
+  [...desiredAISlots]
+    .sort((a, b) => a - b)
+    .forEach((slot) => {
+      if (gameAISlots.has(slot)) return;
+      if (activateLiveAISlot(slot)) changed = true;
+    });
+
+  return changed;
+}
+
+function findJoinableHumanSlot() {
+  const inactiveSlot = findFreeSlot();
+  if (inactiveSlot !== -1) {
+    return { slot: inactiveSlot, replacedAI: false };
+  }
+
+  if (ROOM.state !== 'playing') {
+    return { slot: -1, replacedAI: false };
+  }
+
+  const reusableAISlot = [...gameAISlots]
+    .filter((slot) => ROOM.slots[slot] === null)
+    .sort((a, b) => a - b)[0];
+
+  if (!Number.isInteger(reusableAISlot)) {
+    return { slot: -1, replacedAI: false };
+  }
+
+  return { slot: reusableAISlot, replacedAI: true };
+}
+
+function resetRoomToLobby() {
+  clearGameAISlots();
+  ROOM.state = 'lobby';
+  ROOM.players = new Array(MAX_SLOTS).fill(null);
+  ROOM.lasers = [];
+  ROOM.meteors = [];
+  ROOM.inputBuffer = {};
+  ROOM.winner = null;
+  ROOM.events = [];
+  ROOM.tickNum = 0;
+}
+
+function broadcastWorldIfPlaying() {
+  if (ROOM.state === 'playing') {
+    io.emit('world', serializeWorld());
+  }
+}
+
 function startTrainingSession(aiSlots = [1, 2]) {
   const uniqueSlots = [...new Set(aiSlots.filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < MAX_SLOTS))];
   if (uniqueSlots.length === 0) return { ok: false, error: 'No valid AI slots provided' };
@@ -620,8 +715,7 @@ function handleAIServiceConnection(socket, auth = {}) {
       (meta) => meta.slot === aiSlot && meta.roomId === roomId
     );
     if (!hasSameSlotAgent) {
-      const isLiveGameAI = gameAISlots.has(aiSlot);
-      if (!isLiveGameAI && virtualSlots.has(aiSlot)) {
+      if (!gameAISlots.has(aiSlot) && virtualSlots.has(aiSlot)) {
         virtualSlots.delete(aiSlot);
         ROOM.players[aiSlot] = null;
         delete ROOM.inputBuffer[aiSlot];
@@ -640,16 +734,8 @@ function handleAIServiceConnection(socket, auth = {}) {
  */
 function fillAISlots() {
   clearGameAISlots();
-
-  if (humanCount() < 2) return;
-
-  for (let aiSlot = 0; aiSlot < MAX_SLOTS; aiSlot++) {
-    if (ROOM.slots[aiSlot]) continue;
-    virtualSlots.add(aiSlot);
-    gameAISlots.add(aiSlot);
-    displayNames[aiSlot] = 'AI';
-    console.log(`AI filling slot ${aiSlot}`);
-  }
+  if (!rebalanceLiveAISlots({ allowPreGame: true })) return;
+  gameAISlots.forEach((slot) => console.log(`AI filling slot ${slot}`));
 }
 
 function resetGame() {
@@ -666,9 +752,7 @@ function resetGame() {
 
   for (let i = 0; i < MAX_SLOTS; i++) {
     if (isSlotActive(i)) {
-      ROOM.players[i] = new ServerPlayer(i, displayNames[i] || '');
-      ROOM.players[i].spawnCurrent();
-      ROOM.inputBuffer[i] = { ...DEFAULT_INPUT };
+      spawnFreshParticipant(i, displayNames[i] || '');
     }
   }
   for (let i = 0; i < CFG.METEOR_COUNT; i++) ROOM.meteors.push(new Meteor());
@@ -760,7 +844,7 @@ io.on('connection', (socket) => {
     return;
   }
 
-  const playerIdx = findFreeSlot();
+  const { slot: playerIdx, replacedAI } = findJoinableHumanSlot();
   if (playerIdx === -1) {
     socket.emit('room_full');
     socket.disconnect(true);
@@ -768,7 +852,14 @@ io.on('connection', (socket) => {
     return;
   }
 
+  if (replacedAI) {
+    removeLiveAISlot(playerIdx);
+  }
   ROOM.slots[playerIdx] = socket.id;
+  if (ROOM.state === 'playing') {
+    spawnFreshParticipant(playerIdx, displayNames[playerIdx] || '');
+    rebalanceLiveAISlots();
+  }
   console.log(`player connected: ${socket.id} → slot ${playerIdx}`);
 
   // Tell this client their slot and current server state
@@ -780,15 +871,9 @@ io.on('connection', (socket) => {
     humanCount: humanCount(),
   });
 
-  // If game already running add player mid-game with invulnerability
-  if (ROOM.state === 'playing') {
-    ROOM.players[playerIdx] = new ServerPlayer(playerIdx, displayNames[playerIdx] || '');
-    ROOM.players[playerIdx].spawnCurrent();
-    ROOM.inputBuffer[playerIdx] = { ...DEFAULT_INPUT };
-  }
-
   socket.broadcast.emit('player_joined', { playerIdx });
   emitLobbyStatus();
+  broadcastWorldIfPlaying();
 
   // Kick off countdown only when ≥2 HUMAN players are connected (not AI bots)
   if (ROOM.state === 'lobby' && humanCount() >= 2) startCountdown();
@@ -815,26 +900,30 @@ io.on('connection', (socket) => {
     console.log(`player disconnected: slot ${playerIdx}`);
 
     if (countdownTimer && ROOM.state === 'countdown' && humanCount() < 2) {
-      ROOM.state = 'lobby';
       if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+      resetRoomToLobby();
       console.log('countdown cancelled: waiting for at least 2 human players');
       console.log('countdown returned room to lobby');
     }
 
-    if (humanCount() === 0) {
-      clearGameAISlots();
-      ROOM.state = 'lobby';
-      ROOM.players = new Array(MAX_SLOTS).fill(null);
-      ROOM.lasers = [];
-      ROOM.meteors = [];
-      ROOM.inputBuffer = {};
-      ROOM.winner = null;
-      ROOM.events = [];
-      ROOM.tickNum = 0;
+    if (ROOM.state === 'playing') {
+      if (humanCount() < 2) {
+        resetRoomToLobby();
+        if (humanCount() === 0) {
+          console.log('all human players left -> lobby');
+        } else {
+          console.log('live round ended: waiting for at least 2 human players');
+        }
+      } else if (rebalanceLiveAISlots()) {
+        console.log('rebalanced live AI slots after human disconnect');
+      }
+    } else if (humanCount() === 0) {
+      resetRoomToLobby();
       console.log('all human players left -> lobby');
     }
 
     emitLobbyStatus();
+    broadcastWorldIfPlaying();
   });
 });
 
@@ -897,15 +986,7 @@ function checkGameEnd() {
       return;
     }
 
-    clearGameAISlots();
-    ROOM.state = 'lobby';
-    ROOM.players = new Array(MAX_SLOTS).fill(null);
-    ROOM.lasers = [];
-    ROOM.meteors = [];
-    ROOM.inputBuffer = {};
-    ROOM.winner = null;
-    ROOM.events = [];
-    ROOM.tickNum = 0;
+    resetRoomToLobby();
     emitLobbyStatus();
   }, RESTART_AFTER_MS);
 }
