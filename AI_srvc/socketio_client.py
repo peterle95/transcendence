@@ -36,6 +36,7 @@ SERVICE_SECRET  = os.getenv("SERVICE_SECRET",  "inter-service-shared-secret-chan
 MODEL_PATH      = os.getenv("MODEL_PATH",      "/app/models/dqn_latest.pt")
 AI_SLOT         = int(os.getenv("AI_SLOT",     "1"))
 ROOM_ID         = os.getenv("ROOM_ID",         "local")
+SOCKET_PATH     = os.getenv("SOCKET_PATH",     "/socket.io")
 MODEL_AUTO_RELOAD = os.getenv("MODEL_AUTO_RELOAD", "true").lower() == "true"
 MODEL_RELOAD_INTERVAL_S = float(os.getenv("MODEL_RELOAD_INTERVAL_S", "5"))
 
@@ -351,6 +352,9 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
         now_ms = time.monotonic() * 1000.0
         dt_ms = _extract_dt_ms(data, now_ms, last_tick_ms)
         last_tick_ms = now_ms
+        bridge_client_id = data.get("bridgeClientId")
+        if not isinstance(bridge_client_id, str) or not bridge_client_id:
+            bridge_client_id = None
 
         # Hot-reload promoted model in live inference mode.
         now_s = now_ms / 1000.0
@@ -374,13 +378,16 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
 
         # Se la nave non è viva, manda noop.
         if not ship_state.alive:
-            await sio.emit("ai_command", {
+            noop_payload = {
                 "roomId":    room_id,
                 "slot":      ai_slot,
                 "movimento": 0,
                 "rotazione": 0,
                 "sparo":     0,
-            })
+            }
+            if bridge_client_id:
+                noop_payload["bridgeClientId"] = bridge_client_id
+            await sio.emit("ai_command", noop_payload)
             return
 
         try:
@@ -392,17 +399,23 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
             ship_state.apply_command(action, dt_ms)
             ship_state.tick(dt_ms, now_ms)
 
-            await sio.emit("ai_command", {
+            command_payload = {
                 "roomId":    room_id,
                 "slot":      ai_slot,
                 **action,       # movimento, rotazione, sparo
-            })
+            }
+            if bridge_client_id:
+                command_payload["bridgeClientId"] = bridge_client_id
+            await sio.emit("ai_command", command_payload)
         except Exception as e:
             log.error("errore calcolo azione: %s", e)
-            await sio.emit("ai_command", {
+            error_payload = {
                 "roomId": room_id, "slot": ai_slot,
                 "movimento": 0, "rotazione": 0, "sparo": 0,
-            })
+            }
+            if bridge_client_id:
+                error_payload["bridgeClientId"] = bridge_client_id
+            await sio.emit("ai_command", error_payload)
 
     return sio
 
@@ -430,6 +443,7 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
             "room_id":        room_id,
         },
         transports=["websocket"],   # forza WebSocket puro, salta il polling HTTP
+        socketio_path=SOCKET_PATH.strip("/") or "socket.io",
     )
 
     await sio.wait()  # rimane connesso finché il processo non viene killato

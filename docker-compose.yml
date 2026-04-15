@@ -191,6 +191,7 @@ services:
     container_name: ai_service
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - ROOM_ID=gameplay-room
       - AI_SLOT=1
@@ -213,6 +214,7 @@ services:
     container_name: ai_service_slot2
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - ROOM_ID=gameplay-room
       - AI_SLOT=2
@@ -235,6 +237,7 @@ services:
     container_name: ai_service_slot3
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - ROOM_ID=gameplay-room
       - AI_SLOT=3
@@ -258,6 +261,7 @@ services:
     container_name: ai_train_bot_service
     environment:
       - GAME_SVC_URL=http://game_srvc_train:4000
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - ROOM_ID=training-room
       - AI_SLOT=2
@@ -281,6 +285,7 @@ services:
     container_name: ai_train_service
     environment:
       - GAME_SVC_URL=http://game_srvc_train:4000
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - ROOM_ID=training-room
       - AI_SLOT=1
