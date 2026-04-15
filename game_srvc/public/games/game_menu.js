@@ -80,13 +80,27 @@
     actions.style.justifyItems = 'center';
 
     const keepPlayingBtn = createButton('Keep playing');
+    const resetRoomBtn = createButton('Reset Online Room');
     const statsBtn = createButton('Statistics');
     const exitBtn = createButton('Exit Game');
-    const menuButtons = [keepPlayingBtn, statsBtn, exitBtn];
+    const menuButtons = [keepPlayingBtn];
 
     keepPlayingBtn.addEventListener('click', () => {
       removeMenuOverlay();
       game._isPausedByMenu = false;
+    });
+
+    resetRoomBtn.addEventListener('click', () => {
+      const confirmed = typeof window === 'undefined' || typeof window.confirm !== 'function'
+        ? true
+        : window.confirm('Reset the online room and disconnect all players?');
+      if (!confirmed) return;
+
+      removeMenuOverlay();
+      game._isPausedByMenu = false;
+      if (typeof game.requestOnlineRoomReset === 'function') {
+        game.requestOnlineRoomReset();
+      }
     });
 
     statsBtn.addEventListener('click', () => {
@@ -111,6 +125,12 @@
     });
 
     actions.appendChild(keepPlayingBtn);
+    if (game.selectedMode === 'online' && game.socketMgr && game.socketMgr.isAuthenticated) {
+      actions.appendChild(resetRoomBtn);
+      menuButtons.push(resetRoomBtn);
+    }
+    menuButtons.push(statsBtn);
+    menuButtons.push(exitBtn);
     actions.appendChild(statsBtn);
     actions.appendChild(exitBtn);
 

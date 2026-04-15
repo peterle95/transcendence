@@ -254,7 +254,7 @@ class SocketManager {
   /**
    * @param {string} url  e.g. "http://localhost:4000"
    */
-  constructor(url) {
+  constructor(url, options = {}) {
     this.playerIdx        = null;   // slot assigned by server (0-3)
     this.connected        = false;
     this.serverGameState  = 'lobby'; // 'lobby'|'countdown'|'playing'|'gameOver'
@@ -264,6 +264,9 @@ class SocketManager {
     this.worldQueue       = [];     // ordered authoritative snapshots
     this.pendingGameOver  = null;   // latest game_over payload
     this.gameRestarted    = false;  // flipped true when server sends game_start
+    this.identity         = null;
+    this.isAuthenticated  = false;
+    this.pendingSystemMessage = null;
 
     if (typeof io === 'undefined') {
       console.warn('[SocketManager] socket.io client not loaded – online mode unavailable');
@@ -272,6 +275,11 @@ class SocketManager {
     }
 
     const opts = { transports: ['websocket'] };
+    if (options && typeof options.playerToken === 'string' && options.playerToken) {
+      opts.auth = {
+        player_token: options.playerToken,
+      };
+    }
     if (typeof window !== 'undefined') {
       opts.path = '/game/socket.io/';
     }
@@ -289,10 +297,12 @@ class SocketManager {
       console.log('[SocketManager] disconnected');
     });
 
-    this.socket.on('init', ({ playerIdx, gameState, humanCount }) => {
+    this.socket.on('init', ({ playerIdx, gameState, humanCount, identity }) => {
       this.playerIdx       = playerIdx;
       this.serverGameState = gameState || 'lobby';
       this.humanCount      = Number.isInteger(humanCount) ? humanCount : this.humanCount;
+      this.identity        = identity || null;
+      this.isAuthenticated = Boolean(identity && identity.userId);
       this.hasReceivedWorld = false;
       console.log('[SocketManager] assigned slot', playerIdx, '| serverState:', gameState);
     });
@@ -342,8 +352,45 @@ class SocketManager {
       console.log('[SocketManager] player left slot', playerIdx);
     });
 
+    this.socket.on('online_auth_required', (payload = {}) => {
+      this.pendingSystemMessage = {
+        title: 'Login Required',
+        message: typeof payload.message === 'string' && payload.message
+          ? payload.message
+          : 'Login required for online multiplayer.',
+      };
+    });
+
+    this.socket.on('room_reset', (payload = {}) => {
+      const initiator = typeof payload.initiatorUsername === 'string' && payload.initiatorUsername
+        ? payload.initiatorUsername
+        : '';
+      const baseMessage = typeof payload.message === 'string' && payload.message
+        ? payload.message
+        : 'Online room was reset.';
+      this.pendingSystemMessage = {
+        title: 'Online Room Reset',
+        message: initiator
+          ? `${baseMessage} Requested by ${initiator}.`
+          : baseMessage,
+      };
+    });
+
+    this.socket.on('remote_multiplayer_disabled', (payload = {}) => {
+      this.pendingSystemMessage = {
+        title: 'Mode Unavailable',
+        message: typeof payload.message === 'string' && payload.message
+          ? payload.message
+          : 'Remote multiplayer is not enabled on this server.',
+      };
+    });
+
     this.socket.on('room_full', () => {
       console.warn('[SocketManager] room is full – cannot join');
+      this.pendingSystemMessage = {
+        title: 'Room Full',
+        message: 'The online room is full right now. Please try again in a moment.',
+      };
     });
   }
 
@@ -359,6 +406,17 @@ class SocketManager {
   drainWorldQueue() {
     if (this.worldQueue.length === 0) return [];
     return this.worldQueue.splice(0, this.worldQueue.length);
+  }
+
+  consumeSystemMessage() {
+    const message = this.pendingSystemMessage;
+    this.pendingSystemMessage = null;
+    return message;
+  }
+
+  requestRoomReset() {
+    if (!this.socket || !this.connected || !this.isAuthenticated) return;
+    this.socket.emit('reset_room');
   }
 
   disconnect() {
@@ -1192,6 +1250,8 @@ class Game {
     this._aiBridgeClientId = null;
     this._availableAISlots = new Set();
     this._lastInputSend = 0;
+    this._onlineJoinNonce = 0;
+    this._onlineJoinPendingMessage = '';
     this._onlineNoticeText = '';
     this._onlineNoticeUntil = 0;
   }
@@ -1356,6 +1416,8 @@ class Game {
       window.hideGlobalStatsScreen();
     }
     if (this._rafId) cancelAnimationFrame(this._rafId);
+    this._onlineJoinNonce += 1;
+    this._onlineJoinPendingMessage = '';
     if (this.socketMgr) {
       this.socketMgr.disconnect();
       this.socketMgr = null;
@@ -1364,6 +1426,13 @@ class Game {
   }
 
   cancelCurrentSession() {
+    if (typeof document !== 'undefined') {
+      const inGameMenu = document.getElementById('in-game-menu-overlay');
+      if (inGameMenu) inGameMenu.remove();
+    }
+    if (typeof window !== 'undefined' && typeof window.hideGlobalStatsScreen === 'function') {
+      window.hideGlobalStatsScreen();
+    }
     this.players = [];
     this.lasers = [];
     this.meteors = [];
@@ -1372,6 +1441,8 @@ class Game {
     this.winner = null;
     this.selectedMode = null;
     this._isPausedByMenu = false;
+    this._onlineJoinNonce += 1;
+    this._onlineJoinPendingMessage = '';
     this._onlineNoticeText = '';
     this._onlineNoticeUntil = 0;
     if (this.socketMgr) {
@@ -1386,6 +1457,170 @@ class Game {
   }
 
   /* ─── game modes ─────────────────────────────────────────────── */
+  _showSystemModal(title, message) {
+    if (typeof document === 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert(`${title}\n\n${message}`);
+      }
+      return;
+    }
+
+    const existing = document.getElementById('space-fleet-system-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'space-fleet-system-modal';
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '1200';
+
+    const panel = document.createElement('div');
+    panel.style.background = '#1a1d36';
+    panel.style.border = '2px solid #ffcc00';
+    panel.style.padding = '36px';
+    panel.style.borderRadius = '16px';
+    panel.style.maxWidth = '620px';
+    panel.style.textAlign = 'center';
+    panel.style.color = '#fff';
+    panel.style.fontFamily = 'monospace';
+    panel.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.45)';
+
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+    heading.style.margin = '0 0 18px';
+    heading.style.fontSize = '30px';
+    heading.style.color = '#ffcc00';
+
+    const body = document.createElement('p');
+    body.textContent = message;
+    body.style.margin = '0 0 28px';
+    body.style.fontSize = '18px';
+    body.style.lineHeight = '1.6';
+    body.style.color = '#ddd';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'OK';
+    button.style.background = '#ff4400';
+    button.style.color = '#fff';
+    button.style.border = 'none';
+    button.style.padding = '12px 40px';
+    button.style.fontSize = '20px';
+    button.style.fontFamily = 'monospace';
+    button.style.fontWeight = 'bold';
+    button.style.borderRadius = '8px';
+    button.style.cursor = 'pointer';
+
+    const close = () => {
+      overlay.remove();
+      if (this.mainMenu) this.mainMenu.setCooldown(300);
+    };
+
+    button.addEventListener('click', close);
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === 'Escape' || event.key === ' ') {
+        event.preventDefault();
+        close();
+      }
+    });
+
+    panel.appendChild(heading);
+    panel.appendChild(body);
+    panel.appendChild(button);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    button.focus();
+  }
+
+  _returnToMenuWithMessage(title, message) {
+    this.cancelCurrentSession();
+    this._showSystemModal(title, message);
+  }
+
+  async _fetchOnlineAuthToken() {
+    if (typeof fetch === 'undefined') return null;
+
+    try {
+      const response = await fetch('/game/api/auth/token', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return (data && typeof data.token === 'string' && data.token) ? data.token : null;
+    } catch (error) {
+      console.warn('[Online] token fetch failed', error);
+      return null;
+    }
+  }
+
+  async _beginOnlineJoin(socketUrl, joinNonce) {
+    this._onlineJoinPendingMessage = 'Authenticating online...';
+    const token = await this._fetchOnlineAuthToken();
+
+    if (this._onlineJoinNonce !== joinNonce || this.selectedMode !== 'online') return;
+
+    if (!token) {
+      this._onlineJoinPendingMessage = '';
+      this._returnToMenuWithMessage('Login Required', 'Log in before joining Online multiplayer.');
+      return;
+    }
+
+    const mgr = new SocketManager(socketUrl, { playerToken: token });
+    if (!mgr.socket) {
+      this._onlineJoinPendingMessage = '';
+      this._returnToMenuWithMessage('Online Unavailable', 'The online room could not be opened right now.');
+      return;
+    }
+
+    if (this._onlineJoinNonce !== joinNonce || this.selectedMode !== 'online') {
+      mgr.disconnect();
+      return;
+    }
+
+    this.socketMgr = mgr;
+    this._onlineJoinPendingMessage = 'Connecting to online room...';
+
+    mgr.socket.once('init', ({ playerIdx, gameState, identity }) => {
+      if (this.socketMgr !== mgr || this._onlineJoinNonce !== joinNonce) return;
+
+      this._onlineJoinPendingMessage = '';
+      const player = this.players[playerIdx];
+      if (player) {
+        player.displayName = identity && identity.username
+          ? identity.username
+          : CFG.PLAYER_NAMES[playerIdx].toUpperCase();
+        player.userId = identity && identity.userId ? identity.userId : null;
+      }
+
+      if (gameState === 'playing') {
+        this._showOnlineNotice('Joining live match...', 2400);
+      } else {
+        this._onlineNoticeText = '';
+        this._onlineNoticeUntil = 0;
+      }
+    });
+  }
+
+  requestOnlineRoomReset() {
+    if (!this.socketMgr) return;
+    this.socketMgr.requestRoomReset();
+  }
+
+  _consumeOnlineSystemMessage() {
+    if (!this.socketMgr) return false;
+    const systemMessage = this.socketMgr.consumeSystemMessage();
+    if (!systemMessage) return false;
+
+    this._onlineJoinPendingMessage = '';
+    this._returnToMenuWithMessage(systemMessage.title, systemMessage.message);
+    return true;
+  }
+
   _setupPlayers(mode) {
     this.players = [];
     this.lasers  = [];
@@ -1393,6 +1628,12 @@ class Game {
     this.particles = [];
     this.winner  = null;
     this._onlineInputAccumulator = 0;
+    this._onlineJoinNonce += 1;
+    this._onlineJoinPendingMessage = '';
+    if (this.socketMgr) {
+      this.socketMgr.disconnect();
+      this.socketMgr = null;
+    }
     this._disconnectAIBridge();
 
     const p1Controls = {
@@ -1439,28 +1680,9 @@ class Game {
       const socketUrl = typeof window !== 'undefined'
         ? window.location.origin
         : `http://localhost:${socketPort}`;
-
-      this.socketMgr = new SocketManager(socketUrl);
-
-      if (this.socketMgr.socket) {
-        this.socketMgr.socket.once('init', ({ playerIdx, gameState }) => {
-          // Tell server our display name
-          const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
-          const name = (currentUser && currentUser.username)
-            ? currentUser.username
-            : CFG.PLAYER_NAMES[playerIdx].toUpperCase();
-          this.socketMgr.socket.emit('display_name', name);
-          // Update local view
-          const p = this.players[playerIdx];
-          if (p) { p.displayName = name; p.userId = currentUser ? currentUser.id : null; }
-          if (gameState === 'playing') {
-            this._showOnlineNotice('Joining live match...', 2400);
-          } else {
-            this._onlineNoticeText = '';
-            this._onlineNoticeUntil = 0;
-          }
-        });
-      }
+      const joinNonce = this._onlineJoinNonce;
+      this._onlineJoinPendingMessage = 'Authenticating online...';
+      this._beginOnlineJoin(socketUrl, joinNonce);
     }
 
     // Assign display names and user IDs
@@ -1675,6 +1897,9 @@ class Game {
     // renders the world state it receives.  Skip local simulation entirely.
     if (this.socketMgr) {
       this._handleOnlineUpdate(dt);
+      return;
+    }
+    if (this.selectedMode === 'online') {
       return;
     }
 
@@ -2193,6 +2418,8 @@ for (let i = 0; i < this.players.length; i++) {
   _handleOnlineUpdate(dt) {
     const mgr = this.socketMgr;
     if (!mgr) return;
+    if (this._consumeOnlineSystemMessage()) return;
+
     if (mgr.gameRestarted) {
       mgr.gameRestarted = false;
       this._resetOnlineGame();
@@ -2495,7 +2722,12 @@ for (let i = 0; i < this.players.length; i++) {
   /** Overlay drawn on top of the game canvas while waiting for the server. */
   _drawOnlineOverlay() {
     const mgr = this.socketMgr;
-    if (!mgr) return;
+    if (!mgr) {
+      if (this.selectedMode === 'online' && this._onlineJoinPendingMessage) {
+        return this._drawWaitMessage(this._onlineJoinPendingMessage);
+      }
+      return;
+    }
     if (!mgr.connected)                        return this._drawWaitMessage('Connecting to server…');
     if (mgr.serverGameState === 'countdown' && mgr.countdown !== null)
                                                return this._drawWaitMessage(`Game starts in  ${mgr.countdown}s`);
@@ -2610,9 +2842,13 @@ for (let i = 0; i < this.players.length; i++) {
 
   _draw() {
     const ctx = this.ctx;
+    if (this.socketMgr && this._consumeOnlineSystemMessage()) {
+      return;
+    }
 
     // In online mode, show a waiting overlay until the server game is running
-    if (this.socketMgr && this.socketMgr.serverGameState !== 'playing') {
+    if ((this.selectedMode === 'online' && !this.socketMgr) ||
+        (this.socketMgr && this.socketMgr.serverGameState !== 'playing')) {
       this._drawBackground();
       this._drawOnlineOverlay();
       return;

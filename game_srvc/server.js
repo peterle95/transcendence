@@ -13,6 +13,7 @@ const http       = require("http");
 const PORT              = Number(process.env.SOCKET_PORT) || 4000;
 const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
 const GAME_ROOM_ID      = process.env.GAME_ROOM_ID || 'gameplay-room';
+const AUTH_SERVICE_URL  = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth';
 const ENABLE_TRAINING_ROOM = process.env.ENABLE_TRAINING_ROOM === 'true';
 const REMOTE_MULTIPLAYER_ENABLED = process.env.REMOTE_MULTIPLAYER_ENABLED !== 'false';
 const MAX_SLOTS         = 4;
@@ -273,6 +274,8 @@ const ROOM = {
 const displayNames = {};   // playerIdx → string set by client
 const aiServiceSockets = new Map(); // socket.id -> { slot, roomId }
 const bridgeClients = new Map(); // socket.id -> { clientId, roomId }
+const humanSockets = new Map(); // socket.id -> { socketId, slot, userId, username, email, connectedAt }
+const resettingHumanSockets = new Set();
 const virtualSlots = new Set(); // slot indexes reserved for AI-only training sessions
 const gameAISlots     = new Set(); // slot indexes filled by AI inference during a live game
 
@@ -289,6 +292,56 @@ function findFreeSlot() {
 
 function connectedCount() { return ROOM.slots.filter(Boolean).length + virtualSlots.size; }
 function humanCount() { return ROOM.slots.filter(Boolean).length; }
+
+function sanitizeDisplayName(name, fallback = '') {
+  const value = typeof name === 'string' ? name.trim().slice(0, 32) : '';
+  return value || fallback;
+}
+
+function formatHumanMeta(meta = {}) {
+  return {
+    socketId: meta.socketId || null,
+    slot: Number.isInteger(meta.slot) ? meta.slot : null,
+    userId: meta.userId || null,
+    username: meta.username || null,
+    email: meta.email || null,
+    connectedAt: meta.connectedAt || null,
+  };
+}
+
+async function verifyHumanPlayerToken(token) {
+  const bearerToken = typeof token === 'string' ? token.trim() : '';
+  if (!bearerToken) return null;
+
+  try {
+    const res = await fetch(`${AUTH_SERVICE_URL}/api/auth/verify`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+      },
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const userId = data && data.userId != null ? String(data.userId) : '';
+    const username = sanitizeDisplayName(data && data.username, '');
+    const email = typeof data?.email === 'string' ? data.email.trim().slice(0, 160) : '';
+
+    if (!userId || !username) return null;
+    return { userId, username, email };
+  } catch (error) {
+    console.warn('online auth verify failed:', error && error.message ? error.message : error);
+    return null;
+  }
+}
+
+function clearHumanSlot(slot) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= MAX_SLOTS) return;
+  ROOM.slots[slot] = null;
+  ROOM.players[slot] = null;
+  delete ROOM.inputBuffer[slot];
+  delete displayNames[slot];
+}
 
 function getAvailableAISlots(roomId = GAME_ROOM_ID) {
   return [...new Set(
@@ -542,6 +595,8 @@ function findJoinableHumanSlot() {
 }
 
 function resetRoomToLobby() {
+  clearCountdownTimer();
+  clearRestartTimer();
   clearGameAISlots();
   ROOM.state = 'lobby';
   ROOM.players = new Array(MAX_SLOTS).fill(null);
@@ -739,6 +794,7 @@ function fillAISlots() {
 }
 
 function resetGame() {
+  clearRestartTimer();
   ROOM.lasers    = [];
   ROOM.meteors   = [];
   ROOM.inputBuffer = {};
@@ -802,6 +858,21 @@ const io = new Server(httpServer, {
 
 // Countdown management
 let countdownTimer = null;
+let restartTimer = null;
+
+function clearCountdownTimer() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+function clearRestartTimer() {
+  if (restartTimer) {
+    clearTimeout(restartTimer);
+    restartTimer = null;
+  }
+}
 
 function startCountdown() {
   if (countdownTimer || ROOM.state !== 'lobby') return;
@@ -821,7 +892,7 @@ function startCountdown() {
   }, 1000);
 }
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   const auth = socket.handshake && socket.handshake.auth ? socket.handshake.auth : {};
   const bridgeRole = typeof auth.bridge_role === 'string' ? auth.bridge_role : '';
   const isTrustedAIService = typeof auth.service_secret === 'string' && auth.service_secret === SERVICE_SECRET;
@@ -844,6 +915,27 @@ io.on('connection', (socket) => {
     return;
   }
 
+  const playerToken = typeof auth.player_token === 'string' ? auth.player_token : '';
+  if (!playerToken.trim()) {
+    socket.emit('online_auth_required', {
+      message: 'Login required for online multiplayer.',
+    });
+    socket.disconnect(true);
+    console.log('connection rejected - missing online auth token');
+    return;
+  }
+
+  const verifiedIdentity = await verifyHumanPlayerToken(playerToken);
+  if (socket.disconnected) return;
+  if (!verifiedIdentity) {
+    socket.emit('online_auth_required', {
+      message: 'Your session could not be verified. Please log in again.',
+    });
+    socket.disconnect(true);
+    console.log('connection rejected - invalid online auth token');
+    return;
+  }
+
   const { slot: playerIdx, replacedAI } = findJoinableHumanSlot();
   if (playerIdx === -1) {
     socket.emit('room_full');
@@ -855,12 +947,27 @@ io.on('connection', (socket) => {
   if (replacedAI) {
     removeLiveAISlot(playerIdx);
   }
+  const verifiedUsername = sanitizeDisplayName(
+    verifiedIdentity.username,
+    CFG.PLAYER_NAMES[playerIdx].toUpperCase()
+  );
+  const humanMeta = {
+    socketId: socket.id,
+    slot: playerIdx,
+    userId: verifiedIdentity.userId,
+    username: verifiedUsername,
+    email: verifiedIdentity.email || '',
+    connectedAt: new Date().toISOString(),
+  };
+
   ROOM.slots[playerIdx] = socket.id;
+  displayNames[playerIdx] = verifiedUsername;
+  humanSockets.set(socket.id, humanMeta);
   if (ROOM.state === 'playing') {
-    spawnFreshParticipant(playerIdx, displayNames[playerIdx] || '');
+    spawnFreshParticipant(playerIdx, verifiedUsername);
     rebalanceLiveAISlots();
   }
-  console.log(`player connected: ${socket.id} → slot ${playerIdx}`);
+  console.log('online human connected:', formatHumanMeta(humanMeta));
 
   // Tell this client their slot and current server state
   socket.emit('init', {
@@ -869,6 +976,10 @@ io.on('connection', (socket) => {
     existing:  ROOM.slots.map((id, i) => ({ idx: i, connected: isSlotActive(i) })),
     gameState: ROOM.state,
     humanCount: humanCount(),
+    identity: {
+      userId: humanMeta.userId,
+      username: humanMeta.username,
+    },
   });
 
   socket.broadcast.emit('player_joined', { playerIdx });
@@ -885,22 +996,68 @@ io.on('connection', (socket) => {
     ROOM.inputBuffer[playerIdx] = sanitizeInputState(inp, fallbackSeq);
   });
 
-  socket.on('display_name', (name) => {
-    if (typeof name !== 'string') return;
-    displayNames[playerIdx] = name.slice(0, 32);
-    if (ROOM.players[playerIdx]) ROOM.players[playerIdx].displayName = displayNames[playerIdx];
+  socket.on('display_name', () => {
+    // Online human display names come from verified auth, not client input.
+  });
+
+  socket.on('reset_room', () => {
+    const requesterMeta = humanSockets.get(socket.id);
+    if (!requesterMeta) return;
+
+    const affectedHumans = [...humanSockets.values()]
+      .filter((meta) => Number.isInteger(meta.slot) && ROOM.slots[meta.slot] === meta.socketId)
+      .sort((a, b) => a.slot - b.slot);
+
+    console.log('online room reset requested:', {
+      requester: formatHumanMeta(requesterMeta),
+      sockets: affectedHumans.map((meta) => formatHumanMeta(meta)),
+    });
+
+    affectedHumans.forEach((meta) => {
+      resettingHumanSockets.add(meta.socketId);
+      clearHumanSlot(meta.slot);
+    });
+
+    resetRoomToLobby();
+    emitLobbyStatus();
+
+    affectedHumans.forEach((meta) => {
+      const targetSocket = io.sockets.sockets.get(meta.socketId);
+      if (!targetSocket) {
+        humanSockets.delete(meta.socketId);
+        resettingHumanSockets.delete(meta.socketId);
+        return;
+      }
+
+      targetSocket.emit('room_reset', {
+        message: 'Online room was reset.',
+        initiatorUsername: requesterMeta.username,
+      });
+
+      setTimeout(() => {
+        if (targetSocket.connected) targetSocket.disconnect(true);
+      }, 40);
+    });
   });
 
   socket.on('disconnect', () => {
-    ROOM.slots[playerIdx]   = null;
-    ROOM.players[playerIdx] = null;
-    delete ROOM.inputBuffer[playerIdx];
-    delete displayNames[playerIdx];
+    const meta = humanSockets.get(socket.id) || humanMeta;
+    const wasRoomReset = resettingHumanSockets.has(socket.id);
+
+    clearHumanSlot(playerIdx);
+    humanSockets.delete(socket.id);
+    resettingHumanSockets.delete(socket.id);
+
+    if (wasRoomReset) {
+      console.log('online human disconnected during room reset:', formatHumanMeta(meta));
+      return;
+    }
+
     io.emit('player_left', { playerIdx });
-    console.log(`player disconnected: slot ${playerIdx}`);
+    console.log('online human disconnected:', formatHumanMeta(meta));
 
     if (countdownTimer && ROOM.state === 'countdown' && humanCount() < 2) {
-      if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+      clearCountdownTimer();
       resetRoomToLobby();
       console.log('countdown cancelled: waiting for at least 2 human players');
       console.log('countdown returned room to lobby');
@@ -980,7 +1137,9 @@ function checkGameEnd() {
   });
   console.log(`game over – winner: slot ${ROOM.winner}`);
 
-  setTimeout(() => {
+  clearRestartTimer();
+  restartTimer = setTimeout(() => {
+    restartTimer = null;
     if (humanCount() >= 2 || hasTrainingVirtualSlots()) {
       resetGame();
       return;
