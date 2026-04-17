@@ -18,8 +18,8 @@ loadEnvConfig(projectDir);
 
 // Load SSL certificates (safe lazy-loading/fallback approach)
 let httpsOptions: any = undefined;
-const keyPath = path.resolve(projectDir, 'certs/key.pem');
-const certPath = path.resolve(projectDir, 'certs/cert.pem');
+const keyPath = path.resolve(projectDir, '../certs/key.pem');
+const certPath = path.resolve(projectDir, '../certs/cert.pem');
 
 if (process.env.HTTP === 'https://' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
@@ -56,7 +56,7 @@ app.prepare().then(() => {
 
     const io = new SocketIOServer(server, {
         // Custom path injected via docker-compose to align with Nginx's path-routing
-        path: process.env.CHAT_WS_PATH + process.env.CHAT_PATH || '/chat/socket.io',
+        path: process.env.CHAT_WS_PATH || '/chat/socket.io',
         cors: {
             origin: allowedOrigins,
             methods: ["GET", "POST"]
