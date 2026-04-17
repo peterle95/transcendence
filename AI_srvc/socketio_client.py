@@ -557,11 +557,52 @@ def create_client(model: Optional[DQNNetwork], ai_slot: int, room_id: str, bot_m
     return sio
 
 
+async def _connect_with_retry(
+    sio: socketio.AsyncClient,
+    url: str,
+    auth: dict,
+    *,
+    transports: list[str],
+    initial_delay_s: float = 1.0,
+    max_delay_s: float = 10.0,
+) -> None:
+    delay_s = initial_delay_s
+    attempt = 0
+
+    while True:
+        attempt += 1
+        try:
+            await sio.connect(
+                url,
+                auth=auth,
+                transports=transports,
+            )
+            return
+        except Exception as exc:
+            log.warning(
+                "initial connection attempt %d failed for %s: %s; retrying in %.1fs",
+                attempt,
+                url,
+                exc,
+                delay_s,
+            )
+            try:
+                await sio.disconnect()
+            except Exception:
+                pass
+            await asyncio.sleep(delay_s, None)
+            delay_s = min(max_delay_s, delay_s * 2)
+
+
 async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
     """
     Entry point: carica il modello e mantiene la connessione attiva.
     Chiamato da main.py in modalità TRAINING_MODE=false.
     """
+    if BOT_MODE == "scripted" and os.getenv("TRAINING_SCENARIO") == "meteor-only":
+        log.info("scripted opponent disabled for meteor-only scenario")
+        return
+
     if BOT_MODE == "scripted":
         log.info("starting scripted opponent, no model load")
         model = None
@@ -570,13 +611,13 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
         log.info("modello caricato da %s", MODEL_PATH)
         model.eval()
     else:
-        log.warning("modello non trovato — uso rete non addestrata")
-        model = DQNNetwork()
-        model.eval()
+        log.error("modello non trovato in %s: il bot live non verra' avviato", MODEL_PATH)
+        return
 
     sio = create_client(model, ai_slot, room_id, bot_mode=BOT_MODE)
 
-    await sio.connect(
+    await _connect_with_retry(
+        sio,
         GAME_SVC_URL,
         auth={
             "service_secret": SERVICE_SECRET,

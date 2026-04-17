@@ -166,13 +166,25 @@ services:
       - SOCKET_PATH=/game/socket.io/
       - GAME_ROOM_ID=training-room
       - ENABLE_TRAINING_ROOM=true
-      - TRAINING_SCENARIO=${TRAINING_SCENARIO:-baseline}
+      - TRAINING_SCENARIO=combat	#meteor-only, combat, baseline
       - NODE_ENV=development
     depends_on:
       postgres:
         condition: service_healthy
       auth_srvc:
         condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4000/health',res=>process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
     profiles:
       - training
     networks:
@@ -219,7 +231,7 @@ services:
       - SERVICE_SECRET=inter-service-shared-secret-change-in-production
       - ROOM_ID=gameplay-room
       - AI_SLOT=2
-      - MODEL_PATH=/app/models/train/dqn_latest.pt
+      - 	
       - MODEL_AUTO_RELOAD=true
       - MODEL_RELOAD_INTERVAL_S=5
       - TRAINING_MODE=false
@@ -267,12 +279,14 @@ services:
       - ROOM_ID=training-room
       - AI_SLOT=2
       - BOT_MODE=scripted
+      - TRAINING_SCENARIO=combat
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
     volumes:
       - ai_logs:/app/logs
     depends_on:
-      - game_srvc_train
+      game_srvc_train:
+        condition: service_healthy
     profiles:
       - training
     networks:
@@ -295,26 +309,26 @@ services:
       - TRAIN_AUDIT_LOG_PATH=/app/training/AI_Training_Log.md
       - TRAIN_AUDIT_EVERY=100
       - WIN_RATE_WINDOW_EPISODES=100
-      - TRAINING_SCENARIO=${TRAINING_SCENARIO:-meteor-only}	#meteor-only, combat, baseline
+      - TRAINING_SCENARIO=combat	#meteor-only, combat, baseline
       - TRAIN_STEPS=60000
       - DQN_EPSILON_START=1
       - DQN_EPSILON_END=0.05
       - DQN_EPSILON_DECAY_STEPS=40000
-      - DQN_LR=0.0003	#
+      - DQN_LR=0.0003
       - TRAINING_MODE=true
       - TRAIN_EVAL_ONLY=false
       - TRAIN_RESUME=true
       - REWARD_WIN=1.0
-      - REWARD_DEATH=-1.0
-      - REWARD_HIT=0
-      - REWARD_HURT_METEOR=-0.3
-      - REWARD_HURT_LASER=-0.0
       - REWARD_ALIVE_STEP=0.05
-      - REWARD_METEOR_DANGER=-0.05
-      - REWARD_WASTED_SHOT=0
+      - REWARD_DEATH=-1.0
+      - REWARD_HIT=0.5
+      - REWARD_HURT_METEOR=-0.3
+      - REWARD_HURT_LASER=-0.4
+      - REWARD_WASTED_SHOT=-0.002
+      - REWARD_METEOR_DANGER=0.03
+      - METEOR_DANGER_DISTANCE_NORM=0.15
       - REWARD_ROTATE_STEP=0.000
       - REWARD_ROTATE_DANGER=0.0000
-      - METEOR_DANGER_DISTANCE_NORM=0.00
       - ROTATION_DANGER_DISTANCE_NORM=0
       - LOG_LEVEL=INFO
     volumes:
@@ -322,8 +336,10 @@ services:
       - ai_logs:/app/logs
       - ./AI_srvc/training:/app/training
     depends_on:
-      - game_srvc_train
-      - ai_train_bot
+      game_srvc_train:
+        condition: service_healthy
+      ai_train_bot:
+        condition: service_started
     profiles:
       - training
     networks:
