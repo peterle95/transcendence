@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 export default function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState<{ id: string; username: string } | null>(null)
 
@@ -19,20 +20,52 @@ export default function Header() {
         const data = await res.json()
         if (data?.user?.id) {
           setUser({ id: String(data.user.id), username: data.user.name })
+        } else {
+          setUser(null)
         }
       } catch {
-        // no session
+        setUser(null)
       }
     }
     fetchSession()
-  }, [])
+  }, [pathname])
 
   const handleLogout = async () => {
-    await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
-      method: 'POST',
-      credentials: 'include',
-    })
-    router.push('/login')
+    try {
+      const csrfResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`,
+        { credentials: 'include' }
+      )
+
+      if (!csrfResponse.ok) {
+        throw new Error('Failed to fetch CSRF token')
+      }
+
+      const { csrfToken } = await csrfResponse.json()
+
+      const signoutResponse = await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          csrfToken,
+          callbackUrl: '/login',
+          json: 'true',
+        }),
+      })
+
+      if (!signoutResponse.ok) {
+        throw new Error('Failed to sign out')
+      }
+
+      setUser(null)
+      setIsOpen(false)
+      router.replace('/login')
+      router.refresh()
+    } catch (error) {
+      console.error('Logout failed:', error)
+      // Do not clear state or redirect on failure
+    }
   }
 
   return (

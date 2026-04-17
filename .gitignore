@@ -55,4 +55,9 @@ next-env.d.ts
 [._]ss[a-gi-z]
 [._]sw[a-p]
 
+# backups
+*.bak
+*_baks
+export/*
+
 /src/generated/prisma

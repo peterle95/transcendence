@@ -56,7 +56,7 @@ app.prepare().then(() => {
 
     const io = new SocketIOServer(server, {
         // Custom path injected via docker-compose to align with Nginx's path-routing
-        path: process.env.CHAT_WS_PATH || '/socket.io',
+        path: process.env.CHAT_WS_PATH + process.env.CHAT_PATH || '/chat/socket.io',
         cors: {
             origin: allowedOrigins,
             methods: ["GET", "POST"]

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import ChatInterface from './components/ChatInterface';
+import { CHAT_PUBLIC_BASE } from '@/lib/chatPublicBase';
 import type { User } from '@/types';
 
 // Changed fallback from http://localhost:3000 to /auth to work in production behind Nginx
@@ -42,7 +43,7 @@ export default function DashboardPage() {
         email: '',
       });
 
-      const friendsRes = await fetch('/api/friends', {
+      const friendsRes = await fetch(`${CHAT_PUBLIC_BASE}/api/friends`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (friendsRes.ok) {

@@ -88,6 +88,165 @@ function wrapPos(obj, w, h, margin = 40) {
   if (obj.y > h + margin) obj.y = -margin;
 }
 
+const ONLINE_CFG = Object.freeze({
+  STEP_MS: 1000 / 60,
+  LOCAL_RENDER_BASE: 0.18,
+  LOCAL_SNAP_DISTANCE: 180,
+  REMOTE_RENDER_DELAY_MS: 100,
+  REMOTE_MAX_EXTRAPOLATION_MS: 100,
+  WORLD_QUEUE_MAX: 90,
+  REMOTE_BUFFER_MAX: 40,
+});
+
+function normalizeAngle(angle) {
+  let out = angle;
+  while (out > 180) out -= 360;
+  while (out < -180) out += 360;
+  return out;
+}
+
+function shortestAngleDelta(target, current) {
+  let diff = target - current;
+  while (diff > 180) diff -= 360;
+  while (diff < -180) diff += 360;
+  return diff;
+}
+
+function wrapCoordinate(value, size, margin = CFG.SHIP_RADIUS) {
+  const span = size + margin * 2;
+  return ((value + margin) % span + span) % span - margin;
+}
+
+function unwrapCoordinate(rawValue, previousRawValue, previousUnwrappedValue, size) {
+  let delta = rawValue - previousRawValue;
+  if (delta > size / 2) delta -= size;
+  if (delta < -size / 2) delta += size;
+  return previousUnwrappedValue + delta;
+}
+
+function createContinuousState(x, y, angle = 0) {
+  return {
+    rawX: x,
+    rawY: y,
+    unwrappedX: x,
+    unwrappedY: y,
+    angle: normalizeAngle(angle),
+  };
+}
+
+function advanceContinuousState(state, x, y, angle = 0) {
+  if (!state) return createContinuousState(x, y, angle);
+  return {
+    rawX: x,
+    rawY: y,
+    unwrappedX: unwrapCoordinate(x, state.rawX, state.unwrappedX, CFG.WIDTH),
+    unwrappedY: unwrapCoordinate(y, state.rawY, state.unwrappedY, CFG.HEIGHT),
+    angle: normalizeAngle(angle),
+  };
+}
+
+function applyForwardThrust(state, dt) {
+  const rad = degToRad(state.angle);
+  const thrust = CFG.SHIP_SPEED * dt / 16;
+  state.vx += Math.sin(rad) * thrust;
+  state.vy -= Math.cos(rad) * thrust;
+}
+
+function applyBackwardThrust(state, dt) {
+  const rad = degToRad(state.angle);
+  const thrust = CFG.SHIP_SPEED * dt / 16;
+  state.vx -= Math.sin(rad) * thrust;
+  state.vy += Math.cos(rad) * thrust;
+}
+
+function applyRotateLeft(state, dt) {
+  state.angularVel -= 0.4 * dt / 16;
+}
+
+function applyRotateRight(state, dt) {
+  state.angularVel += 0.4 * dt / 16;
+}
+
+function rechargeShipEnergy(state, nowMs) {
+  if (!Number.isFinite(state.lastRechargeTime)) state.lastRechargeTime = nowMs;
+  if (state.energy < CFG.WEAPON_MAX_ENERGY &&
+      nowMs - state.lastRechargeTime >= CFG.WEAPON_RECHARGE_MS) {
+    state.energy = Math.min(state.energy + CFG.WEAPON_RECHARGE, CFG.WEAPON_MAX_ENERGY);
+    state.lastRechargeTime = nowMs;
+  }
+}
+
+function updateShipPhysics(state, dt, nowMs = performance.now()) {
+  const maxAngular = CFG.SHIP_ROT_SPEED * 0.8;
+  state.angularVel = clamp(state.angularVel, -maxAngular, maxAngular);
+  state.angle = normalizeAngle(state.angle + state.angularVel * dt / 16);
+  state.angularVel *= 0.95;
+
+  state.x += state.vx * dt / 16;
+  state.y += state.vy * dt / 16;
+
+  state.vx *= 0.98;
+  state.vy *= 0.98;
+
+  const maxSpeed = CFG.SHIP_SPEED * 2;
+  const speed = Math.sqrt(state.vx ** 2 + state.vy ** 2);
+  if (speed > maxSpeed) {
+    state.vx = (state.vx / speed) * maxSpeed;
+    state.vy = (state.vy / speed) * maxSpeed;
+  }
+
+  wrapPos(state, CFG.WIDTH, CFG.HEIGHT, state.radius || CFG.SHIP_RADIUS);
+  rechargeShipEnergy(state, nowMs);
+}
+
+function applyShipInput(state, input, dt) {
+  if (!state || !state.alive) return;
+  if (input.forward) applyForwardThrust(state, dt);
+  if (input.backward) applyBackwardThrust(state, dt);
+  if (input.left) applyRotateLeft(state, dt);
+  if (input.right) applyRotateRight(state, dt);
+}
+
+function stepShipState(state, input, dt, nowMs = performance.now()) {
+  if (!state || !state.alive) return;
+  applyShipInput(state, input, dt);
+  updateShipPhysics(state, dt, nowMs);
+}
+
+function createShipStateFromSnapshot(snapshot, nowMs = performance.now()) {
+  return {
+    x: snapshot.x,
+    y: snapshot.y,
+    vx: snapshot.vx,
+    vy: snapshot.vy,
+    angle: normalizeAngle(snapshot.angle),
+    angularVel: snapshot.angularVel,
+    hp: snapshot.hp,
+    energy: snapshot.energy,
+    alive: snapshot.alive,
+    radius: CFG.SHIP_RADIUS,
+    spawnSeq: snapshot.spawnSeq || 0,
+    lastRechargeTime: nowMs,
+  };
+}
+
+function createShipStateFromShip(ship, nowMs = performance.now()) {
+  return {
+    x: ship.x,
+    y: ship.y,
+    vx: ship.vx,
+    vy: ship.vy,
+    angle: normalizeAngle(ship.angle),
+    angularVel: ship.angularVel,
+    hp: ship.hp,
+    energy: ship.energy,
+    alive: ship.alive,
+    radius: ship.radius,
+    spawnSeq: ship.spawnSeq || 0,
+    lastRechargeTime: nowMs,
+  };
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    SOCKET MANAGER  (server-authoritative online multiplayer)
    ═══════════════════════════════════════════════════════════════════════ */
@@ -95,15 +254,19 @@ class SocketManager {
   /**
    * @param {string} url  e.g. "http://localhost:4000"
    */
-  constructor(url) {
+  constructor(url, options = {}) {
     this.playerIdx        = null;   // slot assigned by server (0-3)
     this.connected        = false;
     this.serverGameState  = 'lobby'; // 'lobby'|'countdown'|'playing'|'gameOver'
+    this.humanCount       = 0;
+    this.hasReceivedWorld = false;
     this.countdown        = null;   // seconds remaining, or null
-    this.pendingWorld     = null;   // latest world snapshot waiting to be applied
+    this.worldQueue       = [];     // ordered authoritative snapshots
     this.pendingGameOver  = null;   // latest game_over payload
     this.gameRestarted    = false;  // flipped true when server sends game_start
-    this._lastInputEmit   = 0;
+    this.identity         = null;
+    this.isAuthenticated  = false;
+    this.pendingSystemMessage = null;
 
     if (typeof io === 'undefined') {
       console.warn('[SocketManager] socket.io client not loaded – online mode unavailable');
@@ -112,6 +275,11 @@ class SocketManager {
     }
 
     const opts = { transports: ['websocket'] };
+    if (options && typeof options.playerToken === 'string' && options.playerToken) {
+      opts.auth = {
+        player_token: options.playerToken,
+      };
+    }
     if (typeof window !== 'undefined') {
       opts.path = '/game/socket.io/';
     }
@@ -124,13 +292,25 @@ class SocketManager {
 
     this.socket.on('disconnect', () => {
       this.connected = false;
+      this.hasReceivedWorld = false;
+      this.worldQueue = [];
       console.log('[SocketManager] disconnected');
     });
 
-    this.socket.on('init', ({ playerIdx, gameState }) => {
+    this.socket.on('init', ({ playerIdx, gameState, humanCount, identity }) => {
       this.playerIdx       = playerIdx;
       this.serverGameState = gameState || 'lobby';
+      this.humanCount      = Number.isInteger(humanCount) ? humanCount : this.humanCount;
+      this.identity        = identity || null;
+      this.isAuthenticated = Boolean(identity && identity.userId);
+      this.hasReceivedWorld = false;
       console.log('[SocketManager] assigned slot', playerIdx, '| serverState:', gameState);
+    });
+
+    this.socket.on('lobby_status', ({ gameState, humanCount }) => {
+      this.serverGameState = typeof gameState === 'string' ? gameState : this.serverGameState;
+      this.humanCount = Number.isInteger(humanCount) ? humanCount : this.humanCount;
+      if (this.serverGameState === 'lobby') this.countdown = null;
     });
 
     this.socket.on('countdown', ({ seconds }) => {
@@ -140,13 +320,23 @@ class SocketManager {
 
     this.socket.on('game_start', () => {
       this.serverGameState = 'playing';
+      this.hasReceivedWorld = false;
       this.countdown       = null;
       this.gameRestarted   = true;
+      this.worldQueue      = [];
     });
 
     this.socket.on('world', (world) => {
-      this.pendingWorld    = world;
-      this.serverGameState = world.state;
+      const snapshot = {
+        ...world,
+        receivedAtMs: performance.now(),
+      };
+      this.worldQueue.push(snapshot);
+      if (this.worldQueue.length > ONLINE_CFG.WORLD_QUEUE_MAX) {
+        this.worldQueue.splice(0, this.worldQueue.length - ONLINE_CFG.WORLD_QUEUE_MAX);
+      }
+      this.hasReceivedWorld = true;
+      this.serverGameState = snapshot.state;
     });
 
     this.socket.on('game_over', (data) => {
@@ -162,24 +352,75 @@ class SocketManager {
       console.log('[SocketManager] player left slot', playerIdx);
     });
 
+    this.socket.on('online_auth_required', (payload = {}) => {
+      this.pendingSystemMessage = {
+        title: 'Login Required',
+        message: typeof payload.message === 'string' && payload.message
+          ? payload.message
+          : 'Login required for online multiplayer.',
+      };
+    });
+
+    this.socket.on('room_reset', (payload = {}) => {
+      const initiator = typeof payload.initiatorUsername === 'string' && payload.initiatorUsername
+        ? payload.initiatorUsername
+        : '';
+      const baseMessage = typeof payload.message === 'string' && payload.message
+        ? payload.message
+        : 'Online room was reset.';
+      this.pendingSystemMessage = {
+        title: 'Online Room Reset',
+        message: initiator
+          ? `${baseMessage} Requested by ${initiator}.`
+          : baseMessage,
+      };
+    });
+
+    this.socket.on('remote_multiplayer_disabled', (payload = {}) => {
+      this.pendingSystemMessage = {
+        title: 'Mode Unavailable',
+        message: typeof payload.message === 'string' && payload.message
+          ? payload.message
+          : 'Remote multiplayer is not enabled on this server.',
+      };
+    });
+
     this.socket.on('room_full', () => {
       console.warn('[SocketManager] room is full – cannot join');
+      this.pendingSystemMessage = {
+        title: 'Room Full',
+        message: 'The online room is full right now. Please try again in a moment.',
+      };
     });
   }
 
   /**
-   * Send raw key-press state to the server (~60 Hz, de-duped).
-   * @param {{ forward, backward, left, right, shoot }} inputs
+   * Send a fixed-step input packet to the server.
+   * @param {{ seq, forward, backward, left, right, shoot }} inputs
    */
   emitInput(inputs) {
     if (!this.socket || !this.connected || this.playerIdx === null) return;
-    const now = performance.now();
-    if (now - this._lastInputEmit < 16) return;  // ~60 Hz cap
-    this._lastInputEmit = now;
     this.socket.emit('input', inputs);
   }
 
+  drainWorldQueue() {
+    if (this.worldQueue.length === 0) return [];
+    return this.worldQueue.splice(0, this.worldQueue.length);
+  }
+
+  consumeSystemMessage() {
+    const message = this.pendingSystemMessage;
+    this.pendingSystemMessage = null;
+    return message;
+  }
+
+  requestRoomReset() {
+    if (!this.socket || !this.connected || !this.isAuthenticated) return;
+    this.socket.emit('reset_room');
+  }
+
   disconnect() {
+    this.worldQueue = [];
     if (this.socket) this.socket.disconnect();
   }
 }
@@ -221,24 +462,100 @@ class AssetLoader {
 class InputManager {
   constructor() {
     this.keys = {};
+    this._gameplayKeys = new Set([
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+      'Space', 'Tab',
+      'KeyW', 'KeyA', 'KeyS', 'KeyD',
+    ]);
+
     this._onDown = (e) => {
-      this.keys[e.code] = true;
-      // prevent scroll on arrow keys / space / tab
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab'].includes(e.code)) {
+      const keys = this._getEventKeys(e);
+      keys.forEach((key) => {
+        this.keys[key] = true;
+      });
+      if (keys.some((key) => this._gameplayKeys.has(key))) {
         e.preventDefault();
       }
     };
-    this._onUp = (e) => { this.keys[e.code] = false; };
+    this._onUp = (e) => {
+      const keys = this._getEventKeys(e);
+      keys.forEach((key) => {
+        this.keys[key] = false;
+      });
+      if (keys.some((key) => this._gameplayKeys.has(key))) {
+        e.preventDefault();
+      }
+    };
+    this._onBlur = () => this.clear();
+    this._onVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        this.clear();
+      }
+    };
   }
 
   attach() {
     window.addEventListener('keydown', this._onDown);
     window.addEventListener('keyup',   this._onUp);
+    window.addEventListener('blur', this._onBlur);
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   detach() {
     window.removeEventListener('keydown', this._onDown);
     window.removeEventListener('keyup',   this._onUp);
+    window.removeEventListener('blur', this._onBlur);
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
+    this.clear();
+  }
+
+  clear() { this.keys = {}; }
+
+  _normalizeKey(value) {
+    if (typeof value !== 'string' || !value) return null;
+
+    switch (value) {
+      case ' ':
+      case 'Space':
+      case 'Spacebar':
+        return 'Space';
+      case 'Tab':
+        return 'Tab';
+      case 'ArrowUp':
+      case 'Up':
+        return 'ArrowUp';
+      case 'ArrowDown':
+      case 'Down':
+        return 'ArrowDown';
+      case 'ArrowLeft':
+      case 'Left':
+        return 'ArrowLeft';
+      case 'ArrowRight':
+      case 'Right':
+        return 'ArrowRight';
+      default:
+        if (value.length === 1) {
+          const upper = value.toUpperCase();
+          if (['W', 'A', 'S', 'D'].includes(upper)) {
+            return `Key${upper}`;
+          }
+        }
+        return value;
+    }
+  }
+
+  _getEventKeys(event) {
+    const out = [];
+    const add = (value) => {
+      const normalized = this._normalizeKey(value);
+      if (normalized && !out.includes(normalized)) {
+        out.push(normalized);
+      }
+    };
+
+    add(event.code);
+    add(event.key);
+    return out;
   }
 
   isDown(code) { return !!this.keys[code]; }
@@ -439,6 +756,7 @@ class Ship {
     // weapon energy
     this.energy = CFG.WEAPON_MAX_ENERGY;
     this.lastRechargeTime = 0;
+    this.spawnSeq = 0;
 
     // sprite key
     const color = CFG.PLAYER_NAMES[playerIdx];
@@ -454,6 +772,8 @@ class Ship {
     this.alive = true;
     this.vx = 0;
     this.vy = 0;
+    this.angularVel = 0;
+    this.spawnSeq += 1;
     this.invulnUntil = performance.now() + CFG.SHIP_INVULN_TIME;
     this.lastRechargeTime = performance.now();
   }
@@ -488,34 +808,24 @@ class Ship {
 
 
 thrustForward(dt) {
-  const rad = degToRad(this.angle);
-  const thrust = CFG.SHIP_SPEED * dt / 16;
-  this.vx += Math.sin(rad) * thrust;
-  this.vy -= Math.cos(rad) * thrust;
+  applyForwardThrust(this, dt);
 }
 
 thrustBackward(dt) {
-  const rad = degToRad(this.angle);
-  const thrust = CFG.SHIP_SPEED * dt / 16;
-  this.vx -= Math.sin(rad) * thrust;
-  this.vy += Math.cos(rad) * thrust;
+  applyBackwardThrust(this, dt);
 }
 
 
 rotateLeft(dt) {
-  this.angularVel -= 0.4 * dt / 16;
+  applyRotateLeft(this, dt);
 }
 
 rotateRight(dt) {
-  this.angularVel += 0.4 * dt / 16;
+  applyRotateRight(this, dt);
 }
 
   rechargeWeapon(now) {
-    if (this.energy < CFG.WEAPON_MAX_ENERGY &&
-        now - this.lastRechargeTime >= CFG.WEAPON_RECHARGE_MS) {
-      this.energy = Math.min(this.energy + CFG.WEAPON_RECHARGE, CFG.WEAPON_MAX_ENERGY);
-      this.lastRechargeTime = now;
-    }
+    rechargeShipEnergy(this, now);
   }
 
   canShoot() {
@@ -527,34 +837,7 @@ rotateRight(dt) {
   }
 
 update(dt) {
-	// Rotational Inertia
-  const MAX_ANGULAR = CFG.SHIP_ROT_SPEED * 0.8;
-  this.angularVel = clamp(this.angularVel, -MAX_ANGULAR, MAX_ANGULAR);
-  this.angle += this.angularVel * dt / 16;
-  this.angularVel *= 0.95; // rotational friction
-  
-  // Apply speed to position
-  this.x += this.vx * dt / 16;
-  this.y += this.vy * dt / 16;
-
-  // Deceleration (light space drag)
-  const DRAG = 0.98; // 1.0 = no friction, 0.95 = fast break
-  this.vx *= DRAG;
-  this.vy *= DRAG;
-
-  // Clamp max speed
-  const MAX_SPEED = CFG.SHIP_SPEED * 2;
-  const speed = Math.sqrt(this.vx ** 2 + this.vy ** 2);
-  if (speed > MAX_SPEED) {
-    this.vx = (this.vx / speed) * MAX_SPEED;
-    this.vy = (this.vy / speed) * MAX_SPEED;
-  }
-
-  // Wrap at edges (margin = radius ship icon)
-  wrapPos(this, CFG.WIDTH, CFG.HEIGHT, this.radius);
-
-  // Recharge weapon
-  this.rechargeWeapon(performance.now());
+  updateShipPhysics(this, dt, performance.now());
 }
 
   draw(ctx) {
@@ -622,6 +905,20 @@ class Player {
     for (let i = 1; i <= CFG.FLEET_SIZE; i++) {
       this.ships.push(new Ship(idx, i, assets));
     }
+
+    this.resetOnlineState();
+  }
+
+  resetOnlineState() {
+    this._pendingInputs = [];
+    this._nextInputSeq = 0;
+    this._predictedShipState = null;
+    this._predictedContinuous = null;
+    this._renderContinuous = null;
+    this._remoteSnapshots = [];
+    this._onlineMeta = null;
+    this._latestServerTimeMs = 0;
+    this._latestReceiptTimeMs = 0;
   }
 
   applyNetworkState(state) {
@@ -943,13 +1240,20 @@ class Game {
 
     /** @type {SocketManager|null} Active in 'online' mode only. */
     this.socketMgr = null;
+    this._onlineInputAccumulator = 0;
 
     // Local AI bridge (client local physics + ai_srvc commands over socket relay)
     this.networkSocket = null;
     this.networkRoomId = (typeof window !== 'undefined' && window.GAME_ROOM_ID)
       ? window.GAME_ROOM_ID
       : 'gameplay-room';
+    this._aiBridgeClientId = null;
+    this._availableAISlots = new Set();
     this._lastInputSend = 0;
+    this._onlineJoinNonce = 0;
+    this._onlineJoinPendingMessage = '';
+    this._onlineNoticeText = '';
+    this._onlineNoticeUntil = 0;
   }
 
   _disconnectAIBridge() {
@@ -957,10 +1261,37 @@ class Game {
       this.networkSocket.disconnect();
       this.networkSocket = null;
     }
+    this._aiBridgeClientId = null;
+    this._setAvailableAISlots([]);
+  }
+
+  _createAIBridgeClientId() {
+    return `local-ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  _setAvailableAISlots(slots = []) {
+    const normalizedSlots = Array.isArray(slots)
+      ? slots
+          .map((slot) => Number(slot))
+          .filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < 4)
+      : [];
+
+    this._availableAISlots = new Set(normalizedSlots);
+    this._syncLocalAIStatusLabels();
+  }
+
+  _syncLocalAIStatusLabels() {
+    this.players.forEach((player) => {
+      if (!(player && player.type === 'remote' && player.isAI)) return;
+      player.displayName = this._availableAISlots.has(player.idx) ? 'AI' : 'AI (offline)';
+    });
   }
 
   _connectAIBridge() {
     if (this.networkSocket || typeof io === 'undefined') return;
+    if (!this._aiBridgeClientId) {
+      this._aiBridgeClientId = this._createAIBridgeClientId();
+    }
 
     const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
       ? window.GAME_SOCKET_PORT
@@ -970,20 +1301,42 @@ class Game {
       ? window.location.origin
       : `http://localhost:${socketPort}`;
 
-    const opts = { transports: ['websocket'] };
+    const opts = {
+      transports: ['websocket'],
+      auth: {
+        bridge_role: 'local_ai_client',
+        room_id: this.networkRoomId,
+        bridge_client_id: this._aiBridgeClientId,
+      },
+    };
     if (typeof window !== 'undefined') {
       opts.path = '/game/socket.io/';
     }
 
     this.networkSocket = io(socketUrl, opts);
     this.networkSocket.on('connect', () => {
-      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId);
+      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId, '| client=', this._aiBridgeClientId);
     });
     this.networkSocket.on('disconnect', () => {
       console.log('[AIBridge] disconnected');
+      this._setAvailableAISlots([]);
+    });
+    this.networkSocket.on('ai_bridge_ready', (payload = {}) => {
+      if (payload.roomId !== this.networkRoomId) return;
+      if (typeof payload.bridgeClientId === 'string' && payload.bridgeClientId) {
+        this._aiBridgeClientId = payload.bridgeClientId;
+      }
+      this._setAvailableAISlots(payload.availableSlots);
+      console.log('[AIBridge] ready | available slots:', [...this._availableAISlots].join(',') || 'none');
+    });
+    this.networkSocket.on('ai_service_status', (payload = {}) => {
+      if (payload.roomId !== this.networkRoomId) return;
+      this._setAvailableAISlots(payload.availableSlots);
+      console.log('[AIBridge] AI service status | available slots:', [...this._availableAISlots].join(',') || 'none');
     });
     this.networkSocket.on('ai_command', (payload) => {
       if (!payload || payload.roomId !== this.networkRoomId) return;
+      if (payload.bridgeClientId && payload.bridgeClientId !== this._aiBridgeClientId) return;
       this.onAICommand(payload);
     });
   }
@@ -1063,6 +1416,8 @@ class Game {
       window.hideGlobalStatsScreen();
     }
     if (this._rafId) cancelAnimationFrame(this._rafId);
+    this._onlineJoinNonce += 1;
+    this._onlineJoinPendingMessage = '';
     if (this.socketMgr) {
       this.socketMgr.disconnect();
       this.socketMgr = null;
@@ -1071,6 +1426,13 @@ class Game {
   }
 
   cancelCurrentSession() {
+    if (typeof document !== 'undefined') {
+      const inGameMenu = document.getElementById('in-game-menu-overlay');
+      if (inGameMenu) inGameMenu.remove();
+    }
+    if (typeof window !== 'undefined' && typeof window.hideGlobalStatsScreen === 'function') {
+      window.hideGlobalStatsScreen();
+    }
     this.players = [];
     this.lasers = [];
     this.meteors = [];
@@ -1079,6 +1441,10 @@ class Game {
     this.winner = null;
     this.selectedMode = null;
     this._isPausedByMenu = false;
+    this._onlineJoinNonce += 1;
+    this._onlineJoinPendingMessage = '';
+    this._onlineNoticeText = '';
+    this._onlineNoticeUntil = 0;
     if (this.socketMgr) {
       this.socketMgr.disconnect();
       this.socketMgr = null;
@@ -1091,12 +1457,183 @@ class Game {
   }
 
   /* ─── game modes ─────────────────────────────────────────────── */
+  _showSystemModal(title, message) {
+    if (typeof document === 'undefined') {
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+        window.alert(`${title}\n\n${message}`);
+      }
+      return;
+    }
+
+    const existing = document.getElementById('space-fleet-system-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'space-fleet-system-modal';
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.background = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '1200';
+
+    const panel = document.createElement('div');
+    panel.style.background = '#1a1d36';
+    panel.style.border = '2px solid #ffcc00';
+    panel.style.padding = '36px';
+    panel.style.borderRadius = '16px';
+    panel.style.maxWidth = '620px';
+    panel.style.textAlign = 'center';
+    panel.style.color = '#fff';
+    panel.style.fontFamily = 'monospace';
+    panel.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.45)';
+
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+    heading.style.margin = '0 0 18px';
+    heading.style.fontSize = '30px';
+    heading.style.color = '#ffcc00';
+
+    const body = document.createElement('p');
+    body.textContent = message;
+    body.style.margin = '0 0 28px';
+    body.style.fontSize = '18px';
+    body.style.lineHeight = '1.6';
+    body.style.color = '#ddd';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'OK';
+    button.style.background = '#ff4400';
+    button.style.color = '#fff';
+    button.style.border = 'none';
+    button.style.padding = '12px 40px';
+    button.style.fontSize = '20px';
+    button.style.fontFamily = 'monospace';
+    button.style.fontWeight = 'bold';
+    button.style.borderRadius = '8px';
+    button.style.cursor = 'pointer';
+
+    const close = () => {
+      overlay.remove();
+      if (this.mainMenu) this.mainMenu.setCooldown(300);
+    };
+
+    button.addEventListener('click', close);
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === 'Escape' || event.key === ' ') {
+        event.preventDefault();
+        close();
+      }
+    });
+
+    panel.appendChild(heading);
+    panel.appendChild(body);
+    panel.appendChild(button);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    button.focus();
+  }
+
+  _returnToMenuWithMessage(title, message) {
+    this.cancelCurrentSession();
+    this._showSystemModal(title, message);
+  }
+
+  async _fetchOnlineAuthToken() {
+    if (typeof fetch === 'undefined') return null;
+
+    try {
+      const response = await fetch('/game/api/auth/token', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return (data && typeof data.token === 'string' && data.token) ? data.token : null;
+    } catch (error) {
+      console.warn('[Online] token fetch failed', error);
+      return null;
+    }
+  }
+
+  async _beginOnlineJoin(socketUrl, joinNonce) {
+    this._onlineJoinPendingMessage = 'Authenticating online...';
+    const token = await this._fetchOnlineAuthToken();
+
+    if (this._onlineJoinNonce !== joinNonce || this.selectedMode !== 'online') return;
+
+    if (!token) {
+      this._onlineJoinPendingMessage = '';
+      this._returnToMenuWithMessage('Login Required', 'Log in before joining Online multiplayer.');
+      return;
+    }
+
+    const mgr = new SocketManager(socketUrl, { playerToken: token });
+    if (!mgr.socket) {
+      this._onlineJoinPendingMessage = '';
+      this._returnToMenuWithMessage('Online Unavailable', 'The online room could not be opened right now.');
+      return;
+    }
+
+    if (this._onlineJoinNonce !== joinNonce || this.selectedMode !== 'online') {
+      mgr.disconnect();
+      return;
+    }
+
+    this.socketMgr = mgr;
+    this._onlineJoinPendingMessage = 'Connecting to online room...';
+
+    mgr.socket.once('init', ({ playerIdx, gameState, identity }) => {
+      if (this.socketMgr !== mgr || this._onlineJoinNonce !== joinNonce) return;
+
+      this._onlineJoinPendingMessage = '';
+      const player = this.players[playerIdx];
+      if (player) {
+        player.displayName = identity && identity.username
+          ? identity.username
+          : CFG.PLAYER_NAMES[playerIdx].toUpperCase();
+        player.userId = identity && identity.userId ? identity.userId : null;
+      }
+
+      if (gameState === 'playing') {
+        this._showOnlineNotice('Joining live match...', 2400);
+      } else {
+        this._onlineNoticeText = '';
+        this._onlineNoticeUntil = 0;
+      }
+    });
+  }
+
+  requestOnlineRoomReset() {
+    if (!this.socketMgr) return;
+    this.socketMgr.requestRoomReset();
+  }
+
+  _consumeOnlineSystemMessage() {
+    if (!this.socketMgr) return false;
+    const systemMessage = this.socketMgr.consumeSystemMessage();
+    if (!systemMessage) return false;
+
+    this._onlineJoinPendingMessage = '';
+    this._returnToMenuWithMessage(systemMessage.title, systemMessage.message);
+    return true;
+  }
+
   _setupPlayers(mode) {
     this.players = [];
     this.lasers  = [];
     this.meteors = [];
     this.particles = [];
     this.winner  = null;
+    this._onlineInputAccumulator = 0;
+    this._onlineJoinNonce += 1;
+    this._onlineJoinPendingMessage = '';
+    if (this.socketMgr) {
+      this.socketMgr.disconnect();
+      this.socketMgr = null;
+    }
     this._disconnectAIBridge();
 
     const p1Controls = {
@@ -1116,30 +1653,19 @@ class Game {
 
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      const aiP = new Player(1, 'remote', {}, this.assets);
-      aiP.isAI = true;
-      this.players.push(aiP);
-      this._connectAIBridge();
+      this.players.push(new Player(1, 'ai', {}, this.assets));
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      const aiP = new Player(2, 'remote', {}, this.assets);
-      aiP.isAI = true;
-      this.players.push(aiP);
-      this._connectAIBridge();
+      this.players.push(new Player(2, 'ai', {}, this.assets));
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      const aiP2 = new Player(2, 'remote', {}, this.assets);
-      const aiP3 = new Player(3, 'remote', {}, this.assets);
-      aiP2.isAI = true;
-      aiP3.isAI = true;
-      this.players.push(aiP2);
-      this.players.push(aiP3);
-      this._connectAIBridge();
+      this.players.push(new Player(2, 'ai', {}, this.assets));
+      this.players.push(new Player(3, 'ai', {}, this.assets));
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1154,22 +1680,9 @@ class Game {
       const socketUrl = typeof window !== 'undefined'
         ? window.location.origin
         : `http://localhost:${socketPort}`;
-
-      this.socketMgr = new SocketManager(socketUrl);
-
-      if (this.socketMgr.socket) {
-        this.socketMgr.socket.once('init', ({ playerIdx }) => {
-          // Tell server our display name
-          const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
-          const name = (currentUser && currentUser.username)
-            ? currentUser.username
-            : CFG.PLAYER_NAMES[playerIdx].toUpperCase();
-          this.socketMgr.socket.emit('display_name', name);
-          // Update local view
-          const p = this.players[playerIdx];
-          if (p) { p.displayName = name; p.userId = currentUser ? currentUser.id : null; }
-        });
-      }
+      const joinNonce = this._onlineJoinNonce;
+      this._onlineJoinPendingMessage = 'Authenticating online...';
+      this._beginOnlineJoin(socketUrl, joinNonce);
     }
 
     // Assign display names and user IDs
@@ -1190,13 +1703,22 @@ class Game {
       }
     });
 
+    this._syncLocalAIStatusLabels();
 
-    // spawn first ships
-    this.players.forEach(p => p.spawnCurrent());
+
+    if (mode === 'online') {
+      this.players.forEach((player) => this._clearOnlinePlayerState(player));
+    } else {
+      // spawn first ships
+      this.players.forEach(p => p.spawnCurrent());
+    }
 
     // create meteors
     for (let i = 0; i < CFG.METEOR_COUNT; i++) {
       this.meteors.push(new Meteor(this.assets));
+    }
+    if (mode === 'online') {
+      this.meteors.forEach((meteor) => { meteor.alive = false; });
     }
 
     this.hud = new HUD(this.players);
@@ -1377,6 +1899,9 @@ class Game {
       this._handleOnlineUpdate(dt);
       return;
     }
+    if (this.selectedMode === 'online') {
+      return;
+    }
 
     const now = performance.now();
 
@@ -1428,6 +1953,7 @@ class Game {
         this.networkSocket.emit('ai_game_state', {
           roomId: this.networkRoomId,
           slot: p.idx,
+          bridgeClientId: this._aiBridgeClientId,
           dt_ms: dt,
           my_ship: {
             x: ship.x,
@@ -1636,28 +2162,306 @@ for (let i = 0; i < this.players.length; i++) {
    * Called by _update() instead of the local physics block when in online mode.
    * Sends raw inputs to server; applies pending world snapshots; handles events.
    */
+  _getOnlineInputState() {
+    return {
+      forward: this.input.isDown('ArrowUp'),
+      backward: this.input.isDown('ArrowDown'),
+      left: this.input.isDown('ArrowLeft'),
+      right: this.input.isDown('ArrowRight'),
+      shoot: this.input.isDown('Space'),
+    };
+  }
+
+  _applyAuthoritativeShipState(ship, snapshot) {
+    if (!ship || !snapshot) return;
+    ship.vx = snapshot.vx;
+    ship.vy = snapshot.vy;
+    ship.angularVel = snapshot.angularVel;
+    ship.hp = snapshot.hp;
+    ship.energy = snapshot.energy;
+    ship.alive = snapshot.alive;
+    ship.spawnSeq = snapshot.spawnSeq || 0;
+    if (snapshot.isInvulnerable) ship.invulnUntil = performance.now() + 200;
+  }
+
+  _snapShipToContinuous(ship, continuous) {
+    if (!ship || !continuous) return;
+    ship.x = wrapCoordinate(continuous.unwrappedX, CFG.WIDTH, ship.radius);
+    ship.y = wrapCoordinate(continuous.unwrappedY, CFG.HEIGHT, ship.radius);
+    ship.angle = normalizeAngle(continuous.angle);
+  }
+
+  _clearOnlinePlayerState(player) {
+    if (!player) return;
+    player.resetOnlineState();
+    player.fleetIndex = 0;
+    player.alive = false;
+    player.ships.forEach((ship) => {
+      ship.alive = false;
+      ship.vx = 0;
+      ship.vy = 0;
+      ship.angularVel = 0;
+    });
+  }
+
+  _ensureLocalPrediction(player) {
+    const ship = player && player.currentShip;
+    if (!player || !ship || !ship.alive || player._predictedShipState) return;
+    player._predictedShipState = createShipStateFromShip(ship);
+    player._predictedContinuous = createContinuousState(ship.x, ship.y, ship.angle);
+    if (!player._renderContinuous) {
+      player._renderContinuous = createContinuousState(ship.x, ship.y, ship.angle);
+    }
+    player._onlineMeta = {
+      fleetIndex: player.fleetIndex,
+      alive: ship.alive,
+      spawnSeq: ship.spawnSeq || 0,
+    };
+  }
+
+  _replayPendingLocalInputs(player) {
+    if (!player || !player._predictedShipState || !player._predictedContinuous) return;
+    let replayNow = performance.now() - player._pendingInputs.length * ONLINE_CFG.STEP_MS;
+    player._pendingInputs.forEach((input) => {
+      stepShipState(player._predictedShipState, input, ONLINE_CFG.STEP_MS, replayNow);
+      player._predictedContinuous = advanceContinuousState(
+        player._predictedContinuous,
+        player._predictedShipState.x,
+        player._predictedShipState.y,
+        player._predictedShipState.angle
+      );
+      replayNow += ONLINE_CFG.STEP_MS;
+    });
+  }
+
+  _applyOwnSnapshot(player, ps) {
+    const ship = player.currentShip;
+    if (!ship || !ps.ship) return;
+
+    const snapshot = ps.ship;
+    const nextMeta = {
+      fleetIndex: ps.fleetIndex,
+      alive: snapshot.alive,
+      spawnSeq: snapshot.spawnSeq || 0,
+    };
+    const previousMeta = player._onlineMeta;
+    const discontinuity =
+      !previousMeta ||
+      previousMeta.fleetIndex !== nextMeta.fleetIndex ||
+      previousMeta.alive !== nextMeta.alive ||
+      previousMeta.spawnSeq !== nextMeta.spawnSeq;
+
+    const ackSeq = Number.isFinite(ps.lastProcessedInputSeq) ? ps.lastProcessedInputSeq : 0;
+    player._pendingInputs = player._pendingInputs.filter((input) => input.seq > ackSeq);
+    player._predictedShipState = createShipStateFromSnapshot(snapshot);
+    player._predictedContinuous = createContinuousState(snapshot.x, snapshot.y, snapshot.angle);
+    this._replayPendingLocalInputs(player);
+
+    this._applyAuthoritativeShipState(ship, snapshot);
+
+    const target = player._predictedContinuous;
+    if (!player._renderContinuous || discontinuity) {
+      player._renderContinuous = { ...target };
+      this._snapShipToContinuous(ship, player._renderContinuous);
+    } else {
+      const dx = target.unwrappedX - player._renderContinuous.unwrappedX;
+      const dy = target.unwrappedY - player._renderContinuous.unwrappedY;
+      if (Math.hypot(dx, dy) > ONLINE_CFG.LOCAL_SNAP_DISTANCE) {
+        player._renderContinuous = { ...target };
+        this._snapShipToContinuous(ship, player._renderContinuous);
+      }
+    }
+
+    player._onlineMeta = nextMeta;
+  }
+
+  _applyRemoteSnapshot(player, ps, world) {
+    const ship = player.currentShip;
+    if (!ship || !ps.ship) return;
+
+    const snapshot = ps.ship;
+    const nextMeta = {
+      fleetIndex: ps.fleetIndex,
+      alive: snapshot.alive,
+      spawnSeq: snapshot.spawnSeq || 0,
+    };
+    const previousMeta = player._onlineMeta;
+    const discontinuity =
+      !previousMeta ||
+      previousMeta.fleetIndex !== nextMeta.fleetIndex ||
+      previousMeta.alive !== nextMeta.alive ||
+      previousMeta.spawnSeq !== nextMeta.spawnSeq;
+
+    if (discontinuity) {
+      player._remoteSnapshots = [];
+      player._renderContinuous = createContinuousState(snapshot.x, snapshot.y, snapshot.angle);
+      this._snapShipToContinuous(ship, player._renderContinuous);
+    }
+
+    const previousSample = player._remoteSnapshots[player._remoteSnapshots.length - 1];
+    const continuous = previousSample
+      ? advanceContinuousState(previousSample, snapshot.x, snapshot.y, snapshot.angle)
+      : createContinuousState(snapshot.x, snapshot.y, snapshot.angle);
+
+    player._remoteSnapshots.push({
+      rawX: snapshot.x,
+      rawY: snapshot.y,
+      unwrappedX: continuous.unwrappedX,
+      unwrappedY: continuous.unwrappedY,
+      angle: normalizeAngle(snapshot.angle),
+      vx: snapshot.vx,
+      vy: snapshot.vy,
+      angularVel: snapshot.angularVel,
+      serverTimeMs: Number(world.serverTimeMs) || Date.now(),
+      receivedAtMs: Number(world.receivedAtMs) || performance.now(),
+    });
+    player._remoteSnapshots = player._remoteSnapshots
+      .filter((sample) => sample.serverTimeMs >= (Number(world.serverTimeMs) || 0) - 1000);
+    if (player._remoteSnapshots.length > ONLINE_CFG.REMOTE_BUFFER_MAX) {
+      player._remoteSnapshots.splice(0, player._remoteSnapshots.length - ONLINE_CFG.REMOTE_BUFFER_MAX);
+    }
+
+    player._latestServerTimeMs = Number(world.serverTimeMs) || Date.now();
+    player._latestReceiptTimeMs = Number(world.receivedAtMs) || performance.now();
+    player._onlineMeta = nextMeta;
+    this._applyAuthoritativeShipState(ship, snapshot);
+  }
+
+  _sampleRemoteRenderTarget(player, nowMs) {
+    if (!player || player._remoteSnapshots.length === 0) return null;
+
+    const samples = player._remoteSnapshots;
+    const latest = samples[samples.length - 1];
+    const renderServerTime =
+      latest.serverTimeMs +
+      Math.max(0, nowMs - latest.receivedAtMs) -
+      ONLINE_CFG.REMOTE_RENDER_DELAY_MS;
+
+    if (renderServerTime <= samples[0].serverTimeMs) {
+      const first = samples[0];
+      return {
+        unwrappedX: first.unwrappedX,
+        unwrappedY: first.unwrappedY,
+        angle: first.angle,
+      };
+    }
+
+    for (let i = 0; i < samples.length - 1; i++) {
+      const current = samples[i];
+      const next = samples[i + 1];
+      if (renderServerTime >= current.serverTimeMs && renderServerTime <= next.serverTimeMs) {
+        const span = Math.max(1, next.serverTimeMs - current.serverTimeMs);
+        const t = clamp((renderServerTime - current.serverTimeMs) / span, 0, 1);
+        return {
+          unwrappedX: current.unwrappedX + (next.unwrappedX - current.unwrappedX) * t,
+          unwrappedY: current.unwrappedY + (next.unwrappedY - current.unwrappedY) * t,
+          angle: normalizeAngle(current.angle + shortestAngleDelta(next.angle, current.angle) * t),
+        };
+      }
+    }
+
+    const extraMs = Math.min(
+      Math.max(0, renderServerTime - latest.serverTimeMs),
+      ONLINE_CFG.REMOTE_MAX_EXTRAPOLATION_MS
+    );
+    return {
+      unwrappedX: latest.unwrappedX + latest.vx * extraMs / 16,
+      unwrappedY: latest.unwrappedY + latest.vy * extraMs / 16,
+      angle: normalizeAngle(latest.angle + latest.angularVel * extraMs / 16),
+    };
+  }
+
+  _updateRemoteRenders(nowMs, ownIdx) {
+    this.players.forEach((player, idx) => {
+      if (!player || idx === ownIdx) return;
+      const ship = player.currentShip;
+      const target = this._sampleRemoteRenderTarget(player, nowMs);
+      if (!ship || !target) return;
+      player._renderContinuous = {
+        rawX: target.unwrappedX,
+        rawY: target.unwrappedY,
+        unwrappedX: target.unwrappedX,
+        unwrappedY: target.unwrappedY,
+        angle: target.angle,
+      };
+      this._snapShipToContinuous(ship, player._renderContinuous);
+    });
+  }
+
+  _updateLocalRender(player, dt) {
+    const ship = player && player.currentShip;
+    const target = player && player._predictedContinuous;
+    if (!ship || !target) return;
+
+    if (!player._renderContinuous) {
+      player._renderContinuous = { ...target };
+      this._snapShipToContinuous(ship, player._renderContinuous);
+      return;
+    }
+
+    const dx = target.unwrappedX - player._renderContinuous.unwrappedX;
+    const dy = target.unwrappedY - player._renderContinuous.unwrappedY;
+    if (Math.hypot(dx, dy) > ONLINE_CFG.LOCAL_SNAP_DISTANCE) {
+      player._renderContinuous = { ...target };
+    } else {
+      const alpha = 1 - Math.pow(ONLINE_CFG.LOCAL_RENDER_BASE, dt / 16);
+      player._renderContinuous.unwrappedX += dx * alpha;
+      player._renderContinuous.unwrappedY += dy * alpha;
+      player._renderContinuous.angle = normalizeAngle(
+        player._renderContinuous.angle + shortestAngleDelta(target.angle, player._renderContinuous.angle) * alpha
+      );
+    }
+
+    this._snapShipToContinuous(ship, player._renderContinuous);
+  }
+
   _handleOnlineUpdate(dt) {
     const mgr = this.socketMgr;
     if (!mgr) return;
+    if (this._consumeOnlineSystemMessage()) return;
 
-    // Send our key state to the server
-    if (mgr.playerIdx !== null && mgr.connected) {
-      mgr.emitInput({
-        forward:  this.input.isDown('ArrowUp'),
-        backward: this.input.isDown('ArrowDown'),
-        left:     this.input.isDown('ArrowLeft'),
-        right:    this.input.isDown('ArrowRight'),
-        shoot:    this.input.isDown('Space'),
-      });
+    if (mgr.gameRestarted) {
+      mgr.gameRestarted = false;
+      this._resetOnlineGame();
     }
 
-    // Apply latest world snapshot from server
-    if (mgr.pendingWorld) {
-      this._applyWorldSnapshot(mgr.pendingWorld);
-      mgr.pendingWorld = null;
+    mgr.drainWorldQueue().forEach((world) => this._applyWorldSnapshot(world));
+
+    const ownIdx = mgr.playerIdx;
+    const ownPlayer = ownIdx !== null ? this.players[ownIdx] : null;
+    if (ownPlayer) this._ensureLocalPrediction(ownPlayer);
+
+    if (ownPlayer && mgr.connected && mgr.serverGameState === 'playing') {
+      this._onlineInputAccumulator += dt;
+      while (this._onlineInputAccumulator >= ONLINE_CFG.STEP_MS) {
+        const input = {
+          seq: ownPlayer._nextInputSeq + 1,
+          ...this._getOnlineInputState(),
+        };
+        ownPlayer._nextInputSeq = input.seq;
+        ownPlayer._pendingInputs.push(input);
+        if (ownPlayer._pendingInputs.length > ONLINE_CFG.WORLD_QUEUE_MAX * 2) {
+          ownPlayer._pendingInputs.shift();
+        }
+        if (ownPlayer._predictedShipState) {
+          stepShipState(ownPlayer._predictedShipState, input, ONLINE_CFG.STEP_MS);
+          ownPlayer._predictedContinuous = advanceContinuousState(
+            ownPlayer._predictedContinuous,
+            ownPlayer._predictedShipState.x,
+            ownPlayer._predictedShipState.y,
+            ownPlayer._predictedShipState.angle
+          );
+        }
+        mgr.emitInput(input);
+        this._onlineInputAccumulator -= ONLINE_CFG.STEP_MS;
+      }
+      this._updateLocalRender(ownPlayer, dt);
+    } else {
+      this._onlineInputAccumulator = 0;
     }
 
-    // Server-initiated game-over
+    this._updateRemoteRenders(performance.now(), ownIdx);
+
     if (mgr.pendingGameOver && this.state !== STATE.GAME_OVER) {
       const data = mgr.pendingGameOver;
       mgr.pendingGameOver = null;
@@ -1668,26 +2472,122 @@ for (let i = 0; i < this.players.length; i++) {
       this._gameOverCooldown = 800;
       if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
         window.showRankingScreen(this.players, this.winner, 'online', () => {
-          // Server will auto-restart; just flip back to PLAYING so we render the
-          // world snapshots when the new game arrives.
           this.state = STATE.PLAYING;
         });
       }
     }
 
-    // Server started a new game (auto-restart after game-over)
+    this.particles.forEach((particle) => particle.update(dt));
+    this.particles = this.particles.filter((particle) => particle.alive);
+    return;
+    /*
+
+    // ── 1. Client-side prediction for own player ─────────────────────────
+    // Apply inputs immediately at 60 fps so the ship feels instant.
+    // The server will reconcile via soft correction in _applyWorldSnapshot.
     if (mgr.gameRestarted) {
       mgr.gameRestarted = false;
       this._resetOnlineGame();
     }
 
-    // Particles are purely visual — update client-side only
+    mgr.drainWorldQueue().forEach((world) => this._applyWorldSnapshot(world));
+
+    const ownIdx = mgr.playerIdx;
+    const ownPlayer = ownIdx !== null ? this.players[ownIdx] : null;
+    if (ownPlayer) this._ensureLocalPrediction(ownPlayer);
+
+    // ── 2. Interpolate remote players toward their authoritative targets ──
+    // Frame-rate-independent lerp: alpha = 1 - 0.65^(dt/16)
+    // At 60 fps each frame closes ~35 % of remaining gap → smooth without lag.
+    if (ownPlayer && mgr.connected && mgr.serverGameState === 'playing') {
+    this.players.forEach((p, i) => {
+      if (i === ownIdx || !p || !p._remoteTarget) return;
+      const ship   = p.currentShip;
+      const target = p._remoteTarget;
+      if (!ship || !target) return;
+
+      const dx = target.x - ship.x;
+      const dy = target.y - ship.y;
+      ship.x = Math.abs(dx) > CFG.WIDTH / 2
+        ? target.x
+        : ship.x + dx * LERP;
+      ship.y = Math.abs(dy) > CFG.HEIGHT / 2
+        ? target.y
+        : ship.y + dy * LERP;
+
+      // Angle: shortest-path interpolation to handle 0°/360° wrap
+      let da = target.angle - ship.angle;
+      while (da >  180) da -= 360;
+      while (da < -180) da += 360;
+      ship.angle += da * LERP;
+    });
+
+    // ── 3. Send inputs to server ──────────────────────────────────────────
+    if (ownIdx !== null && mgr.connected) {
+      mgr.emitInput({
+        forward:  this.input.isDown('ArrowUp'),
+        backward: this.input.isDown('ArrowDown'),
+        left:     this.input.isDown('ArrowLeft'),
+        right:    this.input.isDown('ArrowRight'),
+        shoot:    this.input.isDown('Space'),
+      });
+    }
+
+    // ── 4. Apply latest server snapshot (with reconciliation) ─────────────
+    if (mgr.pendingWorld) {
+      this._applyWorldSnapshot(mgr.pendingWorld);
+      mgr.pendingWorld = null;
+    }
+
+    // ── 5. Server-initiated game-over ─────────────────────────────────────
+    if (mgr.pendingGameOver && this.state !== STATE.GAME_OVER) {
+      const data = mgr.pendingGameOver;
+      mgr.pendingGameOver = null;
+      this.winner = (data.winner !== null && data.winner !== undefined)
+        ? (this.players[data.winner] || null)
+        : null;
+      this.state = STATE.GAME_OVER;
+      this._gameOverCooldown = 800;
+      if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
+        window.showRankingScreen(this.players, this.winner, 'online', () => {
+          this.state = STATE.PLAYING;
+        });
+      }
+    }
+
+    // ── 6. Server started a new game ──────────────────────────────────────
+    if (mgr.gameRestarted) {
+      mgr.gameRestarted = false;
+      this._resetOnlineGame();
+    }
+
+    // ── 7. Client-side particles (purely visual) ──────────────────────────
     this.particles.forEach(p => p.update(dt));
     this.particles = this.particles.filter(p => p.alive);
+    */
   }
 
   /** Reset local view state between online rounds. */
   _resetOnlineGame() {
+    this.winner = null;
+    this.lasers = [];
+    this.particles = [];
+    this._onlineInputAccumulator = 0;
+    this.meteors.forEach((meteor) => { meteor.alive = false; });
+    this.players.forEach((player) => {
+      player.fleetIndex = 0;
+      player.alive = true;
+      player.resetOnlineState();
+      player.ships.forEach((ship) => {
+        ship.alive = false;
+        ship.vx = 0;
+        ship.vy = 0;
+        ship.angularVel = 0;
+      });
+    });
+    if (this.state === STATE.GAME_OVER) this.state = STATE.PLAYING;
+    return;
+
     this.winner      = null;
     this.lasers      = [];
     this.particles   = [];
@@ -1702,7 +2602,59 @@ for (let i = 0; i < this.players.length; i++) {
    * Spawns client-side particles for visual events in the snapshot.
    */
   _applyWorldSnapshot(world) {
-    // Sync every player slot
+    this.players.forEach((player, i) => {
+      const ps = world.players[i];
+      if (!player) return;
+      if (!ps) {
+        this._clearOnlinePlayerState(player);
+        return;
+      }
+
+      player.fleetIndex = ps.fleetIndex;
+      player.alive = ps.alive;
+      player.displayName = ps.displayName;
+      if (ps.stats) player.stats = ps.stats;
+
+      const ship = player.currentShip;
+      if (!ship || !ps.ship) {
+        player.resetOnlineState();
+        if (ship) ship.alive = false;
+        player._onlineMeta = {
+          fleetIndex: ps.fleetIndex,
+          alive: ps.alive,
+          spawnSeq: 0,
+        };
+        return;
+      }
+
+      if (this.socketMgr && i === this.socketMgr.playerIdx) {
+        this._applyOwnSnapshot(player, ps);
+      } else {
+        this._applyRemoteSnapshot(player, ps, world);
+      }
+    });
+
+    this.lasers = world.lasers.map((laser) =>
+      new Laser(laser.x, laser.y, laser.angle, laser.ownerIdx, this.assets)
+    );
+
+    world.meteors.forEach((meteorState, i) => {
+      const meteor = this.meteors[i];
+      if (!meteor) return;
+      meteor.x = meteorState.x;
+      meteor.y = meteorState.y;
+      meteor.rot = meteorState.rot;
+      meteor.alive = meteorState.alive;
+      meteor.spriteKey = meteorState.spriteKey;
+      meteor.radius = meteorState.radius;
+    });
+
+    (world.events || []).forEach((event) => {
+      if (event.type === 'spark') this._spawnSparks(event.x, event.y, event.color);
+      if (event.type === 'explosion') this._spawnExplosion(event.x, event.y);
+    });
+    return;
+
     world.players.forEach((ps, i) => {
       if (!ps) return;
       const player = this.players[i];
@@ -1713,28 +2665,43 @@ for (let i = 0; i < this.players.length; i++) {
       player.displayName = ps.displayName;
       if (ps.stats) player.stats = ps.stats;
 
+      const ownPlayer = this.socketMgr && i === this.socketMgr.playerIdx;
       const ship = player.currentShip;
+
       if (ship && ps.ship) {
-        ship.x          = ps.ship.x;
-        ship.y          = ps.ship.y;
-        ship.vx         = ps.ship.vx;
-        ship.vy         = ps.ship.vy;
-        ship.angle      = ps.ship.angle;
-        ship.angularVel = ps.ship.angularVel;
-        ship.hp         = ps.ship.hp;
-        ship.energy     = ps.ship.energy;
-        ship.alive      = ps.ship.alive;
-        // Keep invuln blink alive for a brief window
+        if (ownPlayer) {
+          // Own player: soft reconciliation — preserve local prediction, nudge toward server truth.
+          // Hard-sync authoritative state (HP, energy, alive) immediately.
+          if (!ps.ship.alive) {
+            ship.alive = false;
+            ship.hp    = 0;
+          } else {
+            const CORRECTION = 0.2;
+            ship.x      += (ps.ship.x     - ship.x)     * CORRECTION;
+            ship.y      += (ps.ship.y     - ship.y)     * CORRECTION;
+            ship.vx     += (ps.ship.vx    - ship.vx)    * CORRECTION;
+            ship.vy     += (ps.ship.vy    - ship.vy)    * CORRECTION;
+            ship.hp      = ps.ship.hp;
+            ship.energy  = ps.ship.energy;
+            ship.alive   = ps.ship.alive;
+          }
+        } else {
+          // Remote players: store authoritative target, lerp toward it each frame.
+          player._remoteTarget = ps.ship;
+          // Hard-sync HP/alive immediately so health bars and death are responsive.
+          ship.hp    = ps.ship.hp;
+          ship.alive = ps.ship.alive;
+        }
         if (ps.ship.isInvulnerable) ship.invulnUntil = performance.now() + 200;
       }
     });
 
-    // Replace laser list with server's authoritative list
+    // Server-authoritative lasers (replace client list entirely)
     this.lasers = world.lasers.map(l =>
       new Laser(l.x, l.y, l.angle, l.ownerIdx, this.assets)
     );
 
-    // Sync meteor positions/state (meteors already exist from _setupPlayers)
+    // Sync meteor positions/state
     world.meteors.forEach((ms, i) => {
       const m = this.meteors[i];
       if (!m) return;
@@ -1746,7 +2713,6 @@ for (let i = 0; i < this.players.length; i++) {
       m.radius   = ms.radius;
     });
 
-    // Visual events (sparks / explosions) determined by the server
     (world.events || []).forEach(ev => {
       if (ev.type === 'spark')     this._spawnSparks(ev.x, ev.y, ev.color);
       if (ev.type === 'explosion') this._spawnExplosion(ev.x, ev.y);
@@ -1756,11 +2722,22 @@ for (let i = 0; i < this.players.length; i++) {
   /** Overlay drawn on top of the game canvas while waiting for the server. */
   _drawOnlineOverlay() {
     const mgr = this.socketMgr;
-    if (!mgr) return;
+    if (!mgr) {
+      if (this.selectedMode === 'online' && this._onlineJoinPendingMessage) {
+        return this._drawWaitMessage(this._onlineJoinPendingMessage);
+      }
+      return;
+    }
     if (!mgr.connected)                        return this._drawWaitMessage('Connecting to server…');
     if (mgr.serverGameState === 'countdown' && mgr.countdown !== null)
                                                return this._drawWaitMessage(`Game starts in  ${mgr.countdown}s`);
-    if (mgr.serverGameState === 'lobby')       return this._drawWaitMessage('Waiting for players…');
+    if (mgr.serverGameState === 'lobby') {
+       const hCount = mgr.humanCount ?? 1; // can be enhanced by server later
+       return this._drawWaitMessage(`Waiting for players… (${hCount}/2 needed)`);
+    }
+    if (mgr.serverGameState === 'playing') {
+      this._drawOnlineNotice();
+    }
   }
 
   _drawWaitMessage(msg) {
@@ -1772,6 +2749,40 @@ for (let i = 0; i < this.players.length; i++) {
     ctx.fillStyle = '#ffffff';
     ctx.font      = 'bold 34px monospace';
     ctx.fillText(msg, CFG.WIDTH / 2, CFG.HEIGHT / 2);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
+  _showOnlineNotice(msg, durationMs = 2200) {
+    this._onlineNoticeText = msg;
+    this._onlineNoticeUntil = performance.now() + durationMs;
+  }
+
+  _drawOnlineNotice() {
+    if (!this._onlineNoticeText) return;
+    if (performance.now() > this._onlineNoticeUntil) {
+      this._onlineNoticeText = '';
+      this._onlineNoticeUntil = 0;
+      return;
+    }
+
+    const ctx = this.ctx;
+    const text = this._onlineNoticeText;
+    ctx.save();
+    ctx.font = 'bold 22px monospace';
+    const textWidth = ctx.measureText(text).width;
+    const width = textWidth + 48;
+    const height = 42;
+    const x = (CFG.WIDTH - width) / 2;
+    const y = 28;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+    ctx.fillRect(x, y, width, height);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, width, height);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, CFG.WIDTH / 2, y + 28);
     ctx.textAlign = 'left';
     ctx.restore();
   }
@@ -1831,9 +2842,13 @@ for (let i = 0; i < this.players.length; i++) {
 
   _draw() {
     const ctx = this.ctx;
+    if (this.socketMgr && this._consumeOnlineSystemMessage()) {
+      return;
+    }
 
     // In online mode, show a waiting overlay until the server game is running
-    if (this.socketMgr && this.socketMgr.serverGameState !== 'playing') {
+    if ((this.selectedMode === 'online' && !this.socketMgr) ||
+        (this.socketMgr && this.socketMgr.serverGameState !== 'playing')) {
       this._drawBackground();
       this._drawOnlineOverlay();
       return;
@@ -1854,7 +2869,9 @@ for (let i = 0; i < this.players.length; i++) {
     this.particles.forEach(p => p.draw(ctx));
 
     // HUD
-    if (this.hud) this.hud.draw(ctx);
+    if (this.hud && (!this.socketMgr || this.socketMgr.hasReceivedWorld)) {
+      this.hud.draw(ctx);
+    }
 
     // Countdown / connecting overlay (drawn over the live game if needed)
     if (this.socketMgr) this._drawOnlineOverlay();

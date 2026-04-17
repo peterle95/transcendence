@@ -1,6 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000';
+// Must include auth_srvc Next.js basePath `/auth`.
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth';
 
 async function verifySocketToken(token: string): Promise<{ userId: number; username: string } | null> {
     try {
