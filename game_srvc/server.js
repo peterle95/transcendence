@@ -10,6 +10,7 @@
 const { Server } = require("socket.io");
 const http       = require("http");
 const { getScenario, listScenarios } = require('./scenarios');
+const { getScenario, listScenarios } = require('./scenarios');
 
 const PORT              = Number(process.env.SOCKET_PORT) || 4000;
 const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
@@ -286,6 +287,16 @@ const ROOM = {
   events:        [],          // transient visual events emitted with each world snapshot
   damageEvents:  [],          // { damage_source, target_slot, amount, source_slot, x, y } for AI reward tracking
   tickNum:       0,
+  state:         'lobby',    // 'lobby' | 'countdown' | 'playing' | 'gameOver'
+  slots:         new Array(MAX_SLOTS).fill(null),  // socketId per slot
+  players:       new Array(MAX_SLOTS).fill(null),  // ServerPlayer per slot
+  lasers:        [],
+  meteors:       [],
+  inputBuffer:   {},          // playerIdx → { forward, backward, left, right, shoot }
+  winner:        null,
+  events:        [],          // transient visual events emitted with each world snapshot
+  damageEvents:  [],          // { damage_source, target_slot, amount, source_slot, x, y } for AI reward tracking
+  tickNum:       0,
 };
 
 const displayNames = {};   // playerIdx → string set by client
@@ -429,6 +440,7 @@ function parseAIInput(payload = {}) {
 function buildAIStateForSlot(slot, dt) {
   const me = ROOM.players[slot];
   const myShip = me && me.currentShip ? me.currentShip : null;
+  const relevantDamage = ROOM.damageEvents.filter(e => e.target_slot === slot);
   const relevantDamage = ROOM.damageEvents.filter(e => e.target_slot === slot);
   return {
     roomId: GAME_ROOM_ID,
@@ -823,6 +835,7 @@ function resetGame() {
   ROOM.lasers    = [];
   ROOM.meteors   = [];
   ROOM.damageEvents = [];
+  ROOM.damageEvents = [];
   ROOM.inputBuffer = {};
   ROOM.winner    = null;
   ROOM.events    = [];
@@ -840,9 +853,13 @@ function resetGame() {
   
   // Initialize meteors based on training scenario
   for (let i = 0; i < CURRENT_SCENARIO.meteorCount; i++) ROOM.meteors.push(new Meteor());
+  
+  // Initialize meteors based on training scenario
+  for (let i = 0; i < CURRENT_SCENARIO.meteorCount; i++) ROOM.meteors.push(new Meteor());
 
   ROOM.state = 'playing';
   io.emit('game_start', {});
+  console.log(`game started | scenario=${TRAINING_SCENARIO} meteorCount=${CURRENT_SCENARIO.meteorCount} with ${connectedCount()} player(s)`);
   console.log(`game started | scenario=${TRAINING_SCENARIO} meteorCount=${CURRENT_SCENARIO.meteorCount} with ${connectedCount()} player(s)`);
 }
 
@@ -1251,6 +1268,15 @@ function gameTick() {
             x: laser.x,
             y: laser.y,
           });
+          // Track laser hit damage for AI reward calculation
+          ROOM.damageEvents.push({
+            damage_source: 'player_laser',
+            target_slot: player.idx,
+            source_slot: laser.ownerIdx,
+            amount: 1,
+            x: laser.x,
+            y: laser.y,
+          });
         }
         if (!ship.alive) {
           ROOM.events.push({ type: 'explosion', x: ship.x, y: ship.y });
@@ -1270,6 +1296,18 @@ function gameTick() {
       const ship = player.currentShip;
       if (!ship || !ship.alive) return;
       if (dist2(meteor, ship) < ship.radius + meteor.radius * 0.7) {
+        if (ship.takeDamage(1)) {
+          ROOM.events.push({ type: 'spark', x: ship.x, y: ship.y, color: '#ffaa33' });
+          // Track meteor hit damage for AI reward calculation (non-inflicted damage)
+          ROOM.damageEvents.push({
+            damage_source: 'meteor',
+            target_slot: player.idx,
+            source_slot: -1,  // no source slot for environmental hazard
+            amount: 1,
+            x: ship.x,
+            y: ship.y,
+          });
+        }
         if (ship.takeDamage(1)) {
           ROOM.events.push({ type: 'spark', x: ship.x, y: ship.y, color: '#ffaa33' });
           // Track meteor hit damage for AI reward calculation (non-inflicted damage)
@@ -1337,6 +1375,28 @@ function gameTick() {
             y: sb.y,
           });
         }
+        const hitA = sa.takeDamage(1);
+        const hitB = sb.takeDamage(1);
+        if (hitA) {
+          ROOM.damageEvents.push({
+            damage_source: 'ship_collision',
+            target_slot: pa.idx,
+            source_slot: pb.idx,
+            amount: 1,
+            x: sa.x,
+            y: sa.y,
+          });
+        }
+        if (hitB) {
+          ROOM.damageEvents.push({
+            damage_source: 'ship_collision',
+            target_slot: pb.idx,
+            source_slot: pa.idx,
+            amount: 1,
+            x: sb.x,
+            y: sb.y,
+          });
+        }
         ROOM.events.push({ type: 'spark', x: (sa.x + sb.x) / 2, y: (sa.y + sb.y) / 2, color: '#ffffff' });
         if (!sa.alive) { ROOM.events.push({ type: 'explosion', x: sa.x, y: sa.y }); if (!pa.advanceFleet()) checkGameEnd(); }
         if (!sb.alive) { ROOM.events.push({ type: 'explosion', x: sb.x, y: sb.y }); if (!pb.advanceFleet()) checkGameEnd(); }
@@ -1358,11 +1418,15 @@ function gameTick() {
 
     // Clear damage events after broadcast to prevent duplicates in next frame
     ROOM.damageEvents = [];
+
+    // Clear damage events after broadcast to prevent duplicates in next frame
+    ROOM.damageEvents = [];
   }
 }
 
 setInterval(gameTick, TICK_MS);
 
+console.log(`training scenario | key=${TRAINING_SCENARIO} name='${CURRENT_SCENARIO.name}' meteorCount=${CURRENT_SCENARIO.meteorCount} enemyCount=${CURRENT_SCENARIO.enemyCount}`);
 console.log(`training scenario | key=${TRAINING_SCENARIO} name='${CURRENT_SCENARIO.name}' meteorCount=${CURRENT_SCENARIO.meteorCount} enemyCount=${CURRENT_SCENARIO.enemyCount}`);
 httpServer.listen(PORT, () => console.log(`socket server running on port ${PORT}`));
  
