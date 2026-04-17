@@ -5891,3 +5891,2312 @@ Example:
 | UTC Time: 2026-04-14T06:39:37.154329+00:00 | Event: checkpoint | Episodes: session=2; total=52 | Transitions: session=1500; total=62000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 62000 | Avg Reward: -0.040500 | Avg Loss: 0.091957 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
 | UTC Time: 2026-04-14T06:40:10.147039+00:00 | Event: checkpoint | Episodes: session=3; total=53 | Transitions: session=2000; total=62500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 62500 | Avg Reward: -0.026500 | Avg Loss: 0.097026 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
 | UTC Time: 2026-04-14T06:40:49.875353+00:00 | Event: checkpoint | Episodes: session=3; total=53 | Transitions: session=2500; total=63000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63000 | Avg Reward: -0.004000 | Avg Loss: 0.094233 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-14T11:19:42.811708+00:00
+- Event: session_start
+- Episodes: session=0; total=53
+- Transitions: session=0; total=63000
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 63000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-14T11:19:42.811708+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.700000 |
+| Reward Hurt Laser | -0.000000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0 |
+| REWARD_HURT_METEOR | -0.7 |
+| REWARD_HURT_LASER | -0.0 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | -0.02 |
+| REWARD_WASTED_SHOT | 0 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.10 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-14T11:19:42.811708+00:00 | session_start | session=0; total=53 | session=0; total=63000 | 1.0000 | 0.0500 | 0.0500 | 63000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-14T11:19:42.812880+00:00 | Event: session_start | Episodes: session=0; total=53 | Transitions: session=0; total=63000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:20:18.612211+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=500; total=63500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63500 | Avg Reward: -0.079500 | Avg Loss: 0.095275 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:20:52.040352+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1000; total=64000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64000 | Avg Reward: -0.019997 | Avg Loss: 0.095506 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:21:26.242263+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1500; total=64500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64500 | Avg Reward: -0.048004 | Avg Loss: 0.096225 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:22:12.042329+00:00 | Event: checkpoint | Episodes: session=1; total=54 | Transitions: session=2000; total=65000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65000 | Avg Reward: -0.074493 | Avg Loss: 0.100983 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:22:45.878011+00:00 | Event: checkpoint | Episodes: session=1; total=54 | Transitions: session=2500; total=65500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65500 | Avg Reward: -0.076005 | Avg Loss: 0.107713 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:23:19.545341+00:00 | Event: checkpoint | Episodes: session=1; total=54 | Transitions: session=3000; total=66000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 66000 | Avg Reward: -0.086506 | Avg Loss: 0.101290 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:23:53.671000+00:00 | Event: checkpoint | Episodes: session=1; total=54 | Transitions: session=3500; total=66500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 66500 | Avg Reward: -0.034000 | Avg Loss: 0.104852 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:24:26.784648+00:00 | Event: checkpoint | Episodes: session=1; total=54 | Transitions: session=4000; total=67000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 67000 | Avg Reward: -0.079500 | Avg Loss: 0.108653 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:25:00.550588+00:00 | Event: checkpoint | Episodes: session=1; total=54 | Transitions: session=4500; total=67500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 67500 | Avg Reward: -0.135501 | Avg Loss: 0.117609 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:25:32.817254+00:00 | Event: checkpoint | Episodes: session=2; total=55 | Transitions: session=5000; total=68000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68000 | Avg Reward: 0.008000 | Avg Loss: 0.113738 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:26:06.839543+00:00 | Event: checkpoint | Episodes: session=2; total=55 | Transitions: session=5500; total=68500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68500 | Avg Reward: -0.075998 | Avg Loss: 0.117594 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:26:41.150545+00:00 | Event: checkpoint | Episodes: session=3; total=56 | Transitions: session=6000; total=69000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 69000 | Avg Reward: -0.060506 | Avg Loss: 0.105845 | Win Rate (100 ep): 66.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:27:13.331114+00:00 | Event: checkpoint | Episodes: session=4; total=57 | Transitions: session=6500; total=69500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 69500 | Avg Reward: -0.038995 | Avg Loss: 0.120416 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:27:45.781186+00:00 | Event: checkpoint | Episodes: session=4; total=57 | Transitions: session=7000; total=70000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 70000 | Avg Reward: -0.005994 | Avg Loss: 0.100117 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:28:18.468803+00:00 | Event: checkpoint | Episodes: session=5; total=58 | Transitions: session=7500; total=70500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 70500 | Avg Reward: -0.100502 | Avg Loss: 0.104258 | Win Rate (100 ep): 60.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:28:57.006226+00:00 | Event: checkpoint | Episodes: session=5; total=58 | Transitions: session=8000; total=71000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 71000 | Avg Reward: -0.058496 | Avg Loss: 0.109534 | Win Rate (100 ep): 60.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:29:28.964957+00:00 | Event: checkpoint | Episodes: session=6; total=59 | Transitions: session=8500; total=71500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 71500 | Avg Reward: -0.016506 | Avg Loss: 0.117124 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:30:01.816652+00:00 | Event: checkpoint | Episodes: session=6; total=59 | Transitions: session=9000; total=72000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 72000 | Avg Reward: -0.090004 | Avg Loss: 0.121396 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:30:40.018285+00:00 | Event: checkpoint | Episodes: session=6; total=59 | Transitions: session=9500; total=72500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 72500 | Avg Reward: -0.107501 | Avg Loss: 0.113202 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:31:18.539326+00:00 | Event: checkpoint | Episodes: session=6; total=59 | Transitions: session=10000; total=73000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 73000 | Avg Reward: -0.030503 | Avg Loss: 0.118633 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:31:51.710844+00:00 | Event: checkpoint | Episodes: session=6; total=59 | Transitions: session=10500; total=73500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 73500 | Avg Reward: -0.023505 | Avg Loss: 0.124757 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:32:24.304944+00:00 | Event: checkpoint | Episodes: session=7; total=60 | Transitions: session=11000; total=74000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 74000 | Avg Reward: -0.041005 | Avg Loss: 0.124522 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:33:03.317205+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=11500; total=74500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 74500 | Avg Reward: -0.026995 | Avg Loss: 0.132754 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:33:31.308956+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=12000; total=75000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 75000 | Avg Reward: -0.068999 | Avg Loss: 0.131045 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:34:04.491034+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=12500; total=75500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 75500 | Avg Reward: 0.046500 | Avg Loss: 0.137880 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:34:37.806863+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=13000; total=76000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 76000 | Avg Reward: 0.050000 | Avg Loss: 0.141843 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:35:17.211151+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=13500; total=76500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 76500 | Avg Reward: -0.065498 | Avg Loss: 0.132461 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:35:50.237175+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=14000; total=77000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 77000 | Avg Reward: -0.079500 | Avg Loss: 0.141766 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:36:23.190382+00:00 | Event: checkpoint | Episodes: session=8; total=61 | Transitions: session=14500; total=77500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 77500 | Avg Reward: -0.040998 | Avg Loss: 0.160343 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:36:56.713740+00:00 | Event: checkpoint | Episodes: session=9; total=62 | Transitions: session=15000; total=78000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 78000 | Avg Reward: -0.075999 | Avg Loss: 0.143908 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:37:29.838504+00:00 | Event: checkpoint | Episodes: session=10; total=63 | Transitions: session=15500; total=78500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 78500 | Avg Reward: 0.050004 | Avg Loss: 0.152138 | Win Rate (100 ep): 30.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:38:03.002554+00:00 | Event: checkpoint | Episodes: session=10; total=63 | Transitions: session=16000; total=79000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 79000 | Avg Reward: -0.083000 | Avg Loss: 0.152338 | Win Rate (100 ep): 30.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:38:36.616931+00:00 | Event: checkpoint | Episodes: session=10; total=63 | Transitions: session=16500; total=79500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 79500 | Avg Reward: -0.082999 | Avg Loss: 0.158883 | Win Rate (100 ep): 30.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:39:09.805451+00:00 | Event: checkpoint | Episodes: session=10; total=63 | Transitions: session=17000; total=80000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80000 | Avg Reward: -0.009500 | Avg Loss: 0.144122 | Win Rate (100 ep): 30.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:39:43.396299+00:00 | Event: checkpoint | Episodes: session=11; total=64 | Transitions: session=17500; total=80500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80500 | Avg Reward: 0.016507 | Avg Loss: 0.165781 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:40:10.819646+00:00 | Event: checkpoint | Episodes: session=11; total=64 | Transitions: session=18000; total=81000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81000 | Avg Reward: -0.037503 | Avg Loss: 0.156719 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:40:50.680607+00:00 | Event: checkpoint | Episodes: session=11; total=64 | Transitions: session=18500; total=81500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81500 | Avg Reward: -0.030502 | Avg Loss: 0.165487 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:41:23.700291+00:00 | Event: checkpoint | Episodes: session=11; total=64 | Transitions: session=19000; total=82000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82000 | Avg Reward: -0.132002 | Avg Loss: 0.179335 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:41:57.790282+00:00 | Event: checkpoint | Episodes: session=12; total=65 | Transitions: session=19500; total=82500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82500 | Avg Reward: -0.146008 | Avg Loss: 0.169351 | Win Rate (100 ep): 41.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:42:37.316059+00:00 | Event: checkpoint | Episodes: session=12; total=65 | Transitions: session=20000; total=83000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83000 | Avg Reward: -0.030496 | Avg Loss: 0.163285 | Win Rate (100 ep): 41.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:50:26.139288+00:00 | Event: checkpoint | Episodes: session=14; total=67 | Transitions: session=20500; total=83500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83500 | Avg Reward: 0.013003 | Avg Loss: 0.161567 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:50:52.049023+00:00 | Event: checkpoint | Episodes: session=14; total=67 | Transitions: session=21000; total=84000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84000 | Avg Reward: 0.042996 | Avg Loss: 0.157609 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:51:30.576353+00:00 | Event: checkpoint | Episodes: session=15; total=68 | Transitions: session=21500; total=84500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84500 | Avg Reward: -0.147503 | Avg Loss: 0.171946 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:52:02.966488+00:00 | Event: checkpoint | Episodes: session=15; total=68 | Transitions: session=22000; total=85000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85000 | Avg Reward: -0.125007 | Avg Loss: 0.181064 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:52:35.380567+00:00 | Event: checkpoint | Episodes: session=15; total=68 | Transitions: session=22500; total=85500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85500 | Avg Reward: -0.072497 | Avg Loss: 0.185758 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:53:08.272837+00:00 | Event: checkpoint | Episodes: session=16; total=69 | Transitions: session=23000; total=86000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 86000 | Avg Reward: -0.016500 | Avg Loss: 0.183220 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:53:40.435586+00:00 | Event: checkpoint | Episodes: session=17; total=70 | Transitions: session=23500; total=86500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 86500 | Avg Reward: 0.008000 | Avg Loss: 0.173037 | Win Rate (100 ep): 35.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:54:13.467381+00:00 | Event: checkpoint | Episodes: session=18; total=71 | Transitions: session=24000; total=87000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 87000 | Avg Reward: -0.084500 | Avg Loss: 0.170369 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:54:51.079361+00:00 | Event: checkpoint | Episodes: session=18; total=71 | Transitions: session=24500; total=87500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 87500 | Avg Reward: -0.030502 | Avg Loss: 0.194169 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:55:17.704782+00:00 | Event: checkpoint | Episodes: session=18; total=71 | Transitions: session=25000; total=88000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 88000 | Avg Reward: 0.000999 | Avg Loss: 0.200768 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:55:56.309602+00:00 | Event: checkpoint | Episodes: session=18; total=71 | Transitions: session=25500; total=88500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 88500 | Avg Reward: -0.142504 | Avg Loss: 0.174967 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:56:28.847946+00:00 | Event: checkpoint | Episodes: session=19; total=72 | Transitions: session=26000; total=89000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 89000 | Avg Reward: -0.196494 | Avg Loss: 0.182644 | Win Rate (100 ep): 31.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:57:07.474781+00:00 | Event: checkpoint | Episodes: session=21; total=74 | Transitions: session=26500; total=89500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 89500 | Avg Reward: -0.147506 | Avg Loss: 0.195074 | Win Rate (100 ep): 28.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:57:39.861300+00:00 | Event: checkpoint | Episodes: session=21; total=74 | Transitions: session=27000; total=90000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 90000 | Avg Reward: -0.058503 | Avg Loss: 0.202597 | Win Rate (100 ep): 28.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:58:12.783332+00:00 | Event: checkpoint | Episodes: session=22; total=75 | Transitions: session=27500; total=90500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 90500 | Avg Reward: -0.008000 | Avg Loss: 0.200198 | Win Rate (100 ep): 31.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:58:45.131413+00:00 | Event: checkpoint | Episodes: session=22; total=75 | Transitions: session=28000; total=91000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 91000 | Avg Reward: 0.000995 | Avg Loss: 0.193854 | Win Rate (100 ep): 31.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:59:18.127850+00:00 | Event: checkpoint | Episodes: session=23; total=76 | Transitions: session=28500; total=91500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 91500 | Avg Reward: -0.084502 | Avg Loss: 0.197922 | Win Rate (100 ep): 30.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T11:59:57.626235+00:00 | Event: checkpoint | Episodes: session=24; total=77 | Transitions: session=29000; total=92000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 92000 | Avg Reward: -0.119499 | Avg Loss: 0.196924 | Win Rate (100 ep): 29.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:00:31.074203+00:00 | Event: checkpoint | Episodes: session=24; total=77 | Transitions: session=29500; total=92500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 92500 | Avg Reward: -0.076003 | Avg Loss: 0.211550 | Win Rate (100 ep): 29.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:01:04.179061+00:00 | Event: checkpoint | Episodes: session=24; total=77 | Transitions: session=30000; total=93000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 93000 | Avg Reward: -0.016500 | Avg Loss: 0.199595 | Win Rate (100 ep): 29.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:01:37.354874+00:00 | Event: checkpoint | Episodes: session=24; total=77 | Transitions: session=30500; total=93500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 93500 | Avg Reward: -0.013003 | Avg Loss: 0.209911 | Win Rate (100 ep): 29.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:02:16.856554+00:00 | Event: checkpoint | Episodes: session=24; total=77 | Transitions: session=31000; total=94000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 94000 | Avg Reward: -0.016500 | Avg Loss: 0.193917 | Win Rate (100 ep): 29.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:02:56.467362+00:00 | Event: checkpoint | Episodes: session=24; total=77 | Transitions: session=31500; total=94500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 94500 | Avg Reward: -0.097001 | Avg Loss: 0.221598 | Win Rate (100 ep): 29.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:03:29.819220+00:00 | Event: checkpoint | Episodes: session=25; total=78 | Transitions: session=32000; total=95000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 95000 | Avg Reward: 0.001000 | Avg Loss: 0.207716 | Win Rate (100 ep): 28.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:04:08.908078+00:00 | Event: checkpoint | Episodes: session=26; total=79 | Transitions: session=32500; total=95500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 95500 | Avg Reward: 0.050000 | Avg Loss: 0.229148 | Win Rate (100 ep): 26.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:04:42.011257+00:00 | Event: checkpoint | Episodes: session=26; total=79 | Transitions: session=33000; total=96000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 96000 | Avg Reward: -0.076002 | Avg Loss: 0.208706 | Win Rate (100 ep): 26.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:05:14.257164+00:00 | Event: checkpoint | Episodes: session=26; total=79 | Transitions: session=33500; total=96500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 96500 | Avg Reward: -0.072500 | Avg Loss: 0.218301 | Win Rate (100 ep): 26.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:05:40.557265+00:00 | Event: checkpoint | Episodes: session=26; total=79 | Transitions: session=34000; total=97000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 97000 | Avg Reward: -0.044494 | Avg Loss: 0.210514 | Win Rate (100 ep): 26.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:06:19.543260+00:00 | Event: checkpoint | Episodes: session=27; total=80 | Transitions: session=34500; total=97500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 97500 | Avg Reward: -0.146000 | Avg Loss: 0.202594 | Win Rate (100 ep): 25.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:06:51.627147+00:00 | Event: checkpoint | Episodes: session=27; total=80 | Transitions: session=35000; total=98000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 98000 | Avg Reward: -0.013000 | Avg Loss: 0.212289 | Win Rate (100 ep): 25.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:07:24.048732+00:00 | Event: checkpoint | Episodes: session=27; total=80 | Transitions: session=35500; total=98500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 98500 | Avg Reward: -0.051498 | Avg Loss: 0.225608 | Win Rate (100 ep): 25.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:08:02.523358+00:00 | Event: checkpoint | Episodes: session=29; total=82 | Transitions: session=36000; total=99000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 99000 | Avg Reward: -0.057002 | Avg Loss: 0.211218 | Win Rate (100 ep): 27.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:08:28.614644+00:00 | Event: checkpoint | Episodes: session=29; total=82 | Transitions: session=36500; total=99500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 99500 | Avg Reward: -0.023500 | Avg Loss: 0.248187 | Win Rate (100 ep): 27.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:09:01.391428+00:00 | Event: checkpoint | Episodes: session=29; total=82 | Transitions: session=37000; total=100000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.051499 | Avg Loss: 0.230696 | Win Rate (100 ep): 27.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:09:39.951320+00:00 | Event: checkpoint | Episodes: session=30; total=83 | Transitions: session=37500; total=100500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.107501 | Avg Loss: 0.237423 | Win Rate (100 ep): 26.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:10:12.390323+00:00 | Event: checkpoint | Episodes: session=30; total=83 | Transitions: session=38000; total=101000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.020000 | Avg Loss: 0.238181 | Win Rate (100 ep): 26.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:10:45.005011+00:00 | Event: checkpoint | Episodes: session=30; total=83 | Transitions: session=38500; total=101500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.006002 | Avg Loss: 0.230531 | Win Rate (100 ep): 26.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:11:17.550815+00:00 | Event: checkpoint | Episodes: session=30; total=83 | Transitions: session=39000; total=102000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.132000 | Avg Loss: 0.216239 | Win Rate (100 ep): 26.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:11:50.050377+00:00 | Event: checkpoint | Episodes: session=30; total=83 | Transitions: session=39500; total=102500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013001 | Avg Loss: 0.218143 | Win Rate (100 ep): 26.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:12:28.426530+00:00 | Event: checkpoint | Episodes: session=30; total=83 | Transitions: session=40000; total=103000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.075998 | Avg Loss: 0.225796 | Win Rate (100 ep): 26.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:13:01.763455+00:00 | Event: checkpoint | Episodes: session=31; total=84 | Transitions: session=40500; total=103500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.051494 | Avg Loss: 0.240315 | Win Rate (100 ep): 25.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:13:40.989060+00:00 | Event: checkpoint | Episodes: session=32; total=85 | Transitions: session=41000; total=104000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.154501 | Avg Loss: 0.257886 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:14:20.384680+00:00 | Event: checkpoint | Episodes: session=33; total=86 | Transitions: session=41500; total=104500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.009498 | Avg Loss: 0.243865 | Win Rate (100 ep): 27.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:14:53.568075+00:00 | Event: checkpoint | Episodes: session=34; total=87 | Transitions: session=42000; total=105000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.083000 | Avg Loss: 0.247472 | Win Rate (100 ep): 26.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:15:27.214513+00:00 | Event: checkpoint | Episodes: session=34; total=87 | Transitions: session=42500; total=105500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.030491 | Avg Loss: 0.265701 | Win Rate (100 ep): 26.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:16:06.834053+00:00 | Event: checkpoint | Episodes: session=34; total=87 | Transitions: session=43000; total=106000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.146000 | Avg Loss: 0.238727 | Win Rate (100 ep): 26.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:16:40.377036+00:00 | Event: checkpoint | Episodes: session=34; total=87 | Transitions: session=43500; total=106500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.146001 | Avg Loss: 0.219840 | Win Rate (100 ep): 26.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:17:20.222462+00:00 | Event: checkpoint | Episodes: session=35; total=88 | Transitions: session=44000; total=107000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.050000 | Avg Loss: 0.241417 | Win Rate (100 ep): 25.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:17:53.858198+00:00 | Event: checkpoint | Episodes: session=35; total=88 | Transitions: session=44500; total=107500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.016493 | Avg Loss: 0.245198 | Win Rate (100 ep): 25.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:18:26.977281+00:00 | Event: checkpoint | Episodes: session=36; total=89 | Transitions: session=45000; total=108000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013000 | Avg Loss: 0.250470 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:19:00.712983+00:00 | Event: checkpoint | Episodes: session=37; total=90 | Transitions: session=45500; total=108500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010005 | Avg Loss: 0.236935 | Win Rate (100 ep): 24.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:19:33.823277+00:00 | Event: checkpoint | Episodes: session=37; total=90 | Transitions: session=46000; total=109000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.082999 | Avg Loss: 0.253730 | Win Rate (100 ep): 24.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:20:13.575824+00:00 | Event: checkpoint | Episodes: session=38; total=91 | Transitions: session=46500; total=109500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022001 | Avg Loss: 0.226133 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:20:46.734618+00:00 | Event: checkpoint | Episodes: session=38; total=91 | Transitions: session=47000; total=110000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039501 | Avg Loss: 0.246840 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:21:20.295661+00:00 | Event: checkpoint | Episodes: session=39; total=92 | Transitions: session=47500; total=110500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.165002 | Avg Loss: 0.248559 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:21:59.365827+00:00 | Event: checkpoint | Episodes: session=41; total=94 | Transitions: session=48000; total=111000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013006 | Avg Loss: 0.259163 | Win Rate (100 ep): 26.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:22:33.076515+00:00 | Event: checkpoint | Episodes: session=41; total=94 | Transitions: session=48500; total=111500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.027000 | Avg Loss: 0.247928 | Win Rate (100 ep): 26.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:23:06.847013+00:00 | Event: checkpoint | Episodes: session=41; total=94 | Transitions: session=49000; total=112000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.079507 | Avg Loss: 0.262335 | Win Rate (100 ep): 26.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:30:00.722640+00:00 | Event: checkpoint | Episodes: session=42; total=95 | Transitions: session=49500; total=112500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013003 | Avg Loss: 0.290754 | Win Rate (100 ep): 26.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:30:32.440805+00:00 | Event: checkpoint | Episodes: session=43; total=96 | Transitions: session=50000; total=113000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.041000 | Avg Loss: 0.291767 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:31:10.972821+00:00 | Event: checkpoint | Episodes: session=44; total=97 | Transitions: session=50500; total=113500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013000 | Avg Loss: 0.294553 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:31:43.127493+00:00 | Event: checkpoint | Episodes: session=44; total=97 | Transitions: session=51000; total=114000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.082996 | Avg Loss: 0.261029 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:32:21.464870+00:00 | Event: checkpoint | Episodes: session=45; total=98 | Transitions: session=51500; total=114500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004500 | Avg Loss: 0.259830 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:32:53.737138+00:00 | Event: checkpoint | Episodes: session=45; total=98 | Transitions: session=52000; total=115000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005991 | Avg Loss: 0.250473 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:33:26.306980+00:00 | Event: checkpoint | Episodes: session=45; total=98 | Transitions: session=52500; total=115500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.008000 | Avg Loss: 0.296367 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:33:58.938104+00:00 | Event: checkpoint | Episodes: session=45; total=98 | Transitions: session=53000; total=116000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.016495 | Avg Loss: 0.282682 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:34:24.845342+00:00 | Event: checkpoint | Episodes: session=45; total=98 | Transitions: session=53500; total=116500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013000 | Avg Loss: 0.316221 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:34:57.809116+00:00 | Event: checkpoint | Episodes: session=46; total=99 | Transitions: session=54000; total=117000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.009499 | Avg Loss: 0.283455 | Win Rate (100 ep): 23.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:35:29.918917+00:00 | Event: checkpoint | Episodes: session=46; total=99 | Transitions: session=54500; total=117500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.009497 | Avg Loss: 0.267862 | Win Rate (100 ep): 23.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:36:03.230928+00:00 | Event: checkpoint | Episodes: session=46; total=99 | Transitions: session=55000; total=118000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.044497 | Avg Loss: 0.298899 | Win Rate (100 ep): 23.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:36:30.342672+00:00 | Event: checkpoint | Episodes: session=46; total=99 | Transitions: session=55500; total=118500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.016500 | Avg Loss: 0.294438 | Win Rate (100 ep): 23.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:37:03.830853+00:00 | Event: checkpoint | Episodes: session=46; total=99 | Transitions: session=56000; total=119000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.075996 | Avg Loss: 0.290934 | Win Rate (100 ep): 23.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:37:06.601253+00:00 | Event: episode | Episodes: session=47; total=100 | Transitions: session=56063; total=119063 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.214000 | Avg Loss: 0.295533 | Win Rate (100 ep): 23.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:37:37.434795+00:00 | Event: checkpoint | Episodes: session=47; total=100 | Transitions: session=56500; total=119500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013000 | Avg Loss: 0.293706 | Win Rate (100 ep): 23.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:38:16.805761+00:00 | Event: checkpoint | Episodes: session=47; total=100 | Transitions: session=57000; total=120000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.086500 | Avg Loss: 0.292612 | Win Rate (100 ep): 23.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:38:50.023240+00:00 | Event: checkpoint | Episodes: session=48; total=101 | Transitions: session=57500; total=120500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.016500 | Avg Loss: 0.328205 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:39:30.066450+00:00 | Event: checkpoint | Episodes: session=48; total=101 | Transitions: session=58000; total=121000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.145993 | Avg Loss: 0.309332 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:39:56.713005+00:00 | Event: checkpoint | Episodes: session=48; total=101 | Transitions: session=58500; total=121500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.016501 | Avg Loss: 0.308972 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:40:30.243067+00:00 | Event: checkpoint | Episodes: session=48; total=101 | Transitions: session=59000; total=122000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002501 | Avg Loss: 0.300634 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:41:03.083081+00:00 | Event: checkpoint | Episodes: session=48; total=101 | Transitions: session=59500; total=122500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004500 | Avg Loss: 0.291354 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:41:30.430944+00:00 | Event: checkpoint | Episodes: session=48; total=101 | Transitions: session=60000; total=123000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.011493 | Avg Loss: 0.286472 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:41:33.205363+00:00 | Event: session_end | Episodes: session=48; total=101 | Transitions: session=60000; total=123000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.011493 | Avg Loss: 0.286472 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-14T12:42:04.985346+00:00 | Event: checkpoint | Episodes: session=49; total=102 | Transitions: session=60500; total=123500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049996 | Avg Loss: 0.339050 | Win Rate (100 ep): 22.4% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T08:30:57.146758+00:00
+- Event: session_start
+- Episodes: session=0; total=53
+- Transitions: session=0; total=63000
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 63000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T08:30:57.146758+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T08:30:57.146758+00:00 | session_start | session=0; total=53 | session=0; total=63000 | 1.0000 | 0.0500 | 0.0500 | 63000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T08:30:57.148185+00:00 | Event: session_start | Episodes: session=0; total=53 | Transitions: session=0; total=63000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T08:31:25.443763+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=500; total=63500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63500 | Avg Reward: 0.032930 | Avg Loss: 0.098324 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T08:31:58.318275+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1000; total=64000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64000 | Avg Reward: 0.022560 | Avg Loss: 0.087784 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T08:32:24.900491+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1500; total=64500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64500 | Avg Reward: 0.024180 | Avg Loss: 0.089812 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T08:32:57.683654+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=2000; total=65000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65000 | Avg Reward: 0.022270 | Avg Loss: 0.088214 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T08:39:27.371554+00:00
+- Event: session_start
+- Episodes: session=0; total=53
+- Transitions: session=0; total=65000
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 65000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T08:39:27.371554+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T08:39:27.371554+00:00 | session_start | session=0; total=53 | session=0; total=65000 | 1.0000 | 0.0500 | 0.0500 | 65000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T08:39:27.373173+00:00 | Event: session_start | Episodes: session=0; total=53 | Transitions: session=0; total=65000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T09:04:59.501272+00:00
+- Event: session_start
+- Episodes: session=0; total=53
+- Transitions: session=0; total=65000
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 65000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T09:04:59.501272+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T09:04:59.501272+00:00 | session_start | session=0; total=53 | session=0; total=65000 | 1.0000 | 0.0500 | 0.0500 | 65000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T09:04:59.503818+00:00 | Event: session_start | Episodes: session=0; total=53 | Transitions: session=0; total=65000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:05:28.416816+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=500; total=65500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65500 | Avg Reward: 0.049830 | Avg Loss: 0.103600 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:05:55.776182+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1000; total=66000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 66000 | Avg Reward: 0.048280 | Avg Loss: 0.097275 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:06:23.357991+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1500; total=66500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 66500 | Avg Reward: 0.049810 | Avg Loss: 0.089368 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:06:50.601748+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=2000; total=67000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 67000 | Avg Reward: 0.049850 | Avg Loss: 0.088343 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:07:17.890681+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=2500; total=67500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 67500 | Avg Reward: 0.046740 | Avg Loss: 0.087233 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:07:45.419192+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=3000; total=68000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68000 | Avg Reward: 0.049800 | Avg Loss: 0.085065 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:08:12.655970+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=3500; total=68500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68500 | Avg Reward: 0.049850 | Avg Loss: 0.093585 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:08:40.442298+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=4000; total=69000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 69000 | Avg Reward: 0.048350 | Avg Loss: 0.088491 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:09:07.902474+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=4500; total=69500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 69500 | Avg Reward: 0.049830 | Avg Loss: 0.104184 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:09:35.435039+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=5000; total=70000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 70000 | Avg Reward: 0.049820 | Avg Loss: 0.096321 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:10:03.584191+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=5500; total=70500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 70500 | Avg Reward: 0.049820 | Avg Loss: 0.108607 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T09:13:45.289854+00:00
+- Event: session_start
+- Episodes: session=0; total=53
+- Transitions: session=0; total=63000
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 63000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T09:13:45.289854+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T09:13:45.289854+00:00 | session_start | session=0; total=53 | session=0; total=63000 | 1.0000 | 0.0500 | 0.0500 | 63000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T09:13:45.292288+00:00 | Event: session_start | Episodes: session=0; total=53 | Transitions: session=0; total=63000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:14:14.551796+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=500; total=63500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63500 | Avg Reward: 0.049830 | Avg Loss: 0.103717 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:14:42.321939+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1000; total=64000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64000 | Avg Reward: 0.049840 | Avg Loss: 0.095366 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T09:15:10.247145+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1500; total=64500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64500 | Avg Reward: 0.049810 | Avg Loss: 0.105376 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T12:55:48.664343+00:00
+- Event: session_start
+- Episodes: session=0; total=0
+- Transitions: session=0; total=0
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 1.0000
+- Replay: 0
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T12:55:48.664343+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 1.0000 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T12:55:48.664343+00:00 | session_start | session=0; total=0 | session=0; total=0 | 1.0000 | 0.0500 | 1.0000 | 0 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T12:55:48.666012+00:00 | Event: session_start | Episodes: session=0; total=0 | Transitions: session=0; total=0 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 0 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T12:56:22.383828+00:00 | Event: checkpoint | Episodes: session=1; total=1 | Transitions: session=500; total=500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 500 | Avg Reward: -0.005370 | Avg Loss: 0.053409 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T12:56:55.649797+00:00 | Event: checkpoint | Episodes: session=1; total=1 | Transitions: session=1000; total=1000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 1000 | Avg Reward: -0.016880 | Avg Loss: 0.030414 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T12:57:34.933883+00:00 | Event: checkpoint | Episodes: session=1; total=1 | Transitions: session=1500; total=1500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 1500 | Avg Reward: -0.019800 | Avg Loss: 0.033731 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T12:58:14.159954+00:00 | Event: checkpoint | Episodes: session=2; total=2 | Transitions: session=2000; total=2000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 2000 | Avg Reward: -0.043150 | Avg Loss: 0.026396 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T12:58:47.541221+00:00 | Event: checkpoint | Episodes: session=3; total=3 | Transitions: session=2500; total=2500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 2500 | Avg Reward: 0.001300 | Avg Loss: 0.030655 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T12:59:26.871764+00:00 | Event: checkpoint | Episodes: session=3; total=3 | Transitions: session=3000; total=3000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 3000 | Avg Reward: -0.007840 | Avg Loss: 0.029696 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:00:00.235694+00:00 | Event: checkpoint | Episodes: session=4; total=4 | Transitions: session=3500; total=3500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 3500 | Avg Reward: 0.022550 | Avg Loss: 0.035164 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:00:39.482583+00:00 | Event: checkpoint | Episodes: session=5; total=5 | Transitions: session=4000; total=4000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 4000 | Avg Reward: -0.033290 | Avg Loss: 0.030046 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:01:12.712422+00:00 | Event: checkpoint | Episodes: session=6; total=6 | Transitions: session=4500; total=4500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 4500 | Avg Reward: -0.030370 | Avg Loss: 0.039453 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:01:45.881279+00:00 | Event: checkpoint | Episodes: session=6; total=6 | Transitions: session=5000; total=5000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 5000 | Avg Reward: 0.002880 | Avg Loss: 0.026544 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:02:26.161512+00:00 | Event: checkpoint | Episodes: session=6; total=6 | Transitions: session=5500; total=5500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 5500 | Avg Reward: 0.014780 | Avg Loss: 0.034213 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:02:53.395838+00:00 | Event: checkpoint | Episodes: session=6; total=6 | Transitions: session=6000; total=6000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 6000 | Avg Reward: 0.024090 | Avg Loss: 0.028433 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:03:32.776425+00:00 | Event: checkpoint | Episodes: session=6; total=6 | Transitions: session=6500; total=6500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 6500 | Avg Reward: 0.008720 | Avg Loss: 0.035848 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:04:06.049604+00:00 | Event: checkpoint | Episodes: session=7; total=7 | Transitions: session=7000; total=7000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 7000 | Avg Reward: 0.002960 | Avg Loss: 0.028437 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:04:45.342103+00:00 | Event: checkpoint | Episodes: session=7; total=7 | Transitions: session=7500; total=7500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 7500 | Avg Reward: 0.008870 | Avg Loss: 0.040251 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:05:18.474190+00:00 | Event: checkpoint | Episodes: session=7; total=7 | Transitions: session=8000; total=8000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 8000 | Avg Reward: -0.015320 | Avg Loss: 0.033714 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:05:57.722366+00:00 | Event: checkpoint | Episodes: session=8; total=8 | Transitions: session=8500; total=8500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 8500 | Avg Reward: 0.013770 | Avg Loss: 0.041276 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:06:31.022897+00:00 | Event: checkpoint | Episodes: session=9; total=9 | Transitions: session=9000; total=9000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 9000 | Avg Reward: -0.027890 | Avg Loss: 0.032534 | Win Rate (100 ep): 44.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:07:04.594764+00:00 | Event: checkpoint | Episodes: session=10; total=10 | Transitions: session=9500; total=9500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 9500 | Avg Reward: -0.007770 | Avg Loss: 0.044236 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:07:37.814124+00:00 | Event: checkpoint | Episodes: session=10; total=10 | Transitions: session=10000; total=10000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 10000 | Avg Reward: -0.001690 | Avg Loss: 0.033509 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:08:17.724079+00:00 | Event: checkpoint | Episodes: session=11; total=11 | Transitions: session=10500; total=10500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 10500 | Avg Reward: 0.033200 | Avg Loss: 0.051862 | Win Rate (100 ep): 54.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:08:51.611625+00:00 | Event: checkpoint | Episodes: session=11; total=11 | Transitions: session=11000; total=11000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 11000 | Avg Reward: 0.019290 | Avg Loss: 0.036803 | Win Rate (100 ep): 54.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:09:25.465613+00:00 | Event: checkpoint | Episodes: session=12; total=12 | Transitions: session=11500; total=11500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 11500 | Avg Reward: -0.033320 | Avg Loss: 0.046306 | Win Rate (100 ep): 58.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:10:05.339182+00:00 | Event: checkpoint | Episodes: session=13; total=13 | Transitions: session=12000; total=12000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 12000 | Avg Reward: -0.020430 | Avg Loss: 0.038942 | Win Rate (100 ep): 53.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:10:39.117257+00:00 | Event: checkpoint | Episodes: session=13; total=13 | Transitions: session=12500; total=12500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 12500 | Avg Reward: 0.007230 | Avg Loss: 0.054718 | Win Rate (100 ep): 53.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:11:12.684848+00:00 | Event: checkpoint | Episodes: session=14; total=14 | Transitions: session=13000; total=13000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 13000 | Avg Reward: -0.061890 | Avg Loss: 0.047278 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:11:46.222912+00:00 | Event: checkpoint | Episodes: session=14; total=14 | Transitions: session=13500; total=13500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 13500 | Avg Reward: 0.032970 | Avg Loss: 0.054649 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:12:19.816800+00:00 | Event: checkpoint | Episodes: session=14; total=14 | Transitions: session=14000; total=14000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 14000 | Avg Reward: 0.016080 | Avg Loss: 0.046416 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:12:59.799307+00:00 | Event: checkpoint | Episodes: session=15; total=15 | Transitions: session=14500; total=14500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 14500 | Avg Reward: -0.062590 | Avg Loss: 0.065115 | Win Rate (100 ep): 46.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:13:39.436577+00:00 | Event: checkpoint | Episodes: session=16; total=16 | Transitions: session=15000; total=15000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 15000 | Avg Reward: 0.020920 | Avg Loss: 0.053098 | Win Rate (100 ep): 43.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:14:13.135817+00:00 | Event: checkpoint | Episodes: session=17; total=17 | Transitions: session=15500; total=15500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 15500 | Avg Reward: -0.007770 | Avg Loss: 0.061736 | Win Rate (100 ep): 47.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:14:53.016974+00:00 | Event: checkpoint | Episodes: session=18; total=18 | Transitions: session=16000; total=16000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 16000 | Avg Reward: 0.020710 | Avg Loss: 0.056299 | Win Rate (100 ep): 44.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:15:26.796662+00:00 | Event: checkpoint | Episodes: session=18; total=18 | Transitions: session=16500; total=16500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 16500 | Avg Reward: -0.034760 | Avg Loss: 0.069814 | Win Rate (100 ep): 44.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:16:00.906756+00:00 | Event: checkpoint | Episodes: session=18; total=18 | Transitions: session=17000; total=17000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 17000 | Avg Reward: -0.001800 | Avg Loss: 0.062837 | Win Rate (100 ep): 44.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:16:42.303402+00:00 | Event: checkpoint | Episodes: session=19; total=19 | Transitions: session=17500; total=17500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 17500 | Avg Reward: -0.003470 | Avg Loss: 0.072081 | Win Rate (100 ep): 42.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:17:17.982219+00:00 | Event: checkpoint | Episodes: session=19; total=19 | Transitions: session=18000; total=18000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 18000 | Avg Reward: 0.047890 | Avg Loss: 0.065068 | Win Rate (100 ep): 42.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:17:53.465370+00:00 | Event: checkpoint | Episodes: session=19; total=19 | Transitions: session=18500; total=18500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 18500 | Avg Reward: -0.003340 | Avg Loss: 0.071196 | Win Rate (100 ep): 42.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:18:35.451940+00:00 | Event: checkpoint | Episodes: session=19; total=19 | Transitions: session=19000; total=19000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 19000 | Avg Reward: -0.033060 | Avg Loss: 0.067817 | Win Rate (100 ep): 42.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:19:11.501681+00:00 | Event: checkpoint | Episodes: session=20; total=20 | Transitions: session=19500; total=19500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 19500 | Avg Reward: -0.003810 | Avg Loss: 0.068105 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:19:45.896728+00:00 | Event: checkpoint | Episodes: session=20; total=20 | Transitions: session=20000; total=20000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 20000 | Avg Reward: 0.017880 | Avg Loss: 0.059922 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:20:19.483077+00:00 | Event: checkpoint | Episodes: session=20; total=20 | Transitions: session=20500; total=20500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 20500 | Avg Reward: -0.034830 | Avg Loss: 0.067697 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:20:58.950835+00:00 | Event: checkpoint | Episodes: session=21; total=21 | Transitions: session=21000; total=21000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 21000 | Avg Reward: -0.066970 | Avg Loss: 0.061299 | Win Rate (100 ep): 38.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:21:38.231303+00:00 | Event: checkpoint | Episodes: session=22; total=22 | Transitions: session=21500; total=21500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 21500 | Avg Reward: -0.039390 | Avg Loss: 0.076406 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:22:11.571880+00:00 | Event: checkpoint | Episodes: session=22; total=22 | Transitions: session=22000; total=22000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 22000 | Avg Reward: -0.006360 | Avg Loss: 0.063955 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:22:44.986092+00:00 | Event: checkpoint | Episodes: session=22; total=22 | Transitions: session=22500; total=22500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 22500 | Avg Reward: 0.004230 | Avg Loss: 0.073628 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:23:18.249539+00:00 | Event: checkpoint | Episodes: session=22; total=22 | Transitions: session=23000; total=23000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 23000 | Avg Reward: -0.004770 | Avg Loss: 0.064745 | Win Rate (100 ep): 36.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:23:57.466807+00:00 | Event: checkpoint | Episodes: session=23; total=23 | Transitions: session=23500; total=23500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 23500 | Avg Reward: -0.001500 | Avg Loss: 0.077562 | Win Rate (100 ep): 34.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:24:30.927917+00:00 | Event: checkpoint | Episodes: session=23; total=23 | Transitions: session=24000; total=24000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 24000 | Avg Reward: -0.004820 | Avg Loss: 0.066134 | Win Rate (100 ep): 34.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:25:10.877898+00:00 | Event: checkpoint | Episodes: session=23; total=23 | Transitions: session=24500; total=24500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 24500 | Avg Reward: -0.031950 | Avg Loss: 0.078232 | Win Rate (100 ep): 34.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:25:44.784568+00:00 | Event: checkpoint | Episodes: session=23; total=23 | Transitions: session=25000; total=25000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 25000 | Avg Reward: 0.002900 | Avg Loss: 0.062922 | Win Rate (100 ep): 34.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:26:24.597025+00:00 | Event: checkpoint | Episodes: session=24; total=24 | Transitions: session=25500; total=25500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 25500 | Avg Reward: 0.025810 | Avg Loss: 0.078420 | Win Rate (100 ep): 37.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:26:58.384136+00:00 | Event: checkpoint | Episodes: session=25; total=25 | Transitions: session=26000; total=26000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 26000 | Avg Reward: 0.016340 | Avg Loss: 0.073368 | Win Rate (100 ep): 36.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:27:31.973068+00:00 | Event: checkpoint | Episodes: session=25; total=25 | Transitions: session=26500; total=26500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 26500 | Avg Reward: -0.004710 | Avg Loss: 0.085734 | Win Rate (100 ep): 36.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:28:11.675410+00:00 | Event: checkpoint | Episodes: session=25; total=25 | Transitions: session=27000; total=27000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 27000 | Avg Reward: -0.001660 | Avg Loss: 0.070178 | Win Rate (100 ep): 36.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:28:45.194429+00:00 | Event: checkpoint | Episodes: session=25; total=25 | Transitions: session=27500; total=27500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 27500 | Avg Reward: -0.028710 | Avg Loss: 0.083375 | Win Rate (100 ep): 36.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:29:25.626900+00:00 | Event: checkpoint | Episodes: session=26; total=26 | Transitions: session=28000; total=28000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 28000 | Avg Reward: -0.008950 | Avg Loss: 0.075142 | Win Rate (100 ep): 34.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:30:01.261134+00:00 | Event: checkpoint | Episodes: session=26; total=26 | Transitions: session=28500; total=28500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 28500 | Avg Reward: 0.005700 | Avg Loss: 0.087285 | Win Rate (100 ep): 34.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:30:37.057205+00:00 | Event: checkpoint | Episodes: session=26; total=26 | Transitions: session=29000; total=29000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 29000 | Avg Reward: -0.024150 | Avg Loss: 0.078142 | Win Rate (100 ep): 34.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:31:18.761143+00:00 | Event: checkpoint | Episodes: session=27; total=27 | Transitions: session=29500; total=29500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 29500 | Avg Reward: 0.007810 | Avg Loss: 0.090307 | Win Rate (100 ep): 37.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:31:54.222217+00:00 | Event: checkpoint | Episodes: session=27; total=27 | Transitions: session=30000; total=30000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 30000 | Avg Reward: -0.019770 | Avg Loss: 0.074983 | Win Rate (100 ep): 37.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:32:35.864534+00:00 | Event: checkpoint | Episodes: session=27; total=27 | Transitions: session=30500; total=30500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 30500 | Avg Reward: 0.022320 | Avg Loss: 0.092756 | Win Rate (100 ep): 37.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:33:09.783782+00:00 | Event: checkpoint | Episodes: session=28; total=28 | Transitions: session=31000; total=31000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 31000 | Avg Reward: 0.040760 | Avg Loss: 0.081433 | Win Rate (100 ep): 39.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:33:49.488898+00:00 | Event: checkpoint | Episodes: session=28; total=28 | Transitions: session=31500; total=31500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 31500 | Avg Reward: 0.045170 | Avg Loss: 0.094512 | Win Rate (100 ep): 39.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:34:22.988996+00:00 | Event: checkpoint | Episodes: session=29; total=29 | Transitions: session=32000; total=32000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 32000 | Avg Reward: 0.046770 | Avg Loss: 0.082847 | Win Rate (100 ep): 41.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:34:56.807665+00:00 | Event: checkpoint | Episodes: session=29; total=29 | Transitions: session=32500; total=32500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 32500 | Avg Reward: -0.009130 | Avg Loss: 0.089863 | Win Rate (100 ep): 41.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:35:30.770225+00:00 | Event: checkpoint | Episodes: session=30; total=30 | Transitions: session=33000; total=33000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 33000 | Avg Reward: -0.007640 | Avg Loss: 0.086009 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:36:10.384444+00:00 | Event: checkpoint | Episodes: session=31; total=31 | Transitions: session=33500; total=33500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 33500 | Avg Reward: -0.004600 | Avg Loss: 0.095375 | Win Rate (100 ep): 41.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:36:44.328390+00:00 | Event: checkpoint | Episodes: session=32; total=32 | Transitions: session=34000; total=34000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 34000 | Avg Reward: -0.012830 | Avg Loss: 0.093760 | Win Rate (100 ep): 40.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:37:18.143248+00:00 | Event: checkpoint | Episodes: session=32; total=32 | Transitions: session=34500; total=34500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 34500 | Avg Reward: 0.021130 | Avg Loss: 0.095895 | Win Rate (100 ep): 40.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:37:51.828865+00:00 | Event: checkpoint | Episodes: session=32; total=32 | Transitions: session=35000; total=35000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 35000 | Avg Reward: 0.031420 | Avg Loss: 0.092398 | Win Rate (100 ep): 40.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:38:25.483268+00:00 | Event: checkpoint | Episodes: session=32; total=32 | Transitions: session=35500; total=35500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 35500 | Avg Reward: 0.013270 | Avg Loss: 0.103797 | Win Rate (100 ep): 40.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:39:05.147114+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=36000; total=36000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 36000 | Avg Reward: 0.005750 | Avg Loss: 0.093403 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:39:38.950995+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=36500; total=36500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 36500 | Avg Reward: 0.022530 | Avg Loss: 0.103043 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:40:18.531026+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=37000; total=37000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 37000 | Avg Reward: -0.047810 | Avg Loss: 0.093375 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:40:46.564397+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=37500; total=37500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 37500 | Avg Reward: -0.004680 | Avg Loss: 0.103033 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:41:20.259174+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=38000; total=38000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 38000 | Avg Reward: 0.023990 | Avg Loss: 0.089858 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:42:00.025221+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=38500; total=38500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 38500 | Avg Reward: 0.013610 | Avg Loss: 0.100981 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:42:33.890572+00:00 | Event: checkpoint | Episodes: session=33; total=33 | Transitions: session=39000; total=39000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 39000 | Avg Reward: -0.008980 | Avg Loss: 0.093037 | Win Rate (100 ep): 39.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:43:07.717822+00:00 | Event: checkpoint | Episodes: session=34; total=34 | Transitions: session=39500; total=39500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 39500 | Avg Reward: 0.019300 | Avg Loss: 0.101019 | Win Rate (100 ep): 38.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:43:41.225476+00:00 | Event: checkpoint | Episodes: session=34; total=34 | Transitions: session=40000; total=40000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 40000 | Avg Reward: -0.006140 | Avg Loss: 0.089983 | Win Rate (100 ep): 38.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:44:21.033573+00:00 | Event: checkpoint | Episodes: session=36; total=36 | Transitions: session=40500; total=40500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 40500 | Avg Reward: 0.025990 | Avg Loss: 0.099152 | Win Rate (100 ep): 38.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:44:54.852025+00:00 | Event: checkpoint | Episodes: session=36; total=36 | Transitions: session=41000; total=41000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 41000 | Avg Reward: 0.004400 | Avg Loss: 0.090418 | Win Rate (100 ep): 38.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:45:28.702772+00:00 | Event: checkpoint | Episodes: session=36; total=36 | Transitions: session=41500; total=41500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 41500 | Avg Reward: 0.000180 | Avg Loss: 0.095099 | Win Rate (100 ep): 38.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:46:02.534458+00:00 | Event: checkpoint | Episodes: session=37; total=37 | Transitions: session=42000; total=42000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 42000 | Avg Reward: -0.019610 | Avg Loss: 0.094416 | Win Rate (100 ep): 37.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:46:36.105784+00:00 | Event: checkpoint | Episodes: session=37; total=37 | Transitions: session=42500; total=42500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 42500 | Avg Reward: 0.021150 | Avg Loss: 0.104156 | Win Rate (100 ep): 37.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:47:15.813217+00:00 | Event: checkpoint | Episodes: session=37; total=37 | Transitions: session=43000; total=43000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 43000 | Avg Reward: 0.017940 | Avg Loss: 0.095651 | Win Rate (100 ep): 37.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:47:49.717706+00:00 | Event: checkpoint | Episodes: session=37; total=37 | Transitions: session=43500; total=43500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 43500 | Avg Reward: -0.004380 | Avg Loss: 0.100442 | Win Rate (100 ep): 37.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:48:29.363953+00:00 | Event: checkpoint | Episodes: session=38; total=38 | Transitions: session=44000; total=44000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 44000 | Avg Reward: 0.006810 | Avg Loss: 0.098603 | Win Rate (100 ep): 36.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:49:09.146735+00:00 | Event: checkpoint | Episodes: session=39; total=39 | Transitions: session=44500; total=44500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 44500 | Avg Reward: 0.010450 | Avg Loss: 0.102934 | Win Rate (100 ep): 38.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:49:42.634161+00:00 | Event: checkpoint | Episodes: session=40; total=40 | Transitions: session=45000; total=45000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 45000 | Avg Reward: 0.045650 | Avg Loss: 0.099989 | Win Rate (100 ep): 40.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:50:16.594305+00:00 | Event: checkpoint | Episodes: session=41; total=41 | Transitions: session=45500; total=45500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 45500 | Avg Reward: -0.004230 | Avg Loss: 0.111899 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:50:50.401841+00:00 | Event: checkpoint | Episodes: session=41; total=41 | Transitions: session=46000; total=46000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 46000 | Avg Reward: 0.000330 | Avg Loss: 0.101983 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:51:24.956749+00:00 | Event: checkpoint | Episodes: session=41; total=41 | Transitions: session=46500; total=46500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 46500 | Avg Reward: -0.020900 | Avg Loss: 0.108648 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:52:06.841210+00:00 | Event: checkpoint | Episodes: session=41; total=41 | Transitions: session=47000; total=47000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 47000 | Avg Reward: -0.024070 | Avg Loss: 0.103807 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:52:42.506384+00:00 | Event: checkpoint | Episodes: session=42; total=42 | Transitions: session=47500; total=47500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 47500 | Avg Reward: -0.011900 | Avg Loss: 0.114773 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:53:24.280460+00:00 | Event: checkpoint | Episodes: session=42; total=42 | Transitions: session=48000; total=48000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 48000 | Avg Reward: -0.011810 | Avg Loss: 0.106799 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:53:59.806565+00:00 | Event: checkpoint | Episodes: session=42; total=42 | Transitions: session=48500; total=48500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 48500 | Avg Reward: 0.001460 | Avg Loss: 0.111255 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:54:35.653117+00:00 | Event: checkpoint | Episodes: session=42; total=42 | Transitions: session=49000; total=49000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 49000 | Avg Reward: 0.019650 | Avg Loss: 0.109753 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:55:11.474092+00:00 | Event: checkpoint | Episodes: session=42; total=42 | Transitions: session=49500; total=49500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 49500 | Avg Reward: 0.027070 | Avg Loss: 0.117051 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:55:46.730680+00:00 | Event: checkpoint | Episodes: session=42; total=42 | Transitions: session=50000; total=50000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 50000 | Avg Reward: 0.012280 | Avg Loss: 0.102079 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:56:28.702753+00:00 | Event: checkpoint | Episodes: session=43; total=43 | Transitions: session=50500; total=50500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 50500 | Avg Reward: 0.019510 | Avg Loss: 0.113527 | Win Rate (100 ep): 44.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:57:04.426329+00:00 | Event: checkpoint | Episodes: session=43; total=43 | Transitions: session=51000; total=51000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 51000 | Avg Reward: -0.001650 | Avg Loss: 0.100247 | Win Rate (100 ep): 44.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:57:45.976359+00:00 | Event: checkpoint | Episodes: session=43; total=43 | Transitions: session=51500; total=51500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 51500 | Avg Reward: -0.002800 | Avg Loss: 0.105570 | Win Rate (100 ep): 44.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:58:21.960659+00:00 | Event: checkpoint | Episodes: session=43; total=43 | Transitions: session=52000; total=52000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 52000 | Avg Reward: -0.001320 | Avg Loss: 0.105921 | Win Rate (100 ep): 44.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:59:03.507243+00:00 | Event: checkpoint | Episodes: session=44; total=44 | Transitions: session=52500; total=52500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 52500 | Avg Reward: 0.006160 | Avg Loss: 0.108253 | Win Rate (100 ep): 43.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T13:59:39.055834+00:00 | Event: checkpoint | Episodes: session=45; total=45 | Transitions: session=53000; total=53000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 53000 | Avg Reward: -0.003620 | Avg Loss: 0.104172 | Win Rate (100 ep): 42.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:00:14.468413+00:00 | Event: checkpoint | Episodes: session=45; total=45 | Transitions: session=53500; total=53500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 53500 | Avg Reward: -0.024040 | Avg Loss: 0.106967 | Win Rate (100 ep): 42.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:00:56.391109+00:00 | Event: checkpoint | Episodes: session=47; total=47 | Transitions: session=54000; total=54000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 54000 | Avg Reward: -0.042830 | Avg Loss: 0.114398 | Win Rate (100 ep): 40.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:01:31.907548+00:00 | Event: checkpoint | Episodes: session=47; total=47 | Transitions: session=54500; total=54500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 54500 | Avg Reward: -0.004620 | Avg Loss: 0.110183 | Win Rate (100 ep): 40.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:02:07.737178+00:00 | Event: checkpoint | Episodes: session=48; total=48 | Transitions: session=55000; total=55000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 55000 | Avg Reward: 0.017880 | Avg Loss: 0.110050 | Win Rate (100 ep): 41.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:04:47.433228+00:00 | Event: checkpoint | Episodes: session=49; total=49 | Transitions: session=55500; total=55500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 55500 | Avg Reward: 0.022460 | Avg Loss: 0.114248 | Win Rate (100 ep): 42.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:05:20.906941+00:00 | Event: checkpoint | Episodes: session=50; total=50 | Transitions: session=56000; total=56000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 56000 | Avg Reward: 0.018510 | Avg Loss: 0.109450 | Win Rate (100 ep): 44.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:05:54.602773+00:00 | Event: checkpoint | Episodes: session=50; total=50 | Transitions: session=56500; total=56500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 56500 | Avg Reward: -0.005930 | Avg Loss: 0.114929 | Win Rate (100 ep): 44.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:06:28.128934+00:00 | Event: checkpoint | Episodes: session=51; total=51 | Transitions: session=57000; total=57000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 57000 | Avg Reward: 0.008220 | Avg Loss: 0.108846 | Win Rate (100 ep): 43.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:07:01.851747+00:00 | Event: checkpoint | Episodes: session=51; total=51 | Transitions: session=57500; total=57500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 57500 | Avg Reward: 0.019950 | Avg Loss: 0.125921 | Win Rate (100 ep): 43.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:07:35.701199+00:00 | Event: checkpoint | Episodes: session=52; total=52 | Transitions: session=58000; total=58000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 58000 | Avg Reward: 0.000690 | Avg Loss: 0.117919 | Win Rate (100 ep): 42.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:08:09.467943+00:00 | Event: checkpoint | Episodes: session=52; total=52 | Transitions: session=58500; total=58500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 58500 | Avg Reward: -0.031490 | Avg Loss: 0.121758 | Win Rate (100 ep): 42.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:08:49.015057+00:00 | Event: checkpoint | Episodes: session=52; total=52 | Transitions: session=59000; total=59000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 59000 | Avg Reward: 0.020900 | Avg Loss: 0.117358 | Win Rate (100 ep): 42.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:09:23.146803+00:00 | Event: checkpoint | Episodes: session=53; total=53 | Transitions: session=59500; total=59500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 59500 | Avg Reward: -0.038170 | Avg Loss: 0.123122 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:09:56.948592+00:00 | Event: checkpoint | Episodes: session=53; total=53 | Transitions: session=60000; total=60000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 60000 | Avg Reward: -0.031300 | Avg Loss: 0.113389 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:09:58.455159+00:00 | Event: session_end | Episodes: session=53; total=53 | Transitions: session=60000; total=60000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 60000 | Avg Reward: -0.031300 | Avg Loss: 0.113389 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T14:10:37.659317+00:00 | Event: checkpoint | Episodes: session=53; total=53 | Transitions: session=60500; total=60500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 60500 | Avg Reward: 0.014000 | Avg Loss: 0.124113 | Win Rate (100 ep): 41.5% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T19:43:55.073484+00:00
+- Event: session_start
+- Episodes: session=0; total=53
+- Transitions: session=0; total=60500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 60500
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T19:43:55.073484+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T19:43:55.073484+00:00 | session_start | session=0; total=53 | session=0; total=60500 | 1.0000 | 0.0500 | 0.0500 | 60500 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T19:43:55.075314+00:00 | Event: session_start | Episodes: session=0; total=53 | Transitions: session=0; total=60500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 60500 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:44:29.992469+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=500; total=61000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 61000 | Avg Reward: 0.006000 | Avg Loss: 0.124913 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:45:03.251146+00:00 | Event: checkpoint | Episodes: session=0; total=53 | Transitions: session=1000; total=61500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 61500 | Avg Reward: -0.004440 | Avg Loss: 0.122802 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:45:18.315166+00:00 | Event: episode | Episodes: session=47; total=100 | Transitions: session=1247; total=61747 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 61747 | Avg Reward: -0.241010 | Avg Loss: 0.119585 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:45:41.804164+00:00 | Event: checkpoint | Episodes: session=81; total=134 | Transitions: session=1500; total=62000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 62000 | Avg Reward: 0.013570 | Avg Loss: 0.131144 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:46:15.574173+00:00 | Event: checkpoint | Episodes: session=82; total=135 | Transitions: session=2000; total=62500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 62500 | Avg Reward: -0.002770 | Avg Loss: 0.132886 | Win Rate (100 ep): 1.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:46:49.341793+00:00 | Event: checkpoint | Episodes: session=83; total=136 | Transitions: session=2500; total=63000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63000 | Avg Reward: -0.023640 | Avg Loss: 0.126850 | Win Rate (100 ep): 1.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:47:29.122877+00:00 | Event: checkpoint | Episodes: session=84; total=137 | Transitions: session=3000; total=63500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 63500 | Avg Reward: -0.005250 | Avg Loss: 0.127163 | Win Rate (100 ep): 2.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:48:02.736833+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=3500; total=64000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64000 | Avg Reward: 0.009730 | Avg Loss: 0.128729 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:48:36.005752+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=4000; total=64500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 64500 | Avg Reward: 0.019680 | Avg Loss: 0.119478 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:49:09.408485+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=4500; total=65000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65000 | Avg Reward: 0.019800 | Avg Loss: 0.118255 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:49:37.280951+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=5000; total=65500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 65500 | Avg Reward: 0.020910 | Avg Loss: 0.125197 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:50:10.865807+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=5500; total=66000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 66000 | Avg Reward: 0.033260 | Avg Loss: 0.108036 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:50:50.555659+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=6000; total=66500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 66500 | Avg Reward: -0.035690 | Avg Loss: 0.120706 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:51:24.165431+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=6500; total=67000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 67000 | Avg Reward: 0.024280 | Avg Loss: 0.122460 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:52:05.190982+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=7000; total=67500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 67500 | Avg Reward: 0.033040 | Avg Loss: 0.128659 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:52:39.833373+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=7500; total=68000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68000 | Avg Reward: -0.009040 | Avg Loss: 0.117162 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:53:13.280601+00:00 | Event: checkpoint | Episodes: session=85; total=138 | Transitions: session=8000; total=68500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68500 | Avg Reward: 0.029800 | Avg Loss: 0.120335 | Win Rate (100 ep): 3.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:53:20.286674+00:00 | Event: episode | Episodes: session=147; total=200 | Transitions: session=8093; total=68593 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68593 | Avg Reward: 0.350490 | Avg Loss: 0.118921 | Win Rate (100 ep): 65.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:53:31.552987+00:00 | Event: episode | Episodes: session=247; total=300 | Transitions: session=8193; total=68693 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 68693 | Avg Reward: 0.838780 | Avg Loss: 0.121856 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:53:57.052569+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=8500; total=69000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 69000 | Avg Reward: -0.001440 | Avg Loss: 0.121256 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:54:36.714306+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=9000; total=69500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 69500 | Avg Reward: -0.029930 | Avg Loss: 0.118239 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:55:10.630185+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=9500; total=70000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 70000 | Avg Reward: 0.001810 | Avg Loss: 0.114336 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:55:44.244629+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=10000; total=70500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 70500 | Avg Reward: -0.032690 | Avg Loss: 0.123313 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:56:24.157903+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=10500; total=71000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 71000 | Avg Reward: -0.002840 | Avg Loss: 0.113404 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:56:58.120334+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=11000; total=71500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 71500 | Avg Reward: -0.002750 | Avg Loss: 0.119934 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:57:31.806333+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=11500; total=72000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 72000 | Avg Reward: -0.007330 | Avg Loss: 0.115545 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:58:05.533679+00:00 | Event: checkpoint | Episodes: session=262; total=315 | Transitions: session=12000; total=72500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 72500 | Avg Reward: 0.001510 | Avg Loss: 0.118197 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:58:47.286359+00:00 | Event: checkpoint | Episodes: session=263; total=316 | Transitions: session=12500; total=73000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 73000 | Avg Reward: 0.012150 | Avg Loss: 0.111738 | Win Rate (100 ep): 99.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T19:59:28.808479+00:00 | Event: checkpoint | Episodes: session=265; total=318 | Transitions: session=13000; total=73500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 73500 | Avg Reward: -0.000680 | Avg Loss: 0.123958 | Win Rate (100 ep): 98.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:00:04.811107+00:00 | Event: checkpoint | Episodes: session=265; total=318 | Transitions: session=13500; total=74000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 74000 | Avg Reward: -0.010500 | Avg Loss: 0.116253 | Win Rate (100 ep): 98.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:00:40.607484+00:00 | Event: checkpoint | Episodes: session=266; total=319 | Transitions: session=14000; total=74500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 74500 | Avg Reward: -0.001380 | Avg Loss: 0.122341 | Win Rate (100 ep): 98.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:01:16.463733+00:00 | Event: checkpoint | Episodes: session=266; total=319 | Transitions: session=14500; total=75000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 75000 | Avg Reward: 0.023960 | Avg Loss: 0.120156 | Win Rate (100 ep): 98.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:01:50.775502+00:00 | Event: checkpoint | Episodes: session=267; total=320 | Transitions: session=15000; total=75500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 75500 | Avg Reward: -0.005840 | Avg Loss: 0.123816 | Win Rate (100 ep): 97.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:02:30.798000+00:00 | Event: checkpoint | Episodes: session=268; total=321 | Transitions: session=15500; total=76000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 76000 | Avg Reward: -0.032850 | Avg Loss: 0.118217 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:03:03.953154+00:00 | Event: checkpoint | Episodes: session=268; total=321 | Transitions: session=16000; total=76500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 76500 | Avg Reward: 0.010660 | Avg Loss: 0.114281 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:03:37.046425+00:00 | Event: checkpoint | Episodes: session=268; total=321 | Transitions: session=16500; total=77000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 77000 | Avg Reward: 0.023970 | Avg Loss: 0.117537 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:04:16.377760+00:00 | Event: checkpoint | Episodes: session=268; total=321 | Transitions: session=17000; total=77500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 77500 | Avg Reward: 0.022510 | Avg Loss: 0.126804 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:04:50.175229+00:00 | Event: checkpoint | Episodes: session=268; total=321 | Transitions: session=17500; total=78000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 78000 | Avg Reward: 0.034620 | Avg Loss: 0.119776 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:05:17.634896+00:00 | Event: checkpoint | Episodes: session=268; total=321 | Transitions: session=18000; total=78500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 78500 | Avg Reward: 0.007530 | Avg Loss: 0.130567 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:05:57.286376+00:00 | Event: checkpoint | Episodes: session=269; total=322 | Transitions: session=18500; total=79000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 79000 | Avg Reward: 0.027740 | Avg Loss: 0.119752 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:06:25.175287+00:00 | Event: checkpoint | Episodes: session=269; total=322 | Transitions: session=19000; total=79500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 79500 | Avg Reward: 0.019750 | Avg Loss: 0.117125 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:07:01.041670+00:00 | Event: checkpoint | Episodes: session=315; total=368 | Transitions: session=19500; total=80000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80000 | Avg Reward: 0.243500 | Avg Loss: 0.117349 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:07:02.723486+00:00 | Event: episode | Episodes: session=347; total=400 | Transitions: session=19532; total=80032 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80032 | Avg Reward: 0.420060 | Avg Loss: 0.116316 | Win Rate (100 ep): 96.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:07:19.972892+00:00 | Event: episode | Episodes: session=447; total=500 | Transitions: session=19632; total=80132 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80132 | Avg Reward: 0.882820 | Avg Loss: 0.117476 | Win Rate (100 ep): 99.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:07:37.116624+00:00 | Event: episode | Episodes: session=547; total=600 | Transitions: session=19732; total=80232 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80232 | Avg Reward: 0.971820 | Avg Loss: 0.130391 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:07:48.356263+00:00 | Event: episode | Episodes: session=647; total=700 | Transitions: session=19832; total=80332 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80332 | Avg Reward: 0.982070 | Avg Loss: 0.131020 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:07:59.502250+00:00 | Event: episode | Episodes: session=747; total=800 | Transitions: session=19932; total=80432 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80432 | Avg Reward: 1.021110 | Avg Loss: 0.128155 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:08:08.892035+00:00 | Event: checkpoint | Episodes: session=815; total=868 | Transitions: session=20000; total=80500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80500 | Avg Reward: 1.020720 | Avg Loss: 0.132222 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:08:10.762868+00:00 | Event: episode | Episodes: session=847; total=900 | Transitions: session=20032; total=80532 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80532 | Avg Reward: 1.035810 | Avg Loss: 0.130405 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:08:28.018246+00:00 | Event: episode | Episodes: session=947; total=1000 | Transitions: session=20132; total=80632 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80632 | Avg Reward: 1.019130 | Avg Loss: 0.134131 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:08:39.340959+00:00 | Event: episode | Episodes: session=1047; total=1100 | Transitions: session=20232; total=80732 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80732 | Avg Reward: 1.008990 | Avg Loss: 0.136616 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:08:50.639087+00:00 | Event: episode | Episodes: session=1147; total=1200 | Transitions: session=20332; total=80832 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80832 | Avg Reward: 1.009070 | Avg Loss: 0.127422 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:09:07.925536+00:00 | Event: episode | Episodes: session=1247; total=1300 | Transitions: session=20432; total=80932 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 80932 | Avg Reward: 1.019570 | Avg Loss: 0.127999 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:09:17.514955+00:00 | Event: checkpoint | Episodes: session=1315; total=1368 | Transitions: session=20500; total=81000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81000 | Avg Reward: 1.001680 | Avg Loss: 0.134248 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:09:19.281118+00:00 | Event: episode | Episodes: session=1347; total=1400 | Transitions: session=20532; total=81032 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81032 | Avg Reward: 0.983760 | Avg Loss: 0.136264 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:09:36.654905+00:00 | Event: episode | Episodes: session=1447; total=1500 | Transitions: session=20632; total=81132 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81132 | Avg Reward: 0.965890 | Avg Loss: 0.134138 | Win Rate (100 ep): 99.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:09:47.991520+00:00 | Event: episode | Episodes: session=1547; total=1600 | Transitions: session=20732; total=81232 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81232 | Avg Reward: 0.974860 | Avg Loss: 0.131504 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:10:05.327791+00:00 | Event: episode | Episodes: session=1647; total=1700 | Transitions: session=20832; total=81332 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81332 | Avg Reward: 0.992650 | Avg Loss: 0.132740 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:10:16.637795+00:00 | Event: episode | Episodes: session=1747; total=1800 | Transitions: session=20932; total=81432 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81432 | Avg Reward: 1.010670 | Avg Loss: 0.142052 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:10:32.219173+00:00 | Event: checkpoint | Episodes: session=1815; total=1868 | Transitions: session=21000; total=81500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81500 | Avg Reward: 0.995700 | Avg Loss: 0.141949 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:10:34.020317+00:00 | Event: episode | Episodes: session=1847; total=1900 | Transitions: session=21032; total=81532 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81532 | Avg Reward: 1.004800 | Avg Loss: 0.142829 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:10:45.326688+00:00 | Event: episode | Episodes: session=1947; total=2000 | Transitions: session=21132; total=81632 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81632 | Avg Reward: 1.019650 | Avg Loss: 0.136857 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:10:56.606581+00:00 | Event: episode | Episodes: session=2047; total=2100 | Transitions: session=21232; total=81732 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81732 | Avg Reward: 1.021030 | Avg Loss: 0.135197 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:11:13.991896+00:00 | Event: episode | Episodes: session=2147; total=2200 | Transitions: session=21332; total=81832 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81832 | Avg Reward: 1.001670 | Avg Loss: 0.131379 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:11:25.382302+00:00 | Event: episode | Episodes: session=2247; total=2300 | Transitions: session=21432; total=81932 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 81932 | Avg Reward: 0.989760 | Avg Loss: 0.128264 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:11:34.951195+00:00 | Event: checkpoint | Episodes: session=2315; total=2368 | Transitions: session=21500; total=82000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82000 | Avg Reward: 1.010640 | Avg Loss: 0.127623 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:11:42.632022+00:00 | Event: episode | Episodes: session=2347; total=2400 | Transitions: session=21532; total=82032 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82032 | Avg Reward: 1.007570 | Avg Loss: 0.129753 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:11:53.865033+00:00 | Event: episode | Episodes: session=2447; total=2500 | Transitions: session=21632; total=82132 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82132 | Avg Reward: 1.009000 | Avg Loss: 0.125761 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:12:04.955732+00:00 | Event: episode | Episodes: session=2547; total=2600 | Transitions: session=21732; total=82232 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82232 | Avg Reward: 1.021070 | Avg Loss: 0.124553 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:12:16.134572+00:00 | Event: episode | Episodes: session=2647; total=2700 | Transitions: session=21832; total=82332 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82332 | Avg Reward: 1.034600 | Avg Loss: 0.129023 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:12:27.290031+00:00 | Event: episode | Episodes: session=2747; total=2800 | Transitions: session=21932; total=82432 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82432 | Avg Reward: 1.025680 | Avg Loss: 0.131026 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:12:43.057834+00:00 | Event: checkpoint | Episodes: session=2815; total=2868 | Transitions: session=22000; total=82500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82500 | Avg Reward: 1.019560 | Avg Loss: 0.131110 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:12:44.638201+00:00 | Event: episode | Episodes: session=2847; total=2900 | Transitions: session=22032; total=82532 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82532 | Avg Reward: 1.022650 | Avg Loss: 0.131963 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:12:55.682742+00:00 | Event: episode | Episodes: session=2947; total=3000 | Transitions: session=22132; total=82632 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82632 | Avg Reward: 1.022680 | Avg Loss: 0.127358 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:13:06.610437+00:00 | Event: episode | Episodes: session=3047; total=3100 | Transitions: session=22232; total=82732 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82732 | Avg Reward: 1.025600 | Avg Loss: 0.126379 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T20:13:44.485842+00:00
+- Event: session_start
+- Episodes: session=0; total=2868
+- Transitions: session=0; total=82500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 82500
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T20:13:44.485842+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T20:13:44.485842+00:00 | session_start | session=0; total=2868 | session=0; total=82500 | 1.0000 | 0.0500 | 0.0500 | 82500 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T20:13:44.487504+00:00 | Event: session_start | Episodes: session=0; total=2868 | Transitions: session=0; total=82500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 82500 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:14:20.144110+00:00 | Event: checkpoint | Episodes: session=1; total=2869 | Transitions: session=500; total=83000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83000 | Avg Reward: -0.014250 | Avg Loss: 0.124004 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:14:36.863754+00:00 | Event: episode | Episodes: session=32; total=2900 | Transitions: session=800; total=83300 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83300 | Avg Reward: -0.144510 | Avg Loss: 0.125043 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:14:48.301183+00:00 | Event: episode | Episodes: session=132; total=3000 | Transitions: session=900; total=83400 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83400 | Avg Reward: -0.633940 | Avg Loss: 0.132417 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:14:59.539274+00:00 | Event: episode | Episodes: session=232; total=3100 | Transitions: session=1000; total=83500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83500 | Avg Reward: -0.950000 | Avg Loss: 0.128095 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:01.556763+00:00 | Event: checkpoint | Episodes: session=232; total=3100 | Transitions: session=1000; total=83500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83500 | Avg Reward: -0.950000 | Avg Loss: 0.128095 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:10.848663+00:00 | Event: episode | Episodes: session=332; total=3200 | Transitions: session=1100; total=83600 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83600 | Avg Reward: -0.950000 | Avg Loss: 0.121769 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:22.066156+00:00 | Event: episode | Episodes: session=432; total=3300 | Transitions: session=1200; total=83700 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83700 | Avg Reward: -0.950000 | Avg Loss: 0.132713 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:33.287600+00:00 | Event: episode | Episodes: session=532; total=3400 | Transitions: session=1300; total=83800 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83800 | Avg Reward: -0.950000 | Avg Loss: 0.138895 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:44.554797+00:00 | Event: episode | Episodes: session=632; total=3500 | Transitions: session=1400; total=83900 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 83900 | Avg Reward: -0.950000 | Avg Loss: 0.134104 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:55.786479+00:00 | Event: episode | Episodes: session=732; total=3600 | Transitions: session=1500; total=84000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84000 | Avg Reward: -0.950000 | Avg Loss: 0.126726 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:15:57.673369+00:00 | Event: checkpoint | Episodes: session=732; total=3600 | Transitions: session=1500; total=84000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84000 | Avg Reward: -0.950000 | Avg Loss: 0.126726 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:16:07.065011+00:00 | Event: episode | Episodes: session=832; total=3700 | Transitions: session=1600; total=84100 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84100 | Avg Reward: -0.950000 | Avg Loss: 0.123642 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:16:18.363638+00:00 | Event: episode | Episodes: session=932; total=3800 | Transitions: session=1700; total=84200 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84200 | Avg Reward: -0.950000 | Avg Loss: 0.124205 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:16:29.566351+00:00 | Event: episode | Episodes: session=1032; total=3900 | Transitions: session=1800; total=84300 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84300 | Avg Reward: -0.950000 | Avg Loss: 0.125037 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:16:40.905099+00:00 | Event: episode | Episodes: session=1132; total=4000 | Transitions: session=1900; total=84400 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84400 | Avg Reward: -0.950000 | Avg Loss: 0.124137 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:16:52.121330+00:00 | Event: episode | Episodes: session=1232; total=4100 | Transitions: session=2000; total=84500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84500 | Avg Reward: -0.950000 | Avg Loss: 0.124354 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:16:53.900954+00:00 | Event: checkpoint | Episodes: session=1232; total=4100 | Transitions: session=2000; total=84500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84500 | Avg Reward: -0.950000 | Avg Loss: 0.124354 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:03.541158+00:00 | Event: episode | Episodes: session=1332; total=4200 | Transitions: session=2100; total=84600 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84600 | Avg Reward: -0.950000 | Avg Loss: 0.122902 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:14.852052+00:00 | Event: episode | Episodes: session=1432; total=4300 | Transitions: session=2200; total=84700 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84700 | Avg Reward: -0.950000 | Avg Loss: 0.120313 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:26.143454+00:00 | Event: episode | Episodes: session=1532; total=4400 | Transitions: session=2300; total=84800 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84800 | Avg Reward: -0.950000 | Avg Loss: 0.123752 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:37.417510+00:00 | Event: episode | Episodes: session=1632; total=4500 | Transitions: session=2400; total=84900 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 84900 | Avg Reward: -0.950000 | Avg Loss: 0.121292 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:48.705167+00:00 | Event: episode | Episodes: session=1732; total=4600 | Transitions: session=2500; total=85000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85000 | Avg Reward: -0.950000 | Avg Loss: 0.114014 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:50.677912+00:00 | Event: checkpoint | Episodes: session=1732; total=4600 | Transitions: session=2500; total=85000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85000 | Avg Reward: -0.950000 | Avg Loss: 0.114014 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:17:59.996525+00:00 | Event: episode | Episodes: session=1832; total=4700 | Transitions: session=2600; total=85100 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85100 | Avg Reward: -0.950000 | Avg Loss: 0.118495 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:18:11.201464+00:00 | Event: episode | Episodes: session=1932; total=4800 | Transitions: session=2700; total=85200 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85200 | Avg Reward: -0.950000 | Avg Loss: 0.118786 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:18:22.485010+00:00 | Event: episode | Episodes: session=2032; total=4900 | Transitions: session=2800; total=85300 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85300 | Avg Reward: -0.950000 | Avg Loss: 0.122281 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:18:33.749958+00:00 | Event: episode | Episodes: session=2132; total=5000 | Transitions: session=2900; total=85400 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85400 | Avg Reward: -0.950000 | Avg Loss: 0.126377 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:18:44.960862+00:00 | Event: episode | Episodes: session=2232; total=5100 | Transitions: session=3000; total=85500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85500 | Avg Reward: -0.950000 | Avg Loss: 0.125603 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:18:47.001479+00:00 | Event: checkpoint | Episodes: session=2232; total=5100 | Transitions: session=3000; total=85500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85500 | Avg Reward: -0.950000 | Avg Loss: 0.125603 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T20:19:40.974232+00:00
+- Event: session_start
+- Episodes: session=0; total=5100
+- Transitions: session=0; total=85500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 85500
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T20:19:40.974232+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T20:19:40.974232+00:00 | session_start | session=0; total=5100 | session=0; total=85500 | 1.0000 | 0.0500 | 0.0500 | 85500 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T20:19:40.975714+00:00 | Event: session_start | Episodes: session=0; total=5100 | Transitions: session=0; total=85500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 85500 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:20:10.144788+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=500; total=86000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 86000 | Avg Reward: 0.042070 | Avg Loss: 0.127647 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:20:37.163288+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=1000; total=86500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 86500 | Avg Reward: 0.046490 | Avg Loss: 0.114928 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:21:04.636619+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=1500; total=87000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 87000 | Avg Reward: 0.045310 | Avg Loss: 0.117989 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:21:32.141130+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=2000; total=87500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 87500 | Avg Reward: 0.049810 | Avg Loss: 0.117739 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:21:59.759330+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=2500; total=88000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 88000 | Avg Reward: 0.049840 | Avg Loss: 0.119686 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:22:26.833705+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=3000; total=88500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 88500 | Avg Reward: 0.040580 | Avg Loss: 0.116612 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:22:54.276553+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=3500; total=89000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 89000 | Avg Reward: 0.039310 | Avg Loss: 0.119816 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:23:21.651670+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=4000; total=89500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 89500 | Avg Reward: 0.039250 | Avg Loss: 0.107547 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:23:49.385861+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=4500; total=90000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 90000 | Avg Reward: 0.045310 | Avg Loss: 0.102120 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:24:22.877576+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=5000; total=90500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 90500 | Avg Reward: 0.040660 | Avg Loss: 0.108835 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:24:50.450098+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=5500; total=91000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 91000 | Avg Reward: 0.049660 | Avg Loss: 0.100393 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:25:18.172547+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=6000; total=91500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 91500 | Avg Reward: 0.046830 | Avg Loss: 0.106933 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:25:45.349013+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=6500; total=92000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 92000 | Avg Reward: 0.042310 | Avg Loss: 0.108603 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:26:12.758577+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=7000; total=92500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 92500 | Avg Reward: 0.039340 | Avg Loss: 0.103333 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:26:40.202531+00:00 | Event: checkpoint | Episodes: session=0; total=5100 | Transitions: session=7500; total=93000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 93000 | Avg Reward: 0.049800 | Avg Loss: 0.102222 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:27:13.145750+00:00 | Event: checkpoint | Episodes: session=1; total=5101 | Transitions: session=8000; total=93500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 93500 | Avg Reward: 0.038760 | Avg Loss: 0.104256 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:27:40.573387+00:00 | Event: checkpoint | Episodes: session=1; total=5101 | Transitions: session=8500; total=94000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 94000 | Avg Reward: 0.039330 | Avg Loss: 0.103090 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:28:07.826263+00:00 | Event: checkpoint | Episodes: session=1; total=5101 | Transitions: session=9000; total=94500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 94500 | Avg Reward: 0.048320 | Avg Loss: 0.112084 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:28:35.319645+00:00 | Event: checkpoint | Episodes: session=1; total=5101 | Transitions: session=9500; total=95000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 95000 | Avg Reward: 0.048340 | Avg Loss: 0.103857 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-15T20:29:27.046786+00:00
+- Event: session_start
+- Episodes: session=0; total=5101
+- Transitions: session=0; total=95000
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 95000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-15T20:29:27.046786+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-15T20:29:27.046786+00:00 | session_start | session=0; total=5101 | session=0; total=95000 | 1.0000 | 0.0500 | 0.0500 | 95000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-15T20:29:27.049713+00:00 | Event: session_start | Episodes: session=0; total=5101 | Transitions: session=0; total=95000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 95000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-15T20:30:03.099565+00:00 | Event: checkpoint | Episodes: session=1; total=5102 | Transitions: session=500; total=95500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 95500 | Avg Reward: -0.026150 | Avg Loss: 0.110613 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T06:24:33.056754+00:00
+- Event: session_start
+- Episodes: session=0; total=5102
+- Transitions: session=0; total=95500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 95500
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T06:24:33.056754+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T06:24:33.056754+00:00 | session_start | session=0; total=5102 | session=0; total=95500 | 1.0000 | 0.0500 | 0.0500 | 95500 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T06:24:33.059370+00:00 | Event: session_start | Episodes: session=0; total=5102 | Transitions: session=0; total=95500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 95500 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:25:08.478417+00:00 | Event: checkpoint | Episodes: session=0; total=5102 | Transitions: session=500; total=96000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 96000 | Avg Reward: -0.019240 | Avg Loss: 0.106900 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:25:47.660984+00:00 | Event: checkpoint | Episodes: session=0; total=5102 | Transitions: session=1000; total=96500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 96500 | Avg Reward: -0.025290 | Avg Loss: 0.105853 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:26:21.160313+00:00 | Event: checkpoint | Episodes: session=0; total=5102 | Transitions: session=1500; total=97000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 97000 | Avg Reward: -0.003030 | Avg Loss: 0.105376 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:26:54.269953+00:00 | Event: checkpoint | Episodes: session=0; total=5102 | Transitions: session=2000; total=97500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 97500 | Avg Reward: -0.001400 | Avg Loss: 0.093966 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:27:27.585926+00:00 | Event: checkpoint | Episodes: session=0; total=5102 | Transitions: session=2500; total=98000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 98000 | Avg Reward: -0.007480 | Avg Loss: 0.106799 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:28:01.328836+00:00 | Event: checkpoint | Episodes: session=1; total=5103 | Transitions: session=3000; total=98500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 98500 | Avg Reward: 0.026960 | Avg Loss: 0.105064 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:28:34.716293+00:00 | Event: checkpoint | Episodes: session=1; total=5103 | Transitions: session=3500; total=99000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 99000 | Avg Reward: 0.013540 | Avg Loss: 0.102625 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:29:13.977250+00:00 | Event: checkpoint | Episodes: session=2; total=5104 | Transitions: session=4000; total=99500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 99500 | Avg Reward: -0.005930 | Avg Loss: 0.109376 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:29:47.766756+00:00 | Event: checkpoint | Episodes: session=2; total=5104 | Transitions: session=4500; total=100000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.025390 | Avg Loss: 0.106532 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:30:26.921609+00:00 | Event: checkpoint | Episodes: session=3; total=5105 | Transitions: session=5000; total=100500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.038150 | Avg Loss: 0.114302 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:31:00.499355+00:00 | Event: checkpoint | Episodes: session=3; total=5105 | Transitions: session=5500; total=101000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.032720 | Avg Loss: 0.104519 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:31:33.989291+00:00 | Event: checkpoint | Episodes: session=4; total=5106 | Transitions: session=6000; total=101500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005920 | Avg Loss: 0.110846 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:32:06.921762+00:00 | Event: checkpoint | Episodes: session=4; total=5106 | Transitions: session=6500; total=102000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002970 | Avg Loss: 0.113919 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:32:46.852165+00:00 | Event: checkpoint | Episodes: session=6; total=5108 | Transitions: session=7000; total=102500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.006500 | Avg Loss: 0.097240 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T06:33:41.599943+00:00
+- Event: session_start
+- Episodes: session=0; total=5108
+- Transitions: session=0; total=102500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 100000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T06:33:41.599943+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.500000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.5 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.00 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.0 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T06:33:41.599943+00:00 | session_start | session=0; total=5108 | session=0; total=102500 | 1.0000 | 0.0500 | 0.0500 | 100000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T06:33:41.602103+00:00 | Event: session_start | Episodes: session=0; total=5108 | Transitions: session=0; total=102500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:34:11.402741+00:00 | Event: checkpoint | Episodes: session=0; total=5108 | Transitions: session=500; total=103000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021080 | Avg Loss: 0.100221 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:34:45.232806+00:00 | Event: checkpoint | Episodes: session=0; total=5108 | Transitions: session=1000; total=103500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000160 | Avg Loss: 0.114807 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:35:18.755177+00:00 | Event: checkpoint | Episodes: session=0; total=5108 | Transitions: session=1500; total=104000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022470 | Avg Loss: 0.111311 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:35:46.525769+00:00 | Event: checkpoint | Episodes: session=0; total=5108 | Transitions: session=2000; total=104500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.016480 | Avg Loss: 0.102548 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:36:19.968083+00:00 | Event: checkpoint | Episodes: session=0; total=5108 | Transitions: session=2500; total=105000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.008860 | Avg Loss: 0.101652 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:36:59.682700+00:00 | Event: checkpoint | Episodes: session=0; total=5108 | Transitions: session=3000; total=105500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.018220 | Avg Loss: 0.114007 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:37:33.228500+00:00 | Event: checkpoint | Episodes: session=1; total=5109 | Transitions: session=3500; total=106000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004910 | Avg Loss: 0.112682 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:38:12.749384+00:00 | Event: checkpoint | Episodes: session=1; total=5109 | Transitions: session=4000; total=106500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049580 | Avg Loss: 0.109222 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:38:40.481633+00:00 | Event: checkpoint | Episodes: session=1; total=5109 | Transitions: session=4500; total=107000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005880 | Avg Loss: 0.119534 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:39:20.196431+00:00 | Event: checkpoint | Episodes: session=2; total=5110 | Transitions: session=5000; total=107500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.032800 | Avg Loss: 0.124098 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:39:53.689142+00:00 | Event: checkpoint | Episodes: session=2; total=5110 | Transitions: session=5500; total=108000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021090 | Avg Loss: 0.118891 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:40:33.453325+00:00 | Event: checkpoint | Episodes: session=3; total=5111 | Transitions: session=6000; total=108500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009860 | Avg Loss: 0.123560 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:41:06.730857+00:00 | Event: checkpoint | Episodes: session=3; total=5111 | Transitions: session=6500; total=109000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010760 | Avg Loss: 0.112425 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:41:40.316501+00:00 | Event: checkpoint | Episodes: session=3; total=5111 | Transitions: session=7000; total=109500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.027030 | Avg Loss: 0.112167 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:42:19.940017+00:00 | Event: checkpoint | Episodes: session=5; total=5113 | Transitions: session=7500; total=110000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048710 | Avg Loss: 0.109768 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:42:53.360385+00:00 | Event: checkpoint | Episodes: session=6; total=5114 | Transitions: session=8000; total=110500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.002870 | Avg Loss: 0.105363 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:43:27.172545+00:00 | Event: checkpoint | Episodes: session=6; total=5114 | Transitions: session=8500; total=111000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034500 | Avg Loss: 0.110632 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:44:00.493959+00:00 | Event: checkpoint | Episodes: session=6; total=5114 | Transitions: session=9000; total=111500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002870 | Avg Loss: 0.105774 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:44:34.097648+00:00 | Event: checkpoint | Episodes: session=6; total=5114 | Transitions: session=9500; total=112000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022660 | Avg Loss: 0.108892 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:45:07.824031+00:00 | Event: checkpoint | Episodes: session=7; total=5115 | Transitions: session=10000; total=112500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010790 | Avg Loss: 0.101690 | Win Rate (100 ep): 28.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:45:47.428091+00:00 | Event: checkpoint | Episodes: session=8; total=5116 | Transitions: session=10500; total=113000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000290 | Avg Loss: 0.104082 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:46:21.074689+00:00 | Event: checkpoint | Episodes: session=9; total=5117 | Transitions: session=11000; total=113500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021100 | Avg Loss: 0.108886 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:47:00.948244+00:00 | Event: checkpoint | Episodes: session=9; total=5117 | Transitions: session=11500; total=114000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.007160 | Avg Loss: 0.108212 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:47:34.137353+00:00 | Event: checkpoint | Episodes: session=10; total=5118 | Transitions: session=12000; total=114500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.032240 | Avg Loss: 0.114012 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:48:02.051456+00:00 | Event: checkpoint | Episodes: session=10; total=5118 | Transitions: session=12500; total=115000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024080 | Avg Loss: 0.105443 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:48:41.685835+00:00 | Event: checkpoint | Episodes: session=11; total=5119 | Transitions: session=13000; total=115500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004150 | Avg Loss: 0.110107 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:49:14.990122+00:00 | Event: checkpoint | Episodes: session=12; total=5120 | Transitions: session=13500; total=116000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.031310 | Avg Loss: 0.113595 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:49:48.954855+00:00 | Event: checkpoint | Episodes: session=12; total=5120 | Transitions: session=14000; total=116500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.041960 | Avg Loss: 0.127149 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:50:16.342957+00:00 | Event: checkpoint | Episodes: session=12; total=5120 | Transitions: session=14500; total=117000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021070 | Avg Loss: 0.115796 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:50:49.977291+00:00 | Event: checkpoint | Episodes: session=12; total=5120 | Transitions: session=15000; total=117500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028570 | Avg Loss: 0.108654 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:51:29.696972+00:00 | Event: checkpoint | Episodes: session=14; total=5122 | Transitions: session=15500; total=118000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024180 | Avg Loss: 0.116615 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:52:03.131811+00:00 | Event: checkpoint | Episodes: session=15; total=5123 | Transitions: session=16000; total=118500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002880 | Avg Loss: 0.110754 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:52:36.903673+00:00 | Event: checkpoint | Episodes: session=15; total=5123 | Transitions: session=16500; total=119000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024150 | Avg Loss: 0.113018 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:53:10.306840+00:00 | Event: checkpoint | Episodes: session=15; total=5123 | Transitions: session=17000; total=119500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049770 | Avg Loss: 0.119836 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:53:43.818742+00:00 | Event: checkpoint | Episodes: session=15; total=5123 | Transitions: session=17500; total=120000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.001460 | Avg Loss: 0.113351 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:54:23.708502+00:00 | Event: checkpoint | Episodes: session=15; total=5123 | Transitions: session=18000; total=120500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.022560 | Avg Loss: 0.107970 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:54:57.097210+00:00 | Event: checkpoint | Episodes: session=16; total=5124 | Transitions: session=18500; total=121000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019620 | Avg Loss: 0.103071 | Win Rate (100 ep): 18.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:55:30.677427+00:00 | Event: checkpoint | Episodes: session=16; total=5124 | Transitions: session=19000; total=121500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.033100 | Avg Loss: 0.102071 | Win Rate (100 ep): 18.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:56:04.591802+00:00 | Event: checkpoint | Episodes: session=16; total=5124 | Transitions: session=19500; total=122000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.022390 | Avg Loss: 0.111896 | Win Rate (100 ep): 18.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:56:37.647869+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=20000; total=122500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002770 | Avg Loss: 0.112631 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:57:11.649066+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=20500; total=123000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.028340 | Avg Loss: 0.106217 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:57:45.072822+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=21000; total=123500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036160 | Avg Loss: 0.096977 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:58:24.855263+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=21500; total=124000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005920 | Avg Loss: 0.093186 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:58:52.283597+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=22000; total=124500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.007490 | Avg Loss: 0.100395 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T06:59:25.565700+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=22500; total=125000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045360 | Avg Loss: 0.098345 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:00:05.373098+00:00 | Event: checkpoint | Episodes: session=17; total=5125 | Transitions: session=23000; total=125500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.001220 | Avg Loss: 0.101688 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:00:38.792289+00:00 | Event: checkpoint | Episodes: session=18; total=5126 | Transitions: session=23500; total=126000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009040 | Avg Loss: 0.101650 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:01:18.320285+00:00 | Event: checkpoint | Episodes: session=18; total=5126 | Transitions: session=24000; total=126500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.031440 | Avg Loss: 0.107262 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:01:51.859926+00:00 | Event: checkpoint | Episodes: session=18; total=5126 | Transitions: session=24500; total=127000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.017880 | Avg Loss: 0.096870 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:02:25.363793+00:00 | Event: checkpoint | Episodes: session=19; total=5127 | Transitions: session=25000; total=127500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.006940 | Avg Loss: 0.096649 | Win Rate (100 ep): 15.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:02:58.702864+00:00 | Event: checkpoint | Episodes: session=20; total=5128 | Transitions: session=25500; total=128000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.014050 | Avg Loss: 0.098968 | Win Rate (100 ep): 15.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:03:26.946408+00:00 | Event: checkpoint | Episodes: session=20; total=5128 | Transitions: session=26000; total=128500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042130 | Avg Loss: 0.102740 | Win Rate (100 ep): 15.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:04:06.130953+00:00 | Event: checkpoint | Episodes: session=21; total=5129 | Transitions: session=26500; total=129000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002870 | Avg Loss: 0.095087 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:04:40.062670+00:00 | Event: checkpoint | Episodes: session=22; total=5130 | Transitions: session=27000; total=129500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.003160 | Avg Loss: 0.097328 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:05:19.485766+00:00 | Event: checkpoint | Episodes: session=22; total=5130 | Transitions: session=27500; total=130000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021040 | Avg Loss: 0.090669 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:05:53.354124+00:00 | Event: checkpoint | Episodes: session=22; total=5130 | Transitions: session=28000; total=130500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024470 | Avg Loss: 0.096186 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:06:27.377826+00:00 | Event: checkpoint | Episodes: session=22; total=5130 | Transitions: session=28500; total=131000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.007170 | Avg Loss: 0.104283 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:07:00.354521+00:00 | Event: checkpoint | Episodes: session=23; total=5131 | Transitions: session=29000; total=131500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028470 | Avg Loss: 0.105817 | Win Rate (100 ep): 17.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:07:34.280775+00:00 | Event: checkpoint | Episodes: session=24; total=5132 | Transitions: session=29500; total=132000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009830 | Avg Loss: 0.095651 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:08:19.899571+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=30000; total=132500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036810 | Avg Loss: 0.114521 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:08:46.946413+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=30500; total=133000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024450 | Avg Loss: 0.102507 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:09:21.191656+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=31000; total=133500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.007440 | Avg Loss: 0.103835 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:10:00.409651+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=31500; total=134000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048450 | Avg Loss: 0.104552 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:10:27.836774+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=32000; total=134500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028550 | Avg Loss: 0.094090 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:11:02.007910+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=32500; total=135000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.026910 | Avg Loss: 0.097662 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:11:35.511921+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=33000; total=135500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021120 | Avg Loss: 0.092990 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:12:08.855535+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=33500; total=136000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010620 | Avg Loss: 0.110175 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:12:42.596077+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=34000; total=136500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005900 | Avg Loss: 0.102855 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:13:16.070962+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=34500; total=137000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.025490 | Avg Loss: 0.094384 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:13:49.701096+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=35000; total=137500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019580 | Avg Loss: 0.089253 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:14:23.249901+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=35500; total=138000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014800 | Avg Loss: 0.089035 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:14:56.755898+00:00 | Event: checkpoint | Episodes: session=25; total=5133 | Transitions: session=36000; total=138500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.029790 | Avg Loss: 0.090434 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:15:36.612484+00:00 | Event: checkpoint | Episodes: session=26; total=5134 | Transitions: session=36500; total=139000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.028500 | Avg Loss: 0.090529 | Win Rate (100 ep): 19.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:16:09.790497+00:00 | Event: checkpoint | Episodes: session=26; total=5134 | Transitions: session=37000; total=139500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.032950 | Avg Loss: 0.080721 | Win Rate (100 ep): 19.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:16:37.861428+00:00 | Event: checkpoint | Episodes: session=26; total=5134 | Transitions: session=37500; total=140000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004490 | Avg Loss: 0.081829 | Win Rate (100 ep): 19.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:17:17.120015+00:00 | Event: checkpoint | Episodes: session=27; total=5135 | Transitions: session=38000; total=140500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004340 | Avg Loss: 0.092925 | Win Rate (100 ep): 18.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:17:56.582148+00:00 | Event: checkpoint | Episodes: session=27; total=5135 | Transitions: session=38500; total=141000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021040 | Avg Loss: 0.081202 | Win Rate (100 ep): 18.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:18:30.390094+00:00 | Event: checkpoint | Episodes: session=27; total=5135 | Transitions: session=39000; total=141500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.030280 | Avg Loss: 0.083928 | Win Rate (100 ep): 18.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:18:57.945154+00:00 | Event: checkpoint | Episodes: session=27; total=5135 | Transitions: session=39500; total=142000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034800 | Avg Loss: 0.079651 | Win Rate (100 ep): 18.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:19:31.451764+00:00 | Event: checkpoint | Episodes: session=28; total=5136 | Transitions: session=40000; total=142500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022750 | Avg Loss: 0.094938 | Win Rate (100 ep): 17.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:20:11.623631+00:00 | Event: checkpoint | Episodes: session=30; total=5138 | Transitions: session=40500; total=143000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.002140 | Avg Loss: 0.080875 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:20:45.531791+00:00 | Event: checkpoint | Episodes: session=30; total=5138 | Transitions: session=41000; total=143500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021040 | Avg Loss: 0.089068 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:21:19.008545+00:00 | Event: checkpoint | Episodes: session=30; total=5138 | Transitions: session=41500; total=144000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.017910 | Avg Loss: 0.099620 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:21:52.898703+00:00 | Event: checkpoint | Episodes: session=30; total=5138 | Transitions: session=42000; total=144500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010570 | Avg Loss: 0.087589 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:22:32.631781+00:00 | Event: checkpoint | Episodes: session=31; total=5139 | Transitions: session=42500; total=145000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.031480 | Avg Loss: 0.095875 | Win Rate (100 ep): 22.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:23:06.560078+00:00 | Event: checkpoint | Episodes: session=32; total=5140 | Transitions: session=43000; total=145500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.003150 | Avg Loss: 0.092505 | Win Rate (100 ep): 21.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:23:40.313631+00:00 | Event: checkpoint | Episodes: session=32; total=5140 | Transitions: session=43500; total=146000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024370 | Avg Loss: 0.100793 | Win Rate (100 ep): 21.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:24:13.390199+00:00 | Event: checkpoint | Episodes: session=32; total=5140 | Transitions: session=44000; total=146500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021180 | Avg Loss: 0.099961 | Win Rate (100 ep): 21.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:24:47.218496+00:00 | Event: checkpoint | Episodes: session=32; total=5140 | Transitions: session=44500; total=147000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019640 | Avg Loss: 0.101279 | Win Rate (100 ep): 21.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:25:26.568401+00:00 | Event: checkpoint | Episodes: session=33; total=5141 | Transitions: session=45000; total=147500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.054680 | Avg Loss: 0.089112 | Win Rate (100 ep): 24.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:26:06.393587+00:00 | Event: checkpoint | Episodes: session=33; total=5141 | Transitions: session=45500; total=148000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024310 | Avg Loss: 0.098044 | Win Rate (100 ep): 24.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:26:40.333357+00:00 | Event: checkpoint | Episodes: session=34; total=5142 | Transitions: session=46000; total=148500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.030890 | Avg Loss: 0.098408 | Win Rate (100 ep): 23.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:27:13.857415+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=46500; total=149000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.012850 | Avg Loss: 0.089122 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:27:53.536209+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=47000; total=149500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004680 | Avg Loss: 0.109740 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:28:26.770565+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=47500; total=150000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.017980 | Avg Loss: 0.098401 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:29:00.741388+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=48000; total=150500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009150 | Avg Loss: 0.107825 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:29:40.295600+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=48500; total=151000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.017900 | Avg Loss: 0.103775 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:30:13.856027+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=49000; total=151500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004650 | Avg Loss: 0.095364 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:30:53.703149+00:00 | Event: checkpoint | Episodes: session=35; total=5143 | Transitions: session=49500; total=152000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024240 | Avg Loss: 0.099192 | Win Rate (100 ep): 22.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:31:27.300659+00:00 | Event: checkpoint | Episodes: session=36; total=5144 | Transitions: session=50000; total=152500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.020160 | Avg Loss: 0.099662 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:32:07.277793+00:00 | Event: checkpoint | Episodes: session=37; total=5145 | Transitions: session=50500; total=153000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.023280 | Avg Loss: 0.103714 | Win Rate (100 ep): 24.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:32:46.408912+00:00 | Event: checkpoint | Episodes: session=38; total=5146 | Transitions: session=51000; total=153500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.020840 | Avg Loss: 0.101736 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:33:26.093753+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=51500; total=154000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.015120 | Avg Loss: 0.098314 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:33:59.646913+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=52000; total=154500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022850 | Avg Loss: 0.113967 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:34:33.130909+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=52500; total=155000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021240 | Avg Loss: 0.104305 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:35:06.526523+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=53000; total=155500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.020950 | Avg Loss: 0.105557 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:35:40.363086+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=53500; total=156000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.001200 | Avg Loss: 0.109770 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:36:13.965250+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=54000; total=156500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.003060 | Avg Loss: 0.111636 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:36:53.071260+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=54500; total=157000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.035760 | Avg Loss: 0.101693 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:37:20.927575+00:00 | Event: checkpoint | Episodes: session=39; total=5147 | Transitions: session=55000; total=157500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.000010 | Avg Loss: 0.120915 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:37:54.177348+00:00 | Event: checkpoint | Episodes: session=40; total=5148 | Transitions: session=55500; total=158000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.025560 | Avg Loss: 0.111322 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:38:28.159497+00:00 | Event: checkpoint | Episodes: session=41; total=5149 | Transitions: session=56000; total=158500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.038060 | Avg Loss: 0.113901 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:39:01.753674+00:00 | Event: checkpoint | Episodes: session=42; total=5150 | Transitions: session=56500; total=159000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.002260 | Avg Loss: 0.108176 | Win Rate (100 ep): 23.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:39:35.191454+00:00 | Event: checkpoint | Episodes: session=43; total=5151 | Transitions: session=57000; total=159500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.017930 | Avg Loss: 0.099230 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:40:08.895468+00:00 | Event: checkpoint | Episodes: session=43; total=5151 | Transitions: session=57500; total=160000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.001480 | Avg Loss: 0.094790 | Win Rate (100 ep): 25.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:40:42.600682+00:00 | Event: checkpoint | Episodes: session=44; total=5152 | Transitions: session=58000; total=160500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021180 | Avg Loss: 0.098762 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:41:16.466934+00:00 | Event: checkpoint | Episodes: session=44; total=5152 | Transitions: session=58500; total=161000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000040 | Avg Loss: 0.090408 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:41:49.869990+00:00 | Event: checkpoint | Episodes: session=45; total=5153 | Transitions: session=59000; total=161500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.001860 | Avg Loss: 0.098783 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:42:23.075869+00:00 | Event: checkpoint | Episodes: session=45; total=5153 | Transitions: session=59500; total=162000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.011940 | Avg Loss: 0.097396 | Win Rate (100 ep): 24.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:43:03.102418+00:00 | Event: checkpoint | Episodes: session=46; total=5154 | Transitions: session=60000; total=162500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002420 | Avg Loss: 0.105612 | Win Rate (100 ep): 26.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T07:43:05.546267+00:00 | Event: session_end | Episodes: session=46; total=5154 | Transitions: session=60000; total=162500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002420 | Avg Loss: 0.105612 | Win Rate (100 ep): 26.1% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T08:07:21.540539+00:00
+- Event: session_start
+- Episodes: session=0; total=5154
+- Transitions: session=0; total=162500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 100000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T08:07:21.540539+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.400000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.4 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.03 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.15 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T08:07:21.540539+00:00 | session_start | session=0; total=5154 | session=0; total=162500 | 1.0000 | 0.0500 | 0.0500 | 100000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T08:07:21.543201+00:00 | Event: session_start | Episodes: session=0; total=5154 | Transitions: session=0; total=162500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:07:51.638605+00:00 | Event: checkpoint | Episodes: session=0; total=5154 | Transitions: session=500; total=163000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048019 | Avg Loss: 0.099864 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:08:31.110260+00:00 | Event: checkpoint | Episodes: session=1; total=5155 | Transitions: session=1000; total=163500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.007474 | Avg Loss: 0.097000 | Win Rate (100 ep): 100.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:09:06.135303+00:00 | Event: checkpoint | Episodes: session=2; total=5156 | Transitions: session=1500; total=164000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.034734 | Avg Loss: 0.092540 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:09:41.140019+00:00 | Event: checkpoint | Episodes: session=2; total=5156 | Transitions: session=2000; total=164500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022591 | Avg Loss: 0.096259 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:10:16.095675+00:00 | Event: checkpoint | Episodes: session=2; total=5156 | Transitions: session=2500; total=165000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002862 | Avg Loss: 0.103742 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:10:51.497941+00:00 | Event: checkpoint | Episodes: session=3; total=5157 | Transitions: session=3000; total=165500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002860 | Avg Loss: 0.102221 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:11:26.751880+00:00 | Event: checkpoint | Episodes: session=4; total=5158 | Transitions: session=3500; total=166000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019420 | Avg Loss: 0.103709 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:12:01.491157+00:00 | Event: checkpoint | Episodes: session=4; total=5158 | Transitions: session=4000; total=166500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010522 | Avg Loss: 0.111442 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:12:35.086966+00:00 | Event: checkpoint | Episodes: session=4; total=5158 | Transitions: session=4500; total=167000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005887 | Avg Loss: 0.102112 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:13:08.725524+00:00 | Event: checkpoint | Episodes: session=4; total=5158 | Transitions: session=5000; total=167500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.024000 | Avg Loss: 0.107308 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:13:41.932825+00:00 | Event: checkpoint | Episodes: session=4; total=5158 | Transitions: session=5500; total=168000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002627 | Avg Loss: 0.095945 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:14:15.610395+00:00 | Event: checkpoint | Episodes: session=5; total=5159 | Transitions: session=6000; total=168500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049799 | Avg Loss: 0.106229 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:14:49.334346+00:00 | Event: checkpoint | Episodes: session=5; total=5159 | Transitions: session=6500; total=169000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021280 | Avg Loss: 0.102351 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:15:22.804007+00:00 | Event: checkpoint | Episodes: session=5; total=5159 | Transitions: session=7000; total=169500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.002922 | Avg Loss: 0.105079 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:15:56.600601+00:00 | Event: checkpoint | Episodes: session=5; total=5159 | Transitions: session=7500; total=170000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.020991 | Avg Loss: 0.097179 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:16:30.082263+00:00 | Event: checkpoint | Episodes: session=6; total=5160 | Transitions: session=8000; total=170500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.014092 | Avg Loss: 0.102933 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:17:03.760298+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=8500; total=171000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.036812 | Avg Loss: 0.099186 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:17:37.790908+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=9000; total=171500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.001557 | Avg Loss: 0.108472 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:18:11.168739+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=9500; total=172000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022620 | Avg Loss: 0.096795 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:18:44.591446+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=10000; total=172500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004578 | Avg Loss: 0.092590 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:19:18.024594+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=10500; total=173000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.013635 | Avg Loss: 0.103554 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:19:51.848695+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=11000; total=173500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049481 | Avg Loss: 0.099463 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:20:19.079680+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=11500; total=174000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.030060 | Avg Loss: 0.103471 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:20:52.959391+00:00 | Event: checkpoint | Episodes: session=7; total=5161 | Transitions: session=12000; total=174500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.006059 | Avg Loss: 0.099145 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T08:21:36.087583+00:00
+- Event: session_start
+- Episodes: session=0; total=5161
+- Transitions: session=0; total=174500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 100000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T08:21:36.087583+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.400000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.4 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.03 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.15 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T08:21:36.087583+00:00 | session_start | session=0; total=5161 | session=0; total=174500 | 1.0000 | 0.0500 | 0.0500 | 100000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T08:21:36.090412+00:00 | Event: session_start | Episodes: session=0; total=5161 | Transitions: session=0; total=174500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:22:12.058251+00:00 | Event: checkpoint | Episodes: session=0; total=5161 | Transitions: session=500; total=175000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.040208 | Avg Loss: 0.092049 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:22:45.422662+00:00 | Event: checkpoint | Episodes: session=0; total=5161 | Transitions: session=1000; total=175500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004755 | Avg Loss: 0.096905 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:23:18.899055+00:00 | Event: checkpoint | Episodes: session=1; total=5162 | Transitions: session=1500; total=176000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.013798 | Avg Loss: 0.090284 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:23:58.958684+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=2000; total=176500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004220 | Avg Loss: 0.099751 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:24:26.231444+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=2500; total=177000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.009088 | Avg Loss: 0.099132 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:24:59.908535+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=3000; total=177500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.002966 | Avg Loss: 0.104881 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:25:33.388854+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=3500; total=178000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004331 | Avg Loss: 0.108410 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:26:06.703269+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=4000; total=178500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.029789 | Avg Loss: 0.107782 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:26:46.326049+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=4500; total=179000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.001220 | Avg Loss: 0.103631 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:27:19.805507+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=5000; total=179500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.002925 | Avg Loss: 0.108269 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:27:47.144412+00:00 | Event: checkpoint | Episodes: session=2; total=5163 | Transitions: session=5500; total=180000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.030149 | Avg Loss: 0.096958 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:28:27.045799+00:00 | Event: checkpoint | Episodes: session=4; total=5165 | Transitions: session=6000; total=180500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.018689 | Avg Loss: 0.092534 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:29:06.589384+00:00 | Event: checkpoint | Episodes: session=5; total=5166 | Transitions: session=6500; total=181000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019560 | Avg Loss: 0.097987 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:29:33.876822+00:00 | Event: checkpoint | Episodes: session=5; total=5166 | Transitions: session=7000; total=181500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049778 | Avg Loss: 0.105061 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:30:07.781864+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=7500; total=182000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.017700 | Avg Loss: 0.102885 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:30:41.239317+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=8000; total=182500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.015189 | Avg Loss: 0.101392 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:31:15.138993+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=8500; total=183000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004599 | Avg Loss: 0.097699 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:31:48.993623+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=9000; total=183500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034455 | Avg Loss: 0.102550 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:32:22.227291+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=9500; total=184000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.031610 | Avg Loss: 0.106135 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:32:55.970950+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=10000; total=184500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005781 | Avg Loss: 0.108501 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:33:23.584501+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=10500; total=185000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036163 | Avg Loss: 0.100817 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:33:56.938903+00:00 | Event: checkpoint | Episodes: session=6; total=5167 | Transitions: session=11000; total=185500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.004597 | Avg Loss: 0.085367 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T08:51:42.314848+00:00
+- Event: session_start
+- Episodes: session=0; total=5167
+- Transitions: session=0; total=185500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 100000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T08:51:42.314848+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.400000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.4 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.03 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.15 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | meteor-only |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T08:51:42.314848+00:00 | session_start | session=0; total=5167 | session=0; total=185500 | 1.0000 | 0.0500 | 0.0500 | 100000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T08:51:42.316319+00:00 | Event: session_start | Episodes: session=0; total=5167 | Transitions: session=0; total=185500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:52:12.233371+00:00 | Event: checkpoint | Episodes: session=0; total=5167 | Transitions: session=500; total=186000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004395 | Avg Loss: 0.093642 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:52:45.779623+00:00 | Event: checkpoint | Episodes: session=0; total=5167 | Transitions: session=1000; total=186500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.025293 | Avg Loss: 0.088912 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:53:25.209965+00:00 | Event: checkpoint | Episodes: session=2; total=5169 | Transitions: session=1500; total=187000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.015111 | Avg Loss: 0.085754 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:53:59.278958+00:00 | Event: checkpoint | Episodes: session=2; total=5169 | Transitions: session=2000; total=187500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.019577 | Avg Loss: 0.091334 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:54:32.525242+00:00 | Event: checkpoint | Episodes: session=2; total=5169 | Transitions: session=2500; total=188000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.012113 | Avg Loss: 0.093230 | Win Rate (100 ep): 50.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:55:05.973863+00:00 | Event: checkpoint | Episodes: session=3; total=5170 | Transitions: session=3000; total=188500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.007399 | Avg Loss: 0.114156 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:55:45.397627+00:00 | Event: checkpoint | Episodes: session=3; total=5170 | Transitions: session=3500; total=189000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.025296 | Avg Loss: 0.100953 | Win Rate (100 ep): 33.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:56:18.785557+00:00 | Event: checkpoint | Episodes: session=4; total=5171 | Transitions: session=4000; total=189500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.006532 | Avg Loss: 0.106243 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:56:52.477949+00:00 | Event: checkpoint | Episodes: session=5; total=5172 | Transitions: session=4500; total=190000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.033580 | Avg Loss: 0.106360 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:57:25.937314+00:00 | Event: checkpoint | Episodes: session=6; total=5173 | Transitions: session=5000; total=190500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004139 | Avg Loss: 0.109893 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:57:59.211223+00:00 | Event: checkpoint | Episodes: session=6; total=5173 | Transitions: session=5500; total=191000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.007273 | Avg Loss: 0.103998 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:58:32.952736+00:00 | Event: checkpoint | Episodes: session=6; total=5173 | Transitions: session=6000; total=191500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019531 | Avg Loss: 0.108939 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:59:06.225662+00:00 | Event: checkpoint | Episodes: session=6; total=5173 | Transitions: session=6500; total=192000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005769 | Avg Loss: 0.091204 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T08:59:33.859087+00:00 | Event: checkpoint | Episodes: session=6; total=5173 | Transitions: session=7000; total=192500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009132 | Avg Loss: 0.111084 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:00:07.699638+00:00 | Event: checkpoint | Episodes: session=6; total=5173 | Transitions: session=7500; total=193000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.044934 | Avg Loss: 0.105751 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:00:42.750887+00:00 | Event: checkpoint | Episodes: session=7; total=5174 | Transitions: session=8000; total=193500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.014017 | Avg Loss: 0.102045 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:01:12.124503+00:00 | Event: checkpoint | Episodes: session=7; total=5174 | Transitions: session=8500; total=194000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049589 | Avg Loss: 0.098551 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:01:53.031307+00:00 | Event: checkpoint | Episodes: session=7; total=5174 | Transitions: session=9000; total=194500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024171 | Avg Loss: 0.105294 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:02:22.065867+00:00 | Event: checkpoint | Episodes: session=7; total=5174 | Transitions: session=9500; total=195000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042155 | Avg Loss: 0.105559 | Win Rate (100 ep): 14.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:02:57.345205+00:00 | Event: checkpoint | Episodes: session=8; total=5175 | Transitions: session=10000; total=195500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.020939 | Avg Loss: 0.113445 | Win Rate (100 ep): 12.5% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:03:32.364325+00:00 | Event: checkpoint | Episodes: session=9; total=5176 | Transitions: session=10500; total=196000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005212 | Avg Loss: 0.120972 | Win Rate (100 ep): 11.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:04:13.411717+00:00 | Event: checkpoint | Episodes: session=10; total=5177 | Transitions: session=11000; total=196500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.027688 | Avg Loss: 0.113648 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:04:54.536533+00:00 | Event: checkpoint | Episodes: session=10; total=5177 | Transitions: session=11500; total=197000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.019375 | Avg Loss: 0.113637 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:05:23.652475+00:00 | Event: checkpoint | Episodes: session=10; total=5177 | Transitions: session=12000; total=197500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049440 | Avg Loss: 0.106888 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:05:59.057434+00:00 | Event: checkpoint | Episodes: session=11; total=5178 | Transitions: session=12500; total=198000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.003536 | Avg Loss: 0.102610 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:06:40.023538+00:00 | Event: checkpoint | Episodes: session=11; total=5178 | Transitions: session=13000; total=198500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.030153 | Avg Loss: 0.114164 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:07:09.095184+00:00 | Event: checkpoint | Episodes: session=11; total=5178 | Transitions: session=13500; total=199000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028730 | Avg Loss: 0.125039 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:07:43.737040+00:00 | Event: checkpoint | Episodes: session=12; total=5179 | Transitions: session=14000; total=199500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.005300 | Avg Loss: 0.112639 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:08:17.023501+00:00 | Event: checkpoint | Episodes: session=12; total=5179 | Transitions: session=14500; total=200000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021165 | Avg Loss: 0.117712 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:08:50.672588+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=15000; total=200500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014213 | Avg Loss: 0.112193 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:09:18.238385+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=15500; total=201000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.013624 | Avg Loss: 0.109915 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:09:51.993159+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=16000; total=201500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019806 | Avg Loss: 0.111445 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:10:25.605618+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=16500; total=202000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046443 | Avg Loss: 0.102669 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:10:53.118017+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=17000; total=202500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036386 | Avg Loss: 0.105168 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:11:32.922420+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=17500; total=203000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.025668 | Avg Loss: 0.105693 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:12:00.156585+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=18000; total=203500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.016465 | Avg Loss: 0.104341 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:12:33.792429+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=18500; total=204000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.007381 | Avg Loss: 0.104622 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:13:07.481963+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=19000; total=204500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022696 | Avg Loss: 0.111115 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:13:40.823478+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=19500; total=205000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004382 | Avg Loss: 0.111674 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:14:14.483249+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=20000; total=205500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.023915 | Avg Loss: 0.099270 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:14:48.113325+00:00 | Event: checkpoint | Episodes: session=13; total=5180 | Transitions: session=20500; total=206000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.030138 | Avg Loss: 0.102458 | Win Rate (100 ep): 15.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:15:27.505055+00:00 | Event: checkpoint | Episodes: session=14; total=5181 | Transitions: session=21000; total=206500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.006350 | Avg Loss: 0.109867 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:16:02.594142+00:00 | Event: checkpoint | Episodes: session=14; total=5181 | Transitions: session=21500; total=207000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009045 | Avg Loss: 0.099541 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:16:37.983624+00:00 | Event: checkpoint | Episodes: session=15; total=5182 | Transitions: session=22000; total=207500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.015141 | Avg Loss: 0.102966 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:17:13.333253+00:00 | Event: checkpoint | Episodes: session=15; total=5182 | Transitions: session=22500; total=208000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.016295 | Avg Loss: 0.115071 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:17:54.936377+00:00 | Event: checkpoint | Episodes: session=15; total=5182 | Transitions: session=23000; total=208500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.032951 | Avg Loss: 0.111052 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:18:41.977314+00:00 | Event: checkpoint | Episodes: session=17; total=5184 | Transitions: session=23500; total=209000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022447 | Avg Loss: 0.109575 | Win Rate (100 ep): 29.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:19:17.321021+00:00 | Event: checkpoint | Episodes: session=18; total=5185 | Transitions: session=24000; total=209500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043504 | Avg Loss: 0.119992 | Win Rate (100 ep): 27.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:19:52.516555+00:00 | Event: checkpoint | Episodes: session=18; total=5185 | Transitions: session=24500; total=210000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009166 | Avg Loss: 0.122759 | Win Rate (100 ep): 27.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:20:27.765139+00:00 | Event: checkpoint | Episodes: session=19; total=5186 | Transitions: session=25000; total=210500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021073 | Avg Loss: 0.108663 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:21:03.790090+00:00 | Event: checkpoint | Episodes: session=19; total=5186 | Transitions: session=25500; total=211000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036010 | Avg Loss: 0.113196 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:21:32.953807+00:00 | Event: checkpoint | Episodes: session=19; total=5186 | Transitions: session=26000; total=211500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021002 | Avg Loss: 0.113796 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:22:07.979104+00:00 | Event: checkpoint | Episodes: session=19; total=5186 | Transitions: session=26500; total=212000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.003125 | Avg Loss: 0.111078 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:22:37.380679+00:00 | Event: checkpoint | Episodes: session=19; total=5186 | Transitions: session=27000; total=212500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.015019 | Avg Loss: 0.100211 | Win Rate (100 ep): 26.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:23:18.487870+00:00 | Event: checkpoint | Episodes: session=20; total=5187 | Transitions: session=27500; total=213000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.019252 | Avg Loss: 0.104719 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:23:53.409423+00:00 | Event: checkpoint | Episodes: session=20; total=5187 | Transitions: session=28000; total=213500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036101 | Avg Loss: 0.113127 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:24:22.830805+00:00 | Event: checkpoint | Episodes: session=20; total=5187 | Transitions: session=28500; total=214000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.023970 | Avg Loss: 0.116480 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:24:57.853509+00:00 | Event: checkpoint | Episodes: session=20; total=5187 | Transitions: session=29000; total=214500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.012260 | Avg Loss: 0.121359 | Win Rate (100 ep): 25.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:25:33.266868+00:00 | Event: checkpoint | Episodes: session=21; total=5188 | Transitions: session=29500; total=215000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.018280 | Avg Loss: 0.117677 | Win Rate (100 ep): 23.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:26:08.426584+00:00 | Event: checkpoint | Episodes: session=21; total=5188 | Transitions: session=30000; total=215500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.008920 | Avg Loss: 0.128265 | Win Rate (100 ep): 23.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:26:43.651401+00:00 | Event: checkpoint | Episodes: session=21; total=5188 | Transitions: session=30500; total=216000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024071 | Avg Loss: 0.116077 | Win Rate (100 ep): 23.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:27:19.047113+00:00 | Event: checkpoint | Episodes: session=22; total=5189 | Transitions: session=31000; total=216500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.016328 | Avg Loss: 0.113925 | Win Rate (100 ep): 22.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:27:53.115065+00:00 | Event: checkpoint | Episodes: session=22; total=5189 | Transitions: session=31500; total=217000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.005914 | Avg Loss: 0.115339 | Win Rate (100 ep): 22.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:28:27.055032+00:00 | Event: checkpoint | Episodes: session=22; total=5189 | Transitions: session=32000; total=217500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.005958 | Avg Loss: 0.119386 | Win Rate (100 ep): 22.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:29:00.938806+00:00 | Event: checkpoint | Episodes: session=23; total=5190 | Transitions: session=32500; total=218000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.012693 | Avg Loss: 0.119523 | Win Rate (100 ep): 21.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:29:34.560004+00:00 | Event: checkpoint | Episodes: session=23; total=5190 | Transitions: session=33000; total=218500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021001 | Avg Loss: 0.114262 | Win Rate (100 ep): 21.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:30:02.468410+00:00 | Event: checkpoint | Episodes: session=23; total=5190 | Transitions: session=33500; total=219000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.023989 | Avg Loss: 0.118644 | Win Rate (100 ep): 21.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:30:37.048030+00:00 | Event: checkpoint | Episodes: session=23; total=5190 | Transitions: session=34000; total=219500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.001304 | Avg Loss: 0.109033 | Win Rate (100 ep): 21.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:31:18.692481+00:00 | Event: checkpoint | Episodes: session=25; total=5192 | Transitions: session=34500; total=220000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042080 | Avg Loss: 0.103099 | Win Rate (100 ep): 24.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:31:54.166963+00:00 | Event: checkpoint | Episodes: session=25; total=5192 | Transitions: session=35000; total=220500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.039064 | Avg Loss: 0.101732 | Win Rate (100 ep): 24.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:32:23.197310+00:00 | Event: checkpoint | Episodes: session=25; total=5192 | Transitions: session=35500; total=221000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024051 | Avg Loss: 0.094236 | Win Rate (100 ep): 24.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:32:58.578730+00:00 | Event: checkpoint | Episodes: session=26; total=5193 | Transitions: session=36000; total=221500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010805 | Avg Loss: 0.107842 | Win Rate (100 ep): 23.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:33:39.961378+00:00 | Event: checkpoint | Episodes: session=27; total=5194 | Transitions: session=36500; total=222000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.021138 | Avg Loss: 0.100717 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:34:14.232291+00:00 | Event: checkpoint | Episodes: session=28; total=5195 | Transitions: session=37000; total=222500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014459 | Avg Loss: 0.111688 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:34:53.963439+00:00 | Event: checkpoint | Episodes: session=28; total=5195 | Transitions: session=37500; total=223000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024216 | Avg Loss: 0.104455 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:35:27.649057+00:00 | Event: checkpoint | Episodes: session=29; total=5196 | Transitions: session=38000; total=223500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.011329 | Avg Loss: 0.097107 | Win Rate (100 ep): 20.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:36:07.263366+00:00 | Event: checkpoint | Episodes: session=29; total=5196 | Transitions: session=38500; total=224000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028527 | Avg Loss: 0.097910 | Win Rate (100 ep): 20.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:36:41.074947+00:00 | Event: checkpoint | Episodes: session=29; total=5196 | Transitions: session=39000; total=224500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.004456 | Avg Loss: 0.092690 | Win Rate (100 ep): 20.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:37:14.589435+00:00 | Event: checkpoint | Episodes: session=29; total=5196 | Transitions: session=39500; total=225000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022452 | Avg Loss: 0.095852 | Win Rate (100 ep): 20.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:37:48.181274+00:00 | Event: checkpoint | Episodes: session=29; total=5196 | Transitions: session=40000; total=225500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.020941 | Avg Loss: 0.097146 | Win Rate (100 ep): 20.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:38:21.735473+00:00 | Event: checkpoint | Episodes: session=30; total=5197 | Transitions: session=40500; total=226000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014538 | Avg Loss: 0.096217 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:38:48.970380+00:00 | Event: checkpoint | Episodes: session=30; total=5197 | Transitions: session=41000; total=226500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049751 | Avg Loss: 0.106371 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:39:23.957722+00:00 | Event: checkpoint | Episodes: session=31; total=5198 | Transitions: session=41500; total=227000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.044923 | Avg Loss: 0.097813 | Win Rate (100 ep): 19.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:40:03.915935+00:00 | Event: checkpoint | Episodes: session=31; total=5198 | Transitions: session=42000; total=227500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.008944 | Avg Loss: 0.087121 | Win Rate (100 ep): 19.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:40:37.756448+00:00 | Event: checkpoint | Episodes: session=32; total=5199 | Transitions: session=42500; total=228000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.027280 | Avg Loss: 0.083568 | Win Rate (100 ep): 18.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:41:05.752830+00:00 | Event: checkpoint | Episodes: session=32; total=5199 | Transitions: session=43000; total=228500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.022607 | Avg Loss: 0.092708 | Win Rate (100 ep): 18.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:41:39.524737+00:00 | Event: checkpoint | Episodes: session=32; total=5199 | Transitions: session=43500; total=229000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024182 | Avg Loss: 0.093126 | Win Rate (100 ep): 18.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:42:05.030814+00:00 | Event: episode | Episodes: session=33; total=5200 | Transitions: session=43997; total=229497 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014440 | Avg Loss: 0.091899 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:42:13.522180+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=44000; total=229500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014439 | Avg Loss: 0.091413 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:42:41.319825+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=44500; total=230000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034472 | Avg Loss: 0.096325 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:43:15.253575+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=45000; total=230500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.013509 | Avg Loss: 0.097378 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:43:49.371966+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=45500; total=231000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019647 | Avg Loss: 0.088903 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:44:17.177212+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=46000; total=231500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.033061 | Avg Loss: 0.103748 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:44:52.675257+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=46500; total=232000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028503 | Avg Loss: 0.105465 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:45:28.484219+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=47000; total=232500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.002908 | Avg Loss: 0.108918 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:46:04.373957+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=47500; total=233000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049717 | Avg Loss: 0.108698 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:46:34.434679+00:00 | Event: checkpoint | Episodes: session=33; total=5200 | Transitions: session=48000; total=233500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.007286 | Avg Loss: 0.123930 | Win Rate (100 ep): 18.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:47:10.462872+00:00 | Event: checkpoint | Episodes: session=34; total=5201 | Transitions: session=48500; total=234000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.023989 | Avg Loss: 0.109613 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:47:46.400355+00:00 | Event: checkpoint | Episodes: session=34; total=5201 | Transitions: session=49000; total=234500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.013403 | Avg Loss: 0.097586 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:48:34.489499+00:00 | Event: checkpoint | Episodes: session=34; total=5201 | Transitions: session=49500; total=235000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049599 | Avg Loss: 0.114990 | Win Rate (100 ep): 17.6% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:49:10.375884+00:00 | Event: checkpoint | Episodes: session=35; total=5202 | Transitions: session=50000; total=235500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.014382 | Avg Loss: 0.098702 | Win Rate (100 ep): 17.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:49:40.666210+00:00 | Event: checkpoint | Episodes: session=35; total=5202 | Transitions: session=50500; total=236000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.009227 | Avg Loss: 0.102833 | Win Rate (100 ep): 17.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:56:00.126306+00:00 | Event: checkpoint | Episodes: session=35; total=5202 | Transitions: session=51000; total=236500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.005904 | Avg Loss: 0.096558 | Win Rate (100 ep): 17.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:56:27.744808+00:00 | Event: checkpoint | Episodes: session=35; total=5202 | Transitions: session=51500; total=237000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040483 | Avg Loss: 0.102851 | Win Rate (100 ep): 17.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:57:01.804658+00:00 | Event: checkpoint | Episodes: session=35; total=5202 | Transitions: session=52000; total=237500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.022598 | Avg Loss: 0.091030 | Win Rate (100 ep): 17.1% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:57:35.877594+00:00 | Event: checkpoint | Episodes: session=36; total=5203 | Transitions: session=52500; total=238000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.012278 | Avg Loss: 0.104603 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:58:15.612678+00:00 | Event: checkpoint | Episodes: session=36; total=5203 | Transitions: session=53000; total=238500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037589 | Avg Loss: 0.102607 | Win Rate (100 ep): 16.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:58:55.874155+00:00 | Event: checkpoint | Episodes: session=37; total=5204 | Transitions: session=53500; total=239000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.014159 | Avg Loss: 0.099631 | Win Rate (100 ep): 16.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T09:59:29.651950+00:00 | Event: checkpoint | Episodes: session=38; total=5205 | Transitions: session=54000; total=239500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.015741 | Avg Loss: 0.103874 | Win Rate (100 ep): 15.8% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:00:03.909872+00:00 | Event: checkpoint | Episodes: session=39; total=5206 | Transitions: session=54500; total=240000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024060 | Avg Loss: 0.107375 | Win Rate (100 ep): 17.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:00:37.940287+00:00 | Event: checkpoint | Episodes: session=39; total=5206 | Transitions: session=55000; total=240500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000035 | Avg Loss: 0.117472 | Win Rate (100 ep): 17.9% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:01:25.885059+00:00 | Event: checkpoint | Episodes: session=40; total=5207 | Transitions: session=55500; total=241000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.023202 | Avg Loss: 0.104342 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:02:01.917895+00:00 | Event: checkpoint | Episodes: session=40; total=5207 | Transitions: session=56000; total=241500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000019 | Avg Loss: 0.106046 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:02:37.938615+00:00 | Event: checkpoint | Episodes: session=40; total=5207 | Transitions: session=56500; total=242000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.020870 | Avg Loss: 0.114205 | Win Rate (100 ep): 20.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:03:19.996300+00:00 | Event: checkpoint | Episodes: session=42; total=5209 | Transitions: session=57000; total=242500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.024573 | Avg Loss: 0.101210 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:03:50.109957+00:00 | Event: checkpoint | Episodes: session=42; total=5209 | Transitions: session=57500; total=243000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034447 | Avg Loss: 0.102675 | Win Rate (100 ep): 21.4% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:04:32.200083+00:00 | Event: checkpoint | Episodes: session=43; total=5210 | Transitions: session=58000; total=243500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.008210 | Avg Loss: 0.100889 | Win Rate (100 ep): 23.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:05:02.143506+00:00 | Event: checkpoint | Episodes: session=43; total=5210 | Transitions: session=58500; total=244000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.017982 | Avg Loss: 0.111081 | Win Rate (100 ep): 23.3% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:05:38.023491+00:00 | Event: checkpoint | Episodes: session=44; total=5211 | Transitions: session=59000; total=244500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045206 | Avg Loss: 0.105615 | Win Rate (100 ep): 22.7% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:06:14.031483+00:00 | Event: checkpoint | Episodes: session=45; total=5212 | Transitions: session=59500; total=245000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: -0.014022 | Avg Loss: 0.095542 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:06:50.228887+00:00 | Event: checkpoint | Episodes: session=45; total=5212 | Transitions: session=60000; total=245500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010478 | Avg Loss: 0.084416 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T10:06:52.803525+00:00 | Event: session_end | Episodes: session=45; total=5212 | Transitions: session=60000; total=245500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.010478 | Avg Loss: 0.084416 | Win Rate (100 ep): 22.2% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T16:56:50.541315+00:00
+- Event: session_start
+- Episodes: session=0; total=5212
+- Transitions: session=0; total=245500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 100000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T16:56:50.541315+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.400000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.4 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.03 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.15 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T16:56:50.541315+00:00 | session_start | session=0; total=5212 | session=0; total=245500 | 1.0000 | 0.0500 | 0.0500 | 100000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T16:56:50.543120+00:00 | Event: session_start | Episodes: session=0; total=5212 | Transitions: session=0; total=245500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |	l
+| UTC Time: 2026-04-16T16:57:20.241134+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=500; total=246000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046840 | Avg Loss: 0.086055 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T16:57:47.082217+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=1000; total=246500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.044960 | Avg Loss: 0.090444 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T16:58:14.173517+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=1500; total=247000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046820 | Avg Loss: 0.081207 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T16:58:41.294857+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=2000; total=247500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042320 | Avg Loss: 0.088325 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T16:59:08.355632+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=2500; total=248000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039370 | Avg Loss: 0.089396 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T16:59:35.331028+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=3000; total=248500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.031470 | Avg Loss: 0.094469 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:00:08.815637+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=3500; total=249000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042300 | Avg Loss: 0.088741 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:00:35.788377+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=4000; total=249500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040740 | Avg Loss: 0.081851 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:01:03.191771+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=4500; total=250000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039310 | Avg Loss: 0.087926 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:01:30.409531+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=5000; total=250500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039100 | Avg Loss: 0.085531 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:01:57.527186+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=5500; total=251000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034840 | Avg Loss: 0.094184 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:02:30.972836+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=6000; total=251500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042110 | Avg Loss: 0.086108 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:02:57.688845+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=6500; total=252000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043790 | Avg Loss: 0.080760 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:03:24.754233+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=7000; total=252500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046650 | Avg Loss: 0.090184 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:03:51.997745+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=7500; total=253000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037820 | Avg Loss: 0.090895 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:04:18.853611+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=8000; total=253500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.077619 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:04:46.022370+00:00 | Event: checkpoint | Episodes: session=0; total=5212 | Transitions: session=8500; total=254000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046790 | Avg Loss: 0.087697 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:05:19.401141+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=9000; total=254500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.033070 | Avg Loss: 0.094189 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:05:46.432219+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=9500; total=255000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039170 | Avg Loss: 0.084761 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:06:13.892980+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=10000; total=255500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045230 | Avg Loss: 0.094642 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:06:40.894282+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=10500; total=256000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042330 | Avg Loss: 0.083064 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:07:07.919619+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=11000; total=256500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039240 | Avg Loss: 0.082671 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:07:41.452342+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=11500; total=257000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034860 | Avg Loss: 0.079016 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:08:08.418163+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=12000; total=257500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042320 | Avg Loss: 0.085898 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:08:36.099873+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=12500; total=258000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039230 | Avg Loss: 0.075184 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:09:02.778145+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=13000; total=258500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040790 | Avg Loss: 0.088990 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:09:29.716716+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=13500; total=259000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034460 | Avg Loss: 0.088703 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:10:02.829373+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=14000; total=259500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.025450 | Avg Loss: 0.087827 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:10:29.947815+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=14500; total=260000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045010 | Avg Loss: 0.077163 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:10:57.158327+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=15000; total=260500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042270 | Avg Loss: 0.090567 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:11:24.087337+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=15500; total=261000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039330 | Avg Loss: 0.074761 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:11:50.919365+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=16000; total=261500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040820 | Avg Loss: 0.083085 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:12:24.488490+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=16500; total=262000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034460 | Avg Loss: 0.078944 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:12:51.415844+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=17000; total=262500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045030 | Avg Loss: 0.081823 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:13:18.837402+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=17500; total=263000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042340 | Avg Loss: 0.073620 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:13:45.905477+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=18000; total=263500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.041940 | Avg Loss: 0.082842 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:14:12.933032+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=18500; total=264000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036080 | Avg Loss: 0.078759 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:14:46.283093+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=19000; total=264500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042020 | Avg Loss: 0.092404 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:15:13.270981+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=19500; total=265000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043870 | Avg Loss: 0.077938 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:15:40.434051+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=20000; total=265500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048350 | Avg Loss: 0.076603 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:16:07.535737+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=20500; total=266000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043460 | Avg Loss: 0.074268 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:16:34.920180+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=21000; total=266500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043850 | Avg Loss: 0.075400 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:17:01.894199+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=21500; total=267000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040890 | Avg Loss: 0.085927 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:17:29.659017+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=22000; total=267500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036280 | Avg Loss: 0.079540 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:17:56.268814+00:00 | Event: checkpoint | Episodes: session=1; total=5213 | Transitions: session=22500; total=268000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039150 | Avg Loss: 0.079555 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:18:29.833468+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=23000; total=268500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.033950 | Avg Loss: 0.081968 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:18:56.476135+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=23500; total=269000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046860 | Avg Loss: 0.078320 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:19:23.731183+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=24000; total=269500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045340 | Avg Loss: 0.069370 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:19:51.002884+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=24500; total=270000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045050 | Avg Loss: 0.071338 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:20:17.893934+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=25000; total=270500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048340 | Avg Loss: 0.076718 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:20:44.998390+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=25500; total=271000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.066339 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:21:11.923468+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=26000; total=271500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048320 | Avg Loss: 0.072131 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:21:39.034295+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=26500; total=272000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042320 | Avg Loss: 0.070478 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:22:06.295798+00:00 | Event: checkpoint | Episodes: session=2; total=5214 | Transitions: session=27000; total=272500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049840 | Avg Loss: 0.068765 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:22:39.625240+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=27500; total=273000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039310 | Avg Loss: 0.068426 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:23:06.585825+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=28000; total=273500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039310 | Avg Loss: 0.067114 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:23:33.922594+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=28500; total=274000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043850 | Avg Loss: 0.067649 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:24:01.850842+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=29000; total=274500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.067594 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:24:30.670638+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=29500; total=275000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043480 | Avg Loss: 0.074802 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:24:58.961905+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=30000; total=275500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037850 | Avg Loss: 0.064296 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:25:26.488901+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=30500; total=276000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045310 | Avg Loss: 0.059088 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:25:53.797909+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=31000; total=276500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043840 | Avg Loss: 0.059198 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:26:27.049588+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=31500; total=277000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049660 | Avg Loss: 0.065666 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:26:54.589892+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=32000; total=277500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049840 | Avg Loss: 0.072338 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:27:22.427832+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=32500; total=278000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.044930 | Avg Loss: 0.068422 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:27:49.291624+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=33000; total=278500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046840 | Avg Loss: 0.068129 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:28:16.321644+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=33500; total=279000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.055533 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:28:43.056480+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=34000; total=279500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040990 | Avg Loss: 0.057829 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:29:10.582048+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=34500; total=280000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040480 | Avg Loss: 0.068806 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:29:43.346103+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=35000; total=280500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037640 | Avg Loss: 0.063843 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:30:10.849775+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=35500; total=281000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040680 | Avg Loss: 0.067554 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:30:37.971532+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=36000; total=281500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046840 | Avg Loss: 0.056467 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:31:05.109425+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=36500; total=282000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048350 | Avg Loss: 0.056773 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:31:32.539411+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=37000; total=282500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045300 | Avg Loss: 0.061635 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:31:59.927507+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=37500; total=283000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043680 | Avg Loss: 0.060667 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:32:27.131977+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=38000; total=283500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043850 | Avg Loss: 0.063345 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:32:54.626847+00:00 | Event: checkpoint | Episodes: session=3; total=5215 | Transitions: session=38500; total=284000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048340 | Avg Loss: 0.061921 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:33:27.884179+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=39000; total=284500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042380 | Avg Loss: 0.052938 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:33:54.966742+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=39500; total=285000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.059796 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:34:22.325841+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=40000; total=285500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048310 | Avg Loss: 0.059421 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:34:49.539846+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=40500; total=286000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045280 | Avg Loss: 0.058357 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:35:16.919798+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=41000; total=286500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039340 | Avg Loss: 0.065183 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:35:44.021978+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=41500; total=287000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043470 | Avg Loss: 0.062396 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:36:16.899127+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=42000; total=287500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037460 | Avg Loss: 0.065857 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:36:44.229155+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=42500; total=288000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.044970 | Avg Loss: 0.064985 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:37:11.108708+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=43000; total=288500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043820 | Avg Loss: 0.064988 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:37:38.482327+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=43500; total=289000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048380 | Avg Loss: 0.055077 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:38:05.357227+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=44000; total=289500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043840 | Avg Loss: 0.059757 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:38:32.448108+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=44500; total=290000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.041990 | Avg Loss: 0.054834 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:38:59.621066+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=45000; total=290500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046840 | Avg Loss: 0.057007 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:39:26.368006+00:00 | Event: checkpoint | Episodes: session=4; total=5216 | Transitions: session=45500; total=291000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045310 | Avg Loss: 0.048158 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:39:59.675228+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=46000; total=291500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039330 | Avg Loss: 0.048219 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:40:26.532509+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=46500; total=292000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.052925 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:40:53.319250+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=47000; total=292500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042160 | Avg Loss: 0.048610 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:41:20.572711+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=47500; total=293000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046800 | Avg Loss: 0.054070 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:41:47.514333+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=48000; total=293500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.047990 | Avg Loss: 0.053733 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:42:14.433728+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=48500; total=294000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043800 | Avg Loss: 0.050605 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:42:41.818722+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=49000; total=294500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045360 | Avg Loss: 0.054114 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:43:08.572192+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=49500; total=295000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048170 | Avg Loss: 0.060220 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:43:42.013521+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=50000; total=295500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037570 | Avg Loss: 0.054738 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:44:09.215476+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=50500; total=296000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045350 | Avg Loss: 0.049017 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:44:36.278677+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=51000; total=296500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048210 | Avg Loss: 0.047611 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:45:03.291431+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=51500; total=297000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046830 | Avg Loss: 0.053321 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:45:29.955027+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=52000; total=297500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039330 | Avg Loss: 0.052437 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:45:57.279779+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=52500; total=298000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048250 | Avg Loss: 0.056351 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:46:24.283201+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=53000; total=298500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048250 | Avg Loss: 0.046718 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:46:51.800299+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=53500; total=299000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042040 | Avg Loss: 0.047847 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:47:18.629606+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=54000; total=299500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043790 | Avg Loss: 0.048469 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:47:51.725676+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=54500; total=300000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.045629 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:48:18.909959+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=55000; total=300500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045310 | Avg Loss: 0.053447 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:48:46.084779+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=55500; total=301000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040820 | Avg Loss: 0.048413 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:49:12.845636+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=56000; total=301500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049790 | Avg Loss: 0.048009 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:49:40.056786+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=56500; total=302000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042320 | Avg Loss: 0.048083 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:50:07.254874+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=57000; total=302500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046820 | Avg Loss: 0.051013 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:50:34.030481+00:00 | Event: checkpoint | Episodes: session=5; total=5217 | Transitions: session=57500; total=303000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048330 | Avg Loss: 0.050100 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:51:07.399492+00:00 | Event: checkpoint | Episodes: session=6; total=5218 | Transitions: session=58000; total=303500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.034330 | Avg Loss: 0.050710 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:51:34.262387+00:00 | Event: checkpoint | Episodes: session=6; total=5218 | Transitions: session=58500; total=304000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046830 | Avg Loss: 0.049192 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:52:01.426893+00:00 | Event: checkpoint | Episodes: session=6; total=5218 | Transitions: session=59000; total=304500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048200 | Avg Loss: 0.049682 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:52:28.607821+00:00 | Event: checkpoint | Episodes: session=6; total=5218 | Transitions: session=59500; total=305000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.044969 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:52:55.618479+00:00 | Event: checkpoint | Episodes: session=6; total=5218 | Transitions: session=60000; total=305500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039270 | Avg Loss: 0.047523 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T17:52:58.525149+00:00 | Event: session_end | Episodes: session=6; total=5218 | Transitions: session=60000; total=305500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039270 | Avg Loss: 0.047523 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+## New Training Session
+- UTC Time: 2026-04-16T20:04:55.631519+00:00
+- Event: session_start
+- Episodes: session=0; total=5218
+- Transitions: session=0; total=305500
+- Epsilon Start: 1.0000
+- Epsilon End: 0.0500
+- Epsilon Now: 0.0500
+- Replay: 100000
+- Avg Reward: 0.000000
+- Avg Loss: 0.000000
+- Win Rate (100 ep): 0.0%
+
+### Session Parameters
+
+| Parameter | Value |
+| --- | --- |
+| UTC Time | 2026-04-16T20:04:55.631519+00:00 |
+| Event | session_start |
+| TRAIN_STEPS | 60000 |
+| TRAIN_RESUME | True |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| Epsilon Start | 1.0000 |
+| Epsilon End | 0.0500 |
+| Epsilon Decay Steps | 40000 |
+| Epsilon Now | 0.0500 |
+| Reward Hurt Meteor | -0.300000 |
+| Reward Hurt Laser | -0.400000 |
+| Replay Capacity | 100000 |
+| Batch Size | 64 |
+| Learning Rate | 0.000300 |
+| Gamma | 0.9900 |
+
+### Session ENV
+
+| ENV | Value |
+| --- | --- |
+| GAME_SVC_URL | http://game_srvc_train:4000 |
+| ROOM_ID | training-room |
+| AI_SLOT | 1 |
+| TRAIN_AI_SLOTS | 1,2 |
+| TRAIN_STEPS | 60000 |
+| MODEL_PATH | /app/models/train/dqn_latest.pt |
+| TRAIN_CHECKPOINT_PATH | /app/models/train/dqn_training_checkpoint.pt |
+| TRAIN_AUDIT_LOG_PATH | /app/training/AI_Training_Log.md |
+| TRAIN_AUDIT_EVERY | 100 |
+| WIN_RATE_WINDOW_EPISODES | 100 |
+| REWARD_WIN | 1.0 |
+| REWARD_DEATH | -1.0 |
+| REWARD_HIT | 0.5 |
+| REWARD_HURT_METEOR | -0.3 |
+| REWARD_HURT_LASER | -0.4 |
+| REWARD_ALIVE_STEP | 0.05 |
+| REWARD_METEOR_DANGER | 0.03 |
+| REWARD_WASTED_SHOT | -0.002 |
+| REWARD_ROTATE_STEP | 0.000 |
+| REWARD_ROTATE_DANGER | 0.0000 |
+| METEOR_DANGER_DISTANCE_NORM | 0.15 |
+| ROTATION_DANGER_DISTANCE_NORM | 0 |
+| DQN_EPSILON_START | 1 |
+| DQN_EPSILON_END | 0.05 |
+| DQN_EPSILON_DECAY_STEPS | 40000 |
+| DQN_LR | 0.0003 |
+| TRAINING_MODE | true |
+| TRAINING_SCENARIO | combat |
+| TRAIN_DASHBOARD_AUTO | <missing> |
+| TRAIN_DASHBOARD_PATH | <missing> |
+| LOG_LEVEL | INFO |
+| TRAIN_RESUME | true |
+| TRAIN_EVAL_ONLY | false |
+
+### Initial Metrics
+
+| UTC Time | Event | Episodes | Transitions | Epsilon Start | Epsilon End | Epsilon Now | Replay | Avg Reward | Avg Loss | Win Rate | Runtime Config Updates |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-04-16T20:04:55.631519+00:00 | session_start | session=0; total=5218 | session=0; total=305500 | 1.0000 | 0.0500 | 0.0500 | 100000 | 0.000000 | 0.000000 | 0.0% | - |
+
+---
+
+| UTC Time: 2026-04-16T20:04:55.634407+00:00 | Event: session_start | Episodes: session=0; total=5218 | Transitions: session=0; total=305500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.000000 | Avg Loss: 0.000000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:05:25.152609+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=500; total=306000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043850 | Avg Loss: 0.040826 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:05:52.456984+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=1000; total=306500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046830 | Avg Loss: 0.048157 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:06:19.601433+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=1500; total=307000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048340 | Avg Loss: 0.051543 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:06:47.531415+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=2000; total=307500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036230 | Avg Loss: 0.041008 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:07:15.129971+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=2500; total=308000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.041045 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:07:42.286470+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=3000; total=308500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042330 | Avg Loss: 0.042873 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:08:09.984262+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=3500; total=309000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039330 | Avg Loss: 0.039263 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:08:36.728870+00:00 | Event: checkpoint | Episodes: session=0; total=5218 | Transitions: session=4000; total=309500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045310 | Avg Loss: 0.037747 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:09:10.425965+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=4500; total=310000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048340 | Avg Loss: 0.036625 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:09:37.500316+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=5000; total=310500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040820 | Avg Loss: 0.030409 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:10:04.949465+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=5500; total=311000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046590 | Avg Loss: 0.033721 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:10:32.013193+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=6000; total=311500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042350 | Avg Loss: 0.034294 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:10:59.404253+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=6500; total=312000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040450 | Avg Loss: 0.033006 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:11:27.081748+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=7000; total=312500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.031621 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:11:54.639447+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=7500; total=313000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.035676 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:12:21.682511+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=8000; total=313500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043810 | Avg Loss: 0.033562 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:12:49.098653+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=8500; total=314000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037510 | Avg Loss: 0.030292 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:13:22.481064+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=9000; total=314500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.019620 | Avg Loss: 0.037471 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:13:49.566339+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=9500; total=315000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037810 | Avg Loss: 0.029545 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:14:17.158361+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=10000; total=315500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040810 | Avg Loss: 0.030913 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:14:44.574935+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=10500; total=316000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045020 | Avg Loss: 0.033798 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:15:18.217870+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=11000; total=316500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039200 | Avg Loss: 0.029096 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:15:45.900947+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=11500; total=317000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040850 | Avg Loss: 0.028991 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:16:13.079278+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=12000; total=317500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046680 | Avg Loss: 0.025650 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:16:40.662608+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=12500; total=318000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045350 | Avg Loss: 0.035358 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:17:07.747585+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=13000; total=318500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048330 | Avg Loss: 0.028061 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:17:35.513095+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=13500; total=319000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048040 | Avg Loss: 0.030470 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:18:03.034750+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=14000; total=319500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.027318 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:18:29.963533+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=14500; total=320000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046830 | Avg Loss: 0.030087 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:18:57.242001+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=15000; total=320500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049830 | Avg Loss: 0.028454 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:19:30.545842+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=15500; total=321000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.036060 | Avg Loss: 0.028942 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:19:57.596365+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=16000; total=321500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.028595 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:20:25.098164+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=16500; total=322000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046820 | Avg Loss: 0.027782 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:20:52.204543+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=17000; total=322500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.041980 | Avg Loss: 0.029358 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:21:19.737953+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=17500; total=323000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043820 | Avg Loss: 0.026000 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:21:46.958510+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=18000; total=323500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.027981 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:22:14.203162+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=18500; total=324000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040720 | Avg Loss: 0.029751 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:22:41.705144+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=19000; total=324500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.022660 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:23:08.997130+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=19500; total=325000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.047970 | Avg Loss: 0.025831 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:23:36.537236+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=20000; total=325500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042330 | Avg Loss: 0.027332 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:24:10.147528+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=20500; total=326000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.018130 | Avg Loss: 0.028401 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:24:37.468289+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=21000; total=326500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045050 | Avg Loss: 0.022680 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:25:04.265410+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=21500; total=327000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046820 | Avg Loss: 0.026382 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:25:32.029551+00:00 | Event: checkpoint | Episodes: session=1; total=5219 | Transitions: session=22000; total=327500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043700 | Avg Loss: 0.024608 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:26:05.002571+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=22500; total=328000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.038720 | Avg Loss: 0.028210 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:26:32.245527+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=23000; total=328500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042350 | Avg Loss: 0.025981 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:26:59.567261+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=23500; total=329000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048110 | Avg Loss: 0.021233 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:27:26.548847+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=24000; total=329500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043850 | Avg Loss: 0.024771 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:27:53.994295+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=24500; total=330000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.037810 | Avg Loss: 0.027295 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:28:21.070854+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=25000; total=330500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043820 | Avg Loss: 0.023248 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:28:48.421690+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=25500; total=331000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042320 | Avg Loss: 0.019708 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:29:15.929244+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=26000; total=331500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048310 | Avg Loss: 0.023904 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:29:43.227342+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=26500; total=332000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046790 | Avg Loss: 0.020814 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:30:10.330222+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=27000; total=332500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040840 | Avg Loss: 0.018220 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:30:43.917344+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=27500; total=333000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039160 | Avg Loss: 0.023138 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:31:11.055147+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=28000; total=333500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.030040 | Avg Loss: 0.016599 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:31:38.505919+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=28500; total=334000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048350 | Avg Loss: 0.018151 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:32:05.422314+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=29000; total=334500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045340 | Avg Loss: 0.021618 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:32:32.936387+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=29500; total=335000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048330 | Avg Loss: 0.017334 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:33:00.371946+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=30000; total=335500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049810 | Avg Loss: 0.016305 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:33:27.868312+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=30500; total=336000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049800 | Avg Loss: 0.018940 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:33:55.441115+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=31000; total=336500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048310 | Avg Loss: 0.017041 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:34:22.703340+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=31500; total=337000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049830 | Avg Loss: 0.013001 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:34:50.448022+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=32000; total=337500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042350 | Avg Loss: 0.016648 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:35:23.638855+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=32500; total=338000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.041960 | Avg Loss: 0.015845 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:35:50.947926+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=33000; total=338500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048320 | Avg Loss: 0.017379 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:36:18.423223+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=33500; total=339000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046830 | Avg Loss: 0.017870 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:36:45.986449+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=34000; total=339500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045080 | Avg Loss: 0.015079 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:37:13.112789+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=34500; total=340000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.028520 | Avg Loss: 0.014731 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:37:40.824318+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=35000; total=340500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049810 | Avg Loss: 0.010819 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:38:07.938537+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=35500; total=341000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.012915 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:38:35.270760+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=36000; total=341500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042310 | Avg Loss: 0.009996 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:39:02.854933+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=36500; total=342000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.011380 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:39:35.845293+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=37000; total=342500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.039220 | Avg Loss: 0.010214 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:40:03.326851+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=37500; total=343000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046830 | Avg Loss: 0.010178 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:40:31.601937+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=38000; total=343500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.010135 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:41:00.468368+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=38500; total=344000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049830 | Avg Loss: 0.010332 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:41:29.521032+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=39000; total=344500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045310 | Avg Loss: 0.007832 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:41:58.603676+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=39500; total=345000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042310 | Avg Loss: 0.007021 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:42:27.471935+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=40000; total=345500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049790 | Avg Loss: 0.008071 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:42:57.073581+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=40500; total=346000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046820 | Avg Loss: 0.005364 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:43:25.754455+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=41000; total=346500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045310 | Avg Loss: 0.007889 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:43:54.656231+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=41500; total=347000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048310 | Avg Loss: 0.005499 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:44:23.766649+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=42000; total=347500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046800 | Avg Loss: 0.006071 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:44:58.727300+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=42500; total=348000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043610 | Avg Loss: 0.006355 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:45:28.032435+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=43000; total=348500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042320 | Avg Loss: 0.006231 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:45:56.889378+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=43500; total=349000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046810 | Avg Loss: 0.005377 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:46:25.673390+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=44000; total=349500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040850 | Avg Loss: 0.006855 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:46:55.192060+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=44500; total=350000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048180 | Avg Loss: 0.006465 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:47:24.163535+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=45000; total=350500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042360 | Avg Loss: 0.007343 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:47:53.888783+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=45500; total=351000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049840 | Avg Loss: 0.005085 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:48:22.804296+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=46000; total=351500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042340 | Avg Loss: 0.006889 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:48:51.831758+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=46500; total=352000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048310 | Avg Loss: 0.006084 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:49:27.141729+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=47000; total=352500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.042330 | Avg Loss: 0.006143 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:49:56.266582+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=47500; total=353000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043820 | Avg Loss: 0.004914 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:50:24.928533+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=48000; total=353500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049830 | Avg Loss: 0.006374 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:50:54.279588+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=48500; total=354000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048300 | Avg Loss: 0.004803 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T20:51:23.502411+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=49000; total=354500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046800 | Avg Loss: 0.004622 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T21:08:44.012085+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=49500; total=355000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049660 | Avg Loss: 0.006105 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-16T23:42:38.884024+00:00 | Event: checkpoint | Episodes: session=2; total=5220 | Transitions: session=50000; total=355500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045340 | Avg Loss: 0.005339 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T02:45:40.530492+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=50500; total=356000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.027290 | Avg Loss: 0.006017 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T03:13:21.180618+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=51000; total=356500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048320 | Avg Loss: 0.008418 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T03:13:50.810219+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=51500; total=357000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.046800 | Avg Loss: 0.008313 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T04:29:47.028168+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=52000; total=357500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045300 | Avg Loss: 0.008361 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T05:30:51.050057+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=52500; total=358000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.006104 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T05:59:46.502722+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=53000; total=358500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040840 | Avg Loss: 0.005743 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:20:57.025489+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=53500; total=359000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049800 | Avg Loss: 0.004667 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:21:26.705911+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=54000; total=359500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049810 | Avg Loss: 0.007005 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:48:55.262907+00:00 | Event: checkpoint | Episodes: session=3; total=5221 | Transitions: session=54500; total=360000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040810 | Avg Loss: 0.004583 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:49:28.884795+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=55000; total=360500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.040820 | Avg Loss: 0.004642 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:49:55.896382+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=55500; total=361000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043850 | Avg Loss: 0.006224 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:50:23.072502+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=56000; total=361500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.048060 | Avg Loss: 0.005203 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:50:50.778342+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=56500; total=362000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.043700 | Avg Loss: 0.008497 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:51:18.087355+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=57000; total=362500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049850 | Avg Loss: 0.005085 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:51:45.775883+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=57500; total=363000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049820 | Avg Loss: 0.004955 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:52:13.432665+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=58000; total=363500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045330 | Avg Loss: 0.008414 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:52:40.666248+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=58500; total=364000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049780 | Avg Loss: 0.005899 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:53:14.164146+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=59000; total=364500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.008072 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:53:41.767325+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=59500; total=365000 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.045320 | Avg Loss: 0.008325 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:54:08.628936+00:00 | Event: checkpoint | Episodes: session=4; total=5222 | Transitions: session=60000; total=365500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049830 | Avg Loss: 0.005669 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |
+| UTC Time: 2026-04-17T07:54:11.508117+00:00 | Event: session_end | Episodes: session=4; total=5222 | Transitions: session=60000; total=365500 | Epsilon Start: 1.0000 | Epsilon End: 0.0500 | Replay: 100000 | Avg Reward: 0.049830 | Avg Loss: 0.005669 | Win Rate (100 ep): 0.0% | Runtime Config Updates: - |

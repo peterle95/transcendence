@@ -9,13 +9,26 @@
 
 const { Server } = require("socket.io");
 const http       = require("http");
-const { getScenario } = require('./scenarios');
+const { getScenario, listScenarios } = require('./scenarios');
 
 const PORT              = Number(process.env.SOCKET_PORT) || 4000;
 const SERVICE_SECRET    = process.env.SERVICE_SECRET || 'inter-service-shared-secret-change-in-production';
 const GAME_ROOM_ID      = process.env.GAME_ROOM_ID || 'gameplay-room';
 const ENABLE_TRAINING_ROOM = process.env.ENABLE_TRAINING_ROOM === 'true';
-const TRAINING_SCENARIO = process.env.TRAINING_SCENARIO || 'baseline';
+const AVAILABLE_SCENARIOS = new Set(listScenarios());
+const TRAINING_SCENARIO = ENABLE_TRAINING_ROOM
+  ? process.env.TRAINING_SCENARIO
+  : 'baseline';
+if (ENABLE_TRAINING_ROOM) {
+  if (!TRAINING_SCENARIO) {
+    throw new Error('Missing required environment variable: TRAINING_SCENARIO');
+  }
+  if (!AVAILABLE_SCENARIOS.has(TRAINING_SCENARIO)) {
+    throw new Error(
+      `Invalid TRAINING_SCENARIO='${TRAINING_SCENARIO}'. Valid values: ${Array.from(AVAILABLE_SCENARIOS).join(', ')}`,
+    );
+  }
+}
 const CURRENT_SCENARIO = getScenario(TRAINING_SCENARIO);
 const MAX_SLOTS         = 4;
 const PHYSICS_HZ        = 60;
