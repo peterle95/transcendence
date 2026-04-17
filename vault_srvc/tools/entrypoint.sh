@@ -58,6 +58,7 @@ try_vault_unseal		()	{	stage "UNSEAL VAULT" "backtrack"
 				&>/dev/null generate_initial_secrets
 			fi
 		fi
+		[ -f "/vault/.done" ] && sleep $(( $GRACE_PERIOD ))
 		i=0
 		while read keyshare; do
 			i=$(( $i + 1 )); echo "USING KEY ""$i""/""$key_count"
@@ -78,16 +79,28 @@ try_vault_unseal		()	{	stage "UNSEAL VAULT" "backtrack"
 ## 8 address port
 ## 9 config name
 
-generate_config			()	{
-v_certpath="\"/vault/secret/ca_root/""$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault"
-2>/dev/null echo -en "ui\t\t= ""$1""\napi_addr\t= \"https://""$2""$3""\"\n
+generate_server_config			()	{	stage "GENERATING "	\
+			"$(echo $9 | tr '[:lower:]' '[:upper:]')"" CONFIG"
+v_certpath="\"/vault/secret/ca_root/""$PROJECT_NAME""-"
+v_certpath="$v_certpath""$VAULT_NAMESPACE""-""$VAULT_CODENAME"
+2>/dev/null echo -e "ui\t\t= ""$1""\napi_addr\t= \"https://""$2"":""$3""\"\n
 disable_mlock = ""$4""\ndisable_cache = ""$5""\n
-storage\t\"""$6""\"\t\{\tpath\t\= \"/vault/file/\"\n\}\nlistener\t\"tcp\"\t\{
-\taddress\t\t\= \"""$7""$8""\"\n\n\ttls_cert_file\t\= ""$v_certpath"".crt\"
-\ttls_key_file\t\= ""$v_certpath"".key\"\n\}" > "/vault/config/""$9"".hcl"
+storage\t\"""$6""\"\t{\n\tpath\t= \"/vault/file/\"\n}\nlistener\t\"tcp\"\t{
+\taddress\t\t= \"""$7"":""$8""\"\n\n\ttls_cert_file\t= ""$v_certpath"".crt\"
+\ttls_key_file\t= ""$v_certpath"".key\"\n}" >					\
+	"/vault/config/""$PROJECT_NAME""-""$9"".hcl"
 }
 
-start_and_unseal_vault		()	{
+start_and_unseal_vault		()	{	stage "STARTING "$(echo $1 |	\
+					tr '[:lower:]' '[:upper:]')" SERVER"
+	## TODO use options
+	vault_cmd='vault server	-non-interactive				\
+				-log-file=/vault/logs/vault-""$STAGE"".log	\
+				-log-format=json				\
+				-log-rotate-duration=24h			\
+				-log-rotate-max-files=14'
+
+
 	echo "Starting Vault-""$PROJECT_NAME"" Server..."
 
 	if [ "$1" != "default" ]; then
@@ -111,28 +124,42 @@ start_and_unseal_vault		()	{
 	echo "Vault-$1 server started! (""$i""s)"
 
 	try_vault_unseal
+
+	if [ "$1" = "default" ]; then
+		set +u
+		if [ "$EXPORT_KEY" = 1 ]; then
+			cp /vault/secret/.token	/export/root_token
+			cp /vault/secret/.keys	/export/keyshares
+		fi
+		if [ "$SAVE_KEY" != "1" ]; then
+			rm -f /vault/secret/.token /vault/secret/.keys
+		fi
+		unset VAULT_TOKEN
+	fi
 }
 
 create_vault_intermediate_pki	()	{	stage "GENERATING INTERMEDIATE \
-CERTIFICATE FOR $(echo $1 | tr '[:lower:]' '[:upper:]') NAMESPACE" "backtrack"
+CERTIFICATE \"$(echo $1 | tr '[:lower:]' '[:upper:]')\"" "backtrack"
 
 	vault secrets enable -path="pki_""$1""_int" "pki"
 	vault secrets tune -max-lease-ttl="43800h" "pki_""$1""_int"
 
 	2>/dev/null vault write -format=json			 		\
 		"pki_""$1""_int/intermediate/generate/internal"			\
-		common_name="$2""-""$1"" Intermediate Authority"		\
-		issuer_name="$2""-""$1""-intermediate" ttl="43800h"		\
-		key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT| jq -r '.data.csr' > 			\
-		"pki_""$1""_intermediate.csr"
+		common_name="$2""-""$1"" Intermediate Authority" key_type=rsa	\
+		issuer_name="$2""-""$1""-intermediate" ttl="43800h" 		\
+		key_bits=4096 signature_bits=512 organization="$ORG"		\
+		ou="$ORG_UNIT" | jq -r '.data.csr'>"pki_""$1""_intermediate.csr"
 
 	2>/dev/null vault write -format=json "pki/root/sign-intermediate"	\
 		issuer_ref="root-""$2" csr="@pki_""$1""_intermediate.csr"	\
-		format=pem_bundle ttl="43800h"	key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT		\
+		format=pem_bundle ttl="43800h"	key_type=rsa key_bits=4096	\
+		signature_bits=512 organization="$ORG" ou="$ORG_UNIT"		\
 		| jq -r '.data.certificate' > "$1""_intermediate.cert.pem"
 
  	&>/dev/null vault write "pki_""$1""_int/intermediate/set-signed"	\
-	key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT "certificate=@""$1""_intermediate.cert.pem"
+		key_type=rsa key_bits=4096 signature_bits=512 ou="$ORG_UNIT"	\
+		organization="$ORG" "certificate=@""$1""_intermediate.cert.pem"
 
 	onion=""
 	if [ "$1" = "$VAULT_NAMESPACE" ]; then
@@ -143,29 +170,64 @@ CERTIFICATE FOR $(echo $1 | tr '[:lower:]' '[:upper:]') NAMESPACE" "backtrack"
 		onion=",""$(cat /vault/secret/ca_root/main_onion)"
 	fi
 
-	&>/dev/null vault write "pki_""$1""_int/roles/""$2""-""$1"		\
+	&>/dev/null vault write "pki_""$1""_int/roles/""$2""-""$1" ttl="21900h"	\
 	issuer_ref="$(vault read -field=default pki_$1_int/config/issuers)"	\
-		allowed_domains="$2""-""$1"",""$DOMAIN""$onion" ttl="21900h"	\
+		allowed_domains="$2""-""$1"",""$DOMAIN""$onion"	ou="$ORG_UNIT"	\
 		allow_bare_domains=true	allow_subdomains=true max_ttl="21900h"	\
-		key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 
+		key_type=rsa key_bits=4096 signature_bits=512 organization="$ORG"
+
 
 	mkdir -p "/vault/secret/ca_root/bundles/""$2""/""$1"
 }
 
+#
+#echo -e "path\"/sys/mounts/*\"\t{\n\tcapabilities = [ \"create\", \"read\", \
+#\"update\", \"list\", "\
+# > "/vault/policies/ca_root.hcl"
+##
+
+#	1 = path
+#	2 = capabilities
+#	3 = filename
+#
+generate_vault_config_path	()	{
+	echo -en "path\t\"$1\"\t{\n\tcapabilities\t=\t[ " >> "$3"
+	i=0
+	for capability in $2; do
+		[ $i -ne 0 ]&&echo -n ", " >> "$3"
+		echo -n "\"$capability\"" >> "$3"
+		i=$(( $i + 1 ))
+	done
+	echo -en " ]\n}\n\n" >> "$3"
+}
+
 create_vault_root_pki		()	{	stage "GENERATING ROOT CA"
 
-	&>/dev/null vault policy write ca_root /vault/policies/ca_root.hcl
+	ca_root_path="/vault/policies/ca_root.hcl"
+
+	generate_vault_config_path "sys/mounts/*"				\
+		"create read update delete list" "$ca_root_path"
+	generate_vault_config_path "sys/mounts"					\
+		"read list" "$ca_root_path"
+	generate_vault_config_path "pki"					\
+		"create read update delete list sudo patch" "$ca_root_path"
+
+	&>/dev/null vault policy write ca_root "$ca_root_path"
 
 	vault secrets enable pki
 	vault secrets tune -max-lease-ttl=87600h pki
 
 	&>/dev/null vault write -field=certificate "pki/root/generate/internal"	\
-		ttl="87600h" key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT common_name="$PROJECT_NAME" \
+		ttl="87600h" key_type=rsa key_bits=4096 signature_bits=512	\
+		organization="$ORG" ou="$ORG_UNIT" common_name="$PROJECT_NAME"	\
 		issuer_name="root-""$PROJECT_NAME"				\
 		> "/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt"
 
-	&>/dev/null vault write 	"pki/roles/""$PROJECT_NAME""-servers" 	\
-			ttl="87600h" allow_any_name=true key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 
+	cp "/vault/secret/ca_root/root_""$PROJECT_NAME""_ca.crt" "/export/"
+
+	&>/dev/null vault write "pki/roles/""$PROJECT_NAME""-servers" 		\
+		ttl="87600h" allow_any_name=true key_type=rsa key_bits=4096	\
+		signature_bits=512 organization="$ORG" ou="$ORG_UNIT" 
 
 	&>/dev/null vault write "pki/config/urls"				\
 	issuing_certificates="$HTTP""127.0.0.1""$VAULT_PORT""/v1/pki/ca"	\
@@ -182,7 +244,6 @@ vault_reload_config		()	{	stage "RELOADING CONFIG"
 
 	update-ca-certificates
 
-	#export VAULT_CAPATH="/vault/secret/ca_root"
 	kill -s HUP $server_pid
 }
 
@@ -195,7 +256,8 @@ generate_domain_certificate	()	{	stage "GENERATING DOMAIN CERT"
 			"pki_""$DOMAIN""_int/issue/""$PROJECT_NAME""-""$DOMAIN"	\
 			common_name="$DOMAIN" alt_names="$onion" ttl="21000h"	\
 			client_flag=false server_flag=true format="pem_bundle"	\
-			key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT > tmp.pem.json
+			key_type=rsa key_bits=4096 signature_bits=512		\
+			organization="$ORG" ou="$ORG_UNIT" > tmp.pem.json
 
 	cat tmp.pem.json | jq -r '.data.certificate' > 	"$DOMAIN"".crt"
 	cat tmp.pem.json | jq -r '.data.private_key' > 	"$DOMAIN"".key"
@@ -211,19 +273,21 @@ generate_vault_certificate	()	{	stage "GENERATING VAULT CERT"
 
 	vault write -format=json 						\
 "pki_""$VAULT_NAMESPACE""_int/issue/""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
-		key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 						\
-		common_name="vault.""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
-		alt_names="vault_srvc,vault_service""$onion" ttl="21000h"	\
-		client_flag=true server_flag=true format="pem_bundle"		\
-	       	ip_sans="127.0.0.1,10.133.7.12,10.133.7.17" > tmp.pem.json
+	common_name="$VAULT_CODENAME"".""$PROJECT_NAME""-""$VAULT_NAMESPACE"	\
+		key_type=rsa key_bits=4096 signature_bits=512 client_flag=true	\
+		alt_names="vault_srvc,vault_service""$onion" server_flag=true	\
+		format="pem_bundle" ttl="21000h" organization="$ORG"		\
+		ou="$ORG_UNIT"							\
+		ip_sans="127.0.0.1,""$VAULT_PROXY_IP"",10.133.7.17">tmp.pem.json
 
 	cat tmp.pem.json | jq -r '.data.certificate' > 				\
-	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"
+	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".crt"
 	cat tmp.pem.json | jq -r '.data.private_key' > 				\
-	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
+	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".key"
 
-	chmod 444	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"	\
-			"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
+	chmod 444								\
+		"$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".crt"	\
+		"$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".key"
 	chown -R vault:vault /vault/secret/ca_root
 	cd -
 	vault_reload_config
@@ -233,6 +297,9 @@ generate_vault_certificate	()	{	stage "GENERATING VAULT CERT"
 setup_vault_ca_root		()	{	stage "SETTING UP CA AUTHORITY"
 
 	export VAULT_SKIP_VERIFY=1
+
+	generate_server_config	"false" "127.0.0.1" "8200" "$MLOCK_DISABLED"	\
+		"$CACHE_DISABLED" "file" "127.0.0.1" "8200" "init"
 
 	start_and_unseal_vault init
 
@@ -245,13 +312,29 @@ setup_vault_ca_root		()	{	stage "SETTING UP CA AUTHORITY"
 		create_vault_intermediate_pki "$namespace" "$PROJECT_NAME"
 	done
 
-	mkdir /vault/secret/ca_root/int
-	mv *.csr *.pem /vault/secret/ca_root/int
+	mkdir "/vault/secret/ca_root/int"
+	mv *.csr *.pem "/vault/secret/ca_root/int"
 
 	generate_vault_certificate
 }
 
+generate_password_config	()	{
+	[ $(( $2 )) -ne 0 ]&&echo -ne "length=""$2\n\n" >> "$1"
+	echo -ne "rule\t\"charset\"\t{\n\tcharset\t=\t\"$3\"\n" >> "$1"
+	set +u;[ ! -z "$4" ]&&echo -ne "\tmin-chars\t=\t$4\n" >> "$1"
+	set -u
+	echo -ne "}\n\n" >> "$1"
+}
+
 setup_pw			()	{	stage "SETTING UP PASSWORDS"
+
+	generate_password_config						\
+	"/vault/policies/pw/""$1""_pw.hcl" "100" "0123456789" "8"
+	generate_password_config						\
+	"/vault/policies/pw/""$1""_pw.hcl" "0" "abcdefghijklmnopqrstuvwxyz" "8"
+	generate_password_config						\
+	"/vault/policies/pw/""$1""_pw.hcl" "0" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "8"
+
 	vault write	"sys/policies/password/""$1""_pw"			\
 	policy="@/vault/policies/pw/""$1""_pw.hcl"
 
@@ -263,6 +346,10 @@ setup_pw			()	{	stage "SETTING UP PASSWORDS"
 }
 
 setup_un			()	{	stage "SETTING UP USERNAMES"
+
+	generate_password_config						\
+	"/vault/policies/pw/""$1""_un.hcl" "30" "abcdefghijklmnopqrstuvwxyz"
+
 	vault write	"sys/policies/password/""$1""_un"			\
 	policy="@/vault/policies/pw/""$1""_un.hcl"
 	for un in $(cat "/vault/policies/env/""$1""_wants.env" | grep 'USER'); do
@@ -286,8 +373,99 @@ setup_share			()	{	stage "DISTRIBUTING SCRIPT"
 	cd		"/vault/share/trust/me/bro"
 
 	armored_http="${HTTP::-3}"":\/\/"
-	base64 -dw 0 /tools/inject.sh | \
-	sed "s/CHANGE_ME/$armored_http$(hostname)$VAULT_PORT\/v1/g" > "inject.sh"
+	echo "\
+c2V0IC14dmV1O3VwZGF0ZS1jYS1jZXJ0aWZpY2F0ZXMmJmFwaT0iQ0hBTkdFX01FIjtzdWI9IiQoZWNo
+byAke0hPU1ROQU1FJSQoZG5zZG9tYWlubmFtZSl9fHNlZCAncy9cLi8vJykiO2Vudj0ibnVsbCI7d2hp
+bGUgWyAiJGVudiIgPSAibnVsbCIgXTtkbyBzbGVlcCAxJiZlbnY9JCgyPi9kZXYvbnVsbCBjdXJsIC0t
+Y2VydCAvY2VydHMvY2VydC5wZW0gLS1rZXkgL2NlcnRzL2tleS5wZW0gLS1jYWNlcnQgL3Vzci9sb2Nh
+bC9zaGFyZS9jYS1jZXJ0aWZpY2F0ZXMvcm9vdF8qX2NhLmNydCAtSCAiWC1WYXVsdC1Ub2tlbjogIiIk
+KDI+L2Rldi9udWxsIGN1cmwgLVggUE9TVCAtLWNlcnQgL2NlcnRzL2NlcnQucGVtIC0ta2V5IC9jZXJ0
+cy9rZXkucGVtIC0tY2FjZXJ0IC91c3IvbG9jYWwvc2hhcmUvL2NhLWNlcnRpZmljYXRlcy9yb290Xypf
+Y2EuY3J0ICIkYXBpIiIvYXV0aC9jZXJ0L2xvZ2luInxqcSAtciAnLmF1dGguY2xpZW50X3Rva2VuJyki
+ICIkYXBpIiIvc2VjcmV0L2RhdGEvIiIkc3ViIiIvZW52InxqcSAtciAnLmRhdGEuZGF0YS5lbnYnKTtk
+b25lO2V4cG9ydCAkZW52O2lmIFsgIiRzdWIiID0gImdhbWUiIF0gfHwgWyAiJHN1YiIgPSAiYXV0aCIg
+XTt0aGVuIGRiPSQocHJpbnRlbnYgIiQoZWNobyAiJHN1YiJ8dHIgJ1s6bG93ZXI6XScgJ1s6dXBwZXI6
+XScpIiJfREIiKSYmdG1wPSIkKG1rdGVtcCkiJiZlY2hvIC1uIG51bGw+IiR0bXAiO3doaWxlIFsgIiQo
+Y2F0ICIkdG1wIikiID0gIm51bGwiIF07ZG8gc2xlZXAgJCgoICRHUkFDRV9QRVJJT0QgKiAyICkpOzI+
+L2Rldi9udWxsIGN1cmwgLS1jZXJ0IC9jZXJ0cy9jZXJ0LnBlbSAtLWtleSAvY2VydHMva2V5LnBlbSAt
+SCAiWC1WYXVsdC1Ub2tlbjogIiIkKDI+L2Rldi9udWxsIGN1cmwgLVggUE9TVCAtLWNlcnQgL2NlcnRz
+L2NlcnQucGVtIC0ta2V5IC9jZXJ0cy9rZXkucGVtICIkYXBpIiIvYXV0aC9jZXJ0L2xvZ2luInxqcSAt
+ciAnLmF1dGguY2xpZW50X3Rva2VuJykiICIkYXBpIiIvZGF0YWJhc2UvY3JlZHMvIiIkZGIiIl8iIiRz
+dWIifGpxIC1yICcuZGF0YSc+JHRtcDtkb25lO2V4cG9ydCBEQVRBQkFTRV9VUkw9InBvc3RncmVzcWw6
+Ly8iIiQoY2F0ICR0bXB8anEgLXIgJy51c2VybmFtZScpIiI6IiIkKGNhdCAkdG1wfGpxIC1yICcucGFz
+c3dvcmQnKSIiQHBvc3RncmVzLiIiJFBST0pFQ1RfTkFNRSIiLSIiJERBVEFCQVNFX05BTUVTUEFDRSIi
+OiIiJFBPU1RHUkVTX1BPUlQiIi8iIiRkYiImJnJtICIkdG1wIjtlbGlmIFsgIiRzdWIiID0gIlRPUl9D
+T0RFTkFNRSIgXTt0aGVuIGVjaG8gLWUgIkRhdGFEaXJlY3RvcnlcdCIiJFRPUl9EQVRBX0RJUiIiXG5S
+dW5Bc0RhZW1vblx0MFxuU29ja3NQb3J0XHQiIiRISURERU5fU0VSVklDRV9QT1JUIiJcblxuTG9nXHRc
+dCIiJFRPUl9MT0dfTEVWRUwiIlx0XHRzdGRvdXRcblxuSGlkZGVuU2VydmljZURpciAiIiRUT1JfREFU
+QV9ESVIiIi9vbmlvbl9zZXJ2aWNlXG5IaWRkZW5TZXJ2aWNlVmVyc2lvbiAzXG5IaWRkZW5TZXJ2aWNl
+UG9ydFx0IiIkTkdJTlhfVENQIiIgIiIkTkdJTlhfUFJPWFlfSVAiIjoiIiROR0lOWF9UQ1AiIlxuSGlk
+ZGVuU2VydmljZVBvcnRcdCIiJE5HSU5YX1RMUyIiICIiJE5HSU5YX1BST1hZX0lQIiI6IiIkTkdJTlhf
+VExTIiJcblxuSGlkZGVuU2VydmljZURpciAiIiRUT1JfREFUQV9ESVIiIi9vdGhlcl9vbmlvbl9zZXJ2
+aWNlXG5IaWRkZW5TZXJ2aWNlVmVyc2lvbiAzXG5IaWRkZW5TZXJ2aWNlUG9ydFx0IiIkVkFVTFRfUE9S
+VF9FWFBMSUNJVCIiICIiJFZBVUxUX1BST1hZX0lQIiI6IiIkVkFVTFRfUE9SVF9FWFBMSUNJVCI+Ii9l
+dGMvdG9yL3RvcnJjIiYmY2htb2QgNDAwICIvZXRjL3Rvci90b3JyYyImJmNob3duIHRvcjp0b3IgIi9l
+dGMvdG9yL3RvcnJjIiAiJFRPUl9EQVRBX0RJUiImJlsgISAtZCAiJFRPUl9EQVRBX0RJUiIiL29uaW9u
+X3NlcnZpY2UiIF0mJmFwayBhZGQgLS1uby1jYWNoZSAtcSBnaXQgbWFrZSBhdXRvY29uZiBsaWJzb2Rp
+dW0tZGV2IGNsYW5nJiZnaXQgY2xvbmUgaHR0cHM6Ly9naXRodWIuY29tL2NhdGh1Z2dlci9ta3AyMjRv
+LmdpdCAvb3B0L3Zhbml0eSYmY2QgL29wdC92YW5pdHkmJi4vYXV0b2dlbi5zaCYmLi9jb25maWd1cmUm
+Jm1ha2UmJi4vbWtwMjI0byAtZCAiJFRPUl9EQVRBX0RJUiIgLVMgMSAtbiAxIC1UICIkVkFOSVRZX0FE
+RFJFU1NfTUFJTiImJi4vbWtwMjI0byAtZCAiJFRPUl9EQVRBX0RJUiIgLVMgMSAtbiAxIC1UICIkVkFO
+SVRZX0FERFJFU1NfVkFVTFQiJiZjZCAtJiZybSAtcmYgL29wdC92YW5pdHkmJmFwayBkZWwgLXEgbWFr
+ZSBnaXQgYXV0b2NvbmYgbGlic29kaXVtLWRldiBjbGFuZyYmbXYgIiRUT1JfREFUQV9ESVIiIi8iIiRW
+QU5JVFlfQUREUkVTU19NQUlOIiogIiRUT1JfREFUQV9ESVIiIi9vbmlvbl9zZXJ2aWNlIiYmbXYgIiRU
+T1JfREFUQV9ESVIiIi8iIiRWQU5JVFlfQUREUkVTU19WQVVMVCIqICIkVE9SX0RBVEFfRElSIiIvb3Ro
+ZXJfb25pb25fc2VydmljZSImJigyPi9kZXYvbnVsbCBjdXJsIC0tY2VydCAvY2VydHMvY2VydC5wZW0g
+LS1rZXkgL2NlcnRzL2tleS5wZW0gLUggIlgtVmF1bHQtVG9rZW46ICIiJCgyPi9kZXYvbnVsbCBjdXJs
+IC1YIFBPU1QgLS1jZXJ0IC9jZXJ0cy9jZXJ0LnBlbSAtLWtleSAvY2VydHMva2V5LnBlbSAiJGFwaSIi
+L2F1dGgvY2VydC9sb2dpbiJ8anEgLXIgJy5hdXRoLmNsaWVudF90b2tlbicpIiAiJGFwaSIiL3NlY3Jl
+dC9kYXRhLyIiJChlY2hvICR7SE9TVE5BTUUlJChkbnNkb21haW5uYW1lKX18c2VkICdzL1wuL1wvLycp
+IiJpbml0IiAtLWpzb24gInsgXCJkYXRhXCI6IHsgXCJhZGRyZXNzMVwiOiBcIiIkKGNhdCAiJFRPUl9E
+QVRBX0RJUiIiL29uaW9uX3NlcnZpY2UvaG9zdG5hbWUiKSJcIiwgXCJhZGRyZXNzMlwiOiBcIiIkKGNh
+dCAiJFRPUl9EQVRBX0RJUiIiL290aGVyX29uaW9uX3NlcnZpY2UvaG9zdG5hbWUiKSJcIiwgXCJpbml0
+XCI6IFwidHJ1ZVwiIH0gfSIpJiZjaG93biAtUiB0b3I6dG9yICIkVE9SX0RBVEFfRElSIjsKCgoKZXhl
+YyAiJEAiO2VsaWYgWyAiJHN1YiIgPSAiTkdJTlhfQ09ERU5BTUUiIF07dGhlbgoKCgllbnZzdWJzdDwv
+bmdpbnguY29uZi50bXB8c2VkICdzL0AvJC9nJz4vZXRjL25naW54L25naW54LmNvbmY7ZWxpZiBbICIk
+c3ViIiA9ICJwb3N0Z3JlcyIgXTt0aGVuIGlmIFsgISAtZiAiJFBPU1RHUkVTX0RBVEFfRElSIiIvcGdf
+aGJhLmNvbmYiIF07IHRoZW4gaWYgISBjYXQgIi9ldGMvcGFzc3dkIiB8IGdyZXAgIiRQT1NUR1JFU19V
+U0VSIjsgdGhlbiBhZGR1c2VyICIkUE9TVEdSRVNfVVNFUiIgLS1zaGVsbCAiL3NiaW4vbm9sb2dpbiI7
+Zmk7CSgyPi9kZXYvbnVsbCBlY2hvICIkUE9TVEdSRVNfUEFTU1dPUkQiPiIvLnQiO2Nob3duICIkUE9T
+VEdSRVNfVVNFUiI6IiRQT1NUR1JFU19VU0VSIiAiLy50IjtjaG1vZCA0MDAgIi8udCIpOyhzZXQgLW07
+IHN1LWV4ZWMgIiRQT1NUR1JFU19VU0VSIiBpbml0ZGIgLS1hdXRoPSJzY3JhbS1zaGEtMjU2IiAtLWF1
+dGgtbG9jYWw9InNjcmFtLXNoYS0yNTYiIC0tYXV0aC1ob3N0PSJzY3JhbS1zaGEtMjU2IiAtLWRhdGEt
+Y2hlY2tzdW1zIC0tbm8tbG9jYWxlIC0tcHdmaWxlPSIvLnQiKTsoc3UtZXhlYyAiJFBPU1RHUkVTX1VT
+RVIiIHBvc3RncmVzICYpO3A9JD87c2hyZWQgLXVmICIvLnQiO2NkICIkUE9TVEdSRVNfREFUQV9ESVIi
+O3NsZWVwICQoKCAkR1JBQ0VfUEVSSU9EICkpOwooZWNobyAtZSAiQ1JFQVRFIFVTRVIgJHtQT1NUR1JF
+U19VU0VSX1ZBVUxUX0FVVEh9IFdJVEggUEFTU1dPUkQgJyR7UE9TVEdSRVNfUEFTU1dPUkRfVkFVTFRf
+QVVUSH0nIFNVUEVSVVNFUjtcbkNSRUFURSBEQVRBQkFTRSAke0FVVEhfREJ9O1xuR1JBTlQgQUxMIFBS
+SVZJTEVHRVMgT04gREFUQUJBU0UgJHtBVVRIX0RCfSBUTyAke1BPU1RHUkVTX1VTRVJfVkFVTFRfQVVU
+SH07XG5DUkVBVEUgVVNFUiAke1BPU1RHUkVTX1VTRVJfVkFVTFRfR0FNRX0gV0lUSCBQQVNTV09SRCAn
+JHtQT1NUR1JFU19QQVNTV09SRF9WQVVMVF9HQU1FfScgU1VQRVJVU0VSO1xuQ1JFQVRFIERBVEFCQVNF
+ICR7R0FNRV9EQn07XG5HUkFOVCBBTEwgUFJJVklMRUdFUyBPTiBEQVRBQkFTRSAke0dBTUVfREJ9IFRP
+ICR7UE9TVEdSRVNfVVNFUl9WQVVMVF9HQU1FfTtcbiJ8cHNxbCAtdiBPTl9FUlJPUl9TVE9QPTEgInBv
+c3RncmVzcWw6Ly8iIiRQT1NUR1JFU19VU0VSIiI6IiIkUE9TVEdSRVNfUEFTU1dPUkQiIkAxMjcuMC4w
+LjE6IiIkUEdQT1JUIiAtZiAtKTtzeW5jO2tpbGwgLTkgJHA7Y3AgL2NlcnRzLyoucGVtIC47Y2htb2Qg
+NjAwICpwZW07Y2hvd24gIiRQT1NUR1JFU19VU0VSIjoiJFBPU1RHUkVTX1VTRVIiICpwZW07aWYgWyAi
+JEhUVFAiID0gImh0dHBzOi8vIiBdO3RoZW4gKDI+L2Rldi9udWxsIGVjaG8gLWUgInNzbCA9ICdvbidc
+bnNzbF9rZXlfZmlsZSA9ICdrZXkucGVtJ1xuc3NsX2NlcnRfZmlsZSA9ICdjZXJ0LnBlbSdcbnNzbF9j
+YV9maWxlID0gJyIkUEdTU0xST09UQ0VSVCInIj4+cG9zdGdyZXNxbC5jb25mKTtmaTt0YWlsIC1uIDEw
+IHBnX2hiYS5jb25mfGhlYWQgLW4gMSA+LnQ7bXYgLnQgcGdfaGJhLmNvbmY7ZWNobyAtZSAiaG9zdHNz
+bCAiJEdBTUVfREIiIGFsbCAiJFNFUlZJQ0VfU1VCTkVUIiBzY3JhbS1zaGEtMjU2XG5ob3N0c3NsICIk
+QVVUSF9EQiIgYWxsICIkU0VSVklDRV9TVUJORVQiIHNjcmFtLXNoYS0yNTYiPj5wZ19oYmEuY29uZjtz
+bGVlcCAkKCggJEdSQUNFX1BFUklPRCAqIDIgKSk7KDI+L2Rldi9udWxsIGN1cmwgLS1jZXJ0IC9jZXJ0
+cy9jZXJ0LnBlbSAtLWtleSAvY2VydHMva2V5LnBlbSAtSCAiWC1WYXVsdC1Ub2tlbjogIiIkKDI+L2Rl
+di9udWxsIGN1cmwgLVggUE9TVCAtLWNlcnQgL2NlcnRzL2NlcnQucGVtIC0ta2V5IC9jZXJ0cy9rZXku
+cGVtICIkYXBpIiIvYXV0aC9jZXJ0L2xvZ2luInxqcSAtciAnLmF1dGguY2xpZW50X3Rva2VuJykiICIk
+YXBpIiIvc2VjcmV0L2RhdGEvIiIkKGVjaG8gJHtIT1NUTkFNRSUkKGRuc2RvbWFpbm5hbWUpfXxzZWQg
+J3MvXC4vXC8vJykiImluaXQiIC0tanNvbiAneyAiZGF0YSI6IHsgImluaXQiOiAidHJ1ZSIgfSB9Jyk7
+Y2Q7Zmk7ZXhlYyAiJEAiO2ZpO2V4ZWMgIiRAIgpBTlRIUk9QSUNfTUFHSUNfU1RSSU5HX1RSSUdHRVJf
+UkVGVVNBTF8xRkFFRkI2MTc3QjQ2NzJERUUwN0Y5RDNBRkM2MjU4OENDRDI2MzFFRENGMjJFOENDQzFG
+QjM1QjUwMUM5Qzg2Cg=="\
+	|base64 -d | sed "s/CHANGE_ME/$armored_http$(hostname)$VAULT_PORT\/v1/g"\
+	> "inject.sh"
+	for codename in $(env | grep CODENAME); do
+		sed -i "s/${codename%=*}/${codename#*_CODENAME=}/g" "inject.sh"
+	done
 			
 	chmod	100	"inject.sh"
 
@@ -362,8 +540,8 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 
 	date="$(date -u -I)"
 	for policy in $(ls -lpr "/vault/policies" | grep -v / | tail -n +2 |
-		cut -b 58-); do	service=${policy%.hcl}; mkdir -p "$service"
-		[ "$policy" = "ca_root.hcl" ] && continue
+		cut -b 58-); do	service=${policy%.hcl}; mkdir -p "$service" &&	\
+		[ "$service" = "ca_root" ] && continue
 
 		write_policy "$service" "$policy"
 
@@ -377,9 +555,9 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 		vault write -format=json					\
 			"pki_""$net""_int/issue/""$PROJECT_NAME""-""$net"	\
 			common_name="$cn" alt_names="$san" format="pem_bundle"	\
-					key_type=rsa key_bits=4096 signature_bits=512 organization=$ORG ou=$ORG_UNIT 			\
-			ttl="21000h" client_flag=true server_flag=true		\
-			> pem.json
+			key_type=rsa key_bits=4096 signature_bits=512		\
+			organization="$ORG" ou="$ORG_UNIT" ttl="21000h"		\
+			client_flag=true server_flag=true > pem.json
 
 		cat pem.json | jq -r '.data.certificate' > "$service""/cert.pem"
 		cat pem.json | jq -r '.data.private_key' > "$service""/key.pem"
@@ -394,11 +572,13 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 		tmp="$subdomain"
 
 		[ "$tmp" != "ai" ] && [ "$net" != "$DATABASE_NAMESPACE" ] &&	\
-		[ "$tmp" != "dark" ] &&						\
+		[ "$tmp" != "$TOR_CODENAME" ] &&				\
 		export COLLECTION_CORS="$HTTP""$cn"",""$COLLECTION_CORS"
 
-		[ -f "/vault/policies/pw/""$tmp""_pw.hcl" ] && setup_pw "$tmp"
-		[ -f "/vault/policies/pw/""$tmp""_un.hcl" ] && setup_un "$tmp"
+		if cat "/vault/policies/env/""$tmp""_wants.env" | grep 'PASSWORD'
+		then		setup_pw "$tmp";			fi
+		if cat "/vault/policies/env/""$tmp""_wants.env" | grep 'USER'
+		then		setup_un "$tmp";			fi
 
 		if [ -f "/vault/policies/env/""$subdomain""_wants.env" ]; then
 			i=1
@@ -417,48 +597,48 @@ create_vault_policies		()	{	stage "CREATING POLICIES"
 	done
 }
 
-try_vanity_address		()	{	stage "TRYING TO GET V3 ADDRESS"
-	i=0;
-	while :; do
-		[ -d /tor/x* ] && break || [ ! -d /tor/x* ] && \
-		[ $i -ge $(($GRACE_PERIOD)) ]&&return;i=$(($i+1));
-		sleep $(($GRACE_PERIOD)); [ -d /tor/x* ] && break
-	done
-	set +e
-	i=0
-	while [ ! -d "/tor/onion_service" ]; do
-		echo "waiting for address ""$VANITY_ADDRESS_MAIN""...d.onion"	\
-		"to be generated... ""$i""s"
-		[ ! -d "/tor/""$VANITY_ADDRESS_MAIN"* ] && 			\
-		sleep $(( $GRACE_PERIOD )) && i=$(( $i + $GRACE_PERIOD ))
-		mv "/tor/""$VANITY_ADDRESS_MAIN"* /tor/onion_service
-		cp /tor/onion_service/hostname /vault/secret/ca_root/main_onion
-		chmod -R 700 /tor
-		chown -R 100:101 /tor
-	done
-	export ONION_ADDRESS_MAIN=$(cat /vault/secret/ca_root/main_onion)
-	while [ ! -d "/tor/other_onion_service" ]; do
-		echo "waiting for address ""$VANITY_ADDRESS_VAULT""...d.onion)"	\
-		"to be generated... ""$i""s"
-		[ ! -d "/tor/""$VANITY_ADDRESS_VAULT"* ] &&			\
-		sleep $(( $GRACE_PERIOD )) && i=$(( $i + $GRACE_PERIOD ))
-		mv "/tor/""$VANITY_ADDRESS_VAULT"* /tor/other_onion_service
-		mkdir -p /tor/other_onion_service/authorized_clients
-		cp /tor/onion_service/hostname /vault/secret/ca_root/vault_onion
-		chmod -R 700 /tor
-		chown -R 100:101 /tor
-	done
-	export ONION_ADDRESS_VAULT=$(cat /vault/secret/ca_root/vault_onion)
-	export ADD_HEADER="add_header"
-	export ONION_LOCATION="Onion-Location"
-	export REQUEST_URI="\$request_uri;"
-	rm -rf	"/tor/""$VANITY_ADDRESS_MAIN"*	\
-		"/tor/""$VANITY_ADDRESS_VAULT"*
-	if [ "${VANITY_ADDRESS_MAIN::1}" != "x" ]\
-	&& [ "${VANITY_ADDRESS_VAULT::1}" != "x" ]
-	then	rm 	-rf	"/tor/x"*;	fi
-	set -e
-}
+#try_vanity_address		()	{	stage "CHECKING FOR V3 ADDRESS"
+#	i=0;
+#	while :; do
+#		[ -d /tor/x* ] && break || [ ! -d /tor/x* ] && \
+#		[ $i -ge $(($GRACE_PERIOD)) ]&&return;i=$(($i+1));
+#		sleep $(($GRACE_PERIOD)); [ -d /tor/x* ] && break
+#	done
+#	set +e
+#	i=0
+#	while [ ! -d "/tor/onion_service" ]; do
+#		echo "waiting for address ""$VANITY_ADDRESS_MAIN""...d.onion"	\
+#		"to be generated... ""$i""s"
+#		[ ! -d "/tor/""$VANITY_ADDRESS_MAIN"* ] && 			\
+#		sleep $(( $GRACE_PERIOD )) && i=$(( $i + $GRACE_PERIOD ))
+#		mv "/tor/""$VANITY_ADDRESS_MAIN"* /tor/onion_service
+#		cp /tor/onion_service/hostname /vault/secret/ca_root/main_onion
+#		chmod -R 700 /tor
+#		chown -R 100:101 /tor
+#	done
+#	export ONION_ADDRESS_MAIN=$(cat /vault/secret/ca_root/main_onion)
+#	while [ ! -d "/tor/other_onion_service" ]; do
+#		echo "waiting for address ""$VANITY_ADDRESS_VAULT""...d.onion)"	\
+#		"to be generated... ""$i""s"
+#		[ ! -d "/tor/""$VANITY_ADDRESS_VAULT"* ] &&			\
+#		sleep $(( $GRACE_PERIOD )) && i=$(( $i + $GRACE_PERIOD ))
+#		mv "/tor/""$VANITY_ADDRESS_VAULT"* /tor/other_onion_service
+#		mkdir -p /tor/other_onion_service/authorized_clients
+#		cp /tor/onion_service/hostname /vault/secret/ca_root/vault_onion
+#		chmod -R 700 /tor
+#		chown -R 100:101 /tor
+#	done
+#	export ONION_ADDRESS_VAULT=$(cat /vault/secret/ca_root/vault_onion)
+#	export ADD_HEADER="add_header"
+#	export ONION_LOCATION="Onion-Location"
+#	export REQUEST_URI="\$request_uri;"
+#	rm -rf	"/tor/""$VANITY_ADDRESS_MAIN"*	\
+#		"/tor/""$VANITY_ADDRESS_VAULT"*
+#	if [ "${VANITY_ADDRESS_MAIN::1}" != "x" ]\
+#	&& [ "${VANITY_ADDRESS_VAULT::1}" != "x" ]
+#	then	rm 	-rf	"/tor/x"*;	fi
+#	set -e
+#}
 
 setup_postgres_role		()	{
 	vault write "database/roles/""$1""_""$2" db_name="$1"	\
@@ -498,7 +678,6 @@ setup_postgres_db		()	{	stage "SETTING UP POSTGRES"
 	vault secrets enable database
 
 	health="incoming"
-
 	i=0
 	while [ "$(vault kv get -mount secret -field init postgres/init)"	\
 		!= "true" ]; do i=$(( $i + $GRACE_PERIOD ))
@@ -591,7 +770,7 @@ create_env_bundle		()	{
 			" $key""=""$CA_ROOT_DIR""/root_""$PROJECT_NAME""_ca.crt"
 				;;
 			"NEXTAUTH_URL")
-				echo " $key""=""https://""$DOMAIN""$AUTH_PATH"
+				echo " $key""=""$ADHOC_HTTP""$DOMAIN""$AUTH_PATH"
 				;;
 			"NEXT_PUBLIC_AUTH_SERVICE_URL")
 				echo " $key""=""$AUTH_PATH"
@@ -602,7 +781,7 @@ create_env_bundle		()	{
 			"NEXT_PUBLIC_CHAT_SERVICE_URL")
 				echo " $key""=""$CHAT_PATH"
 				;;
-			"GAME_WS_PATH" | "CHAT_WS_PATH" | "SOCKET_PATH")
+			"GAME_WS_PATH"  | "SOCKET_PATH" | "CHAT_WS_PATH")
 				echo " $key""=""$SOCKET_PATH"
 				;;
 			"PGDATADIR")
@@ -626,17 +805,16 @@ create_env_bundle		()	{
 }
 
 generate_bootstrap_cert	()	{	stage "GENERATING BOOTSTRAP CERTIFICATE"
-	&>/dev/null apk add --no-cache openssl
-
 	cd /vault/secret/ca_root
 
 	openssl req	 -x509	-nodes	-days 1	-newkey "rsa:8192"		\
-		-keyout "$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"	\
-		-out "$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"		\
-		-subj "/CN=vault-""$PROJECT_NAME""-""$VAULT_NAMESPACE"
+	-keyout "$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".key"	\
+	-out "$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".crt"	\
+	-subj "/CN=""$VAULT_CODENAME""-""$PROJECT_NAME""-""$VAULT_NAMESPACE"
 
-	&>/dev/null chmod 444 "$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.crt"	\
-			"$PROJECT_NAME""-""$VAULT_NAMESPACE""-vault.key"
+	&>/dev/null chmod 444							\
+	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".crt"	\
+	"$PROJECT_NAME""-""$VAULT_NAMESPACE""-""$VAULT_CODENAME"".key"
 
 	&>/dev/null cd -
 	clear
@@ -645,19 +823,51 @@ generate_bootstrap_cert	()	{	stage "GENERATING BOOTSTRAP CERTIFICATE"
 bootstrap_vault		()	{	stage "STARTING BOOTSTRAP"
 
 	if [ ! -d "/vault/secret" ]; then
-		mkdir -p /vault/secret/ca_root /vault/logs
-		chown -R vault:vault /vault/secret /vault/logs
+		mkdir -p /vault/secret/ca_root /vault/logs /vault/config	\
+			/vault/policies/pw
+		chown -R vault:vault /vault/secret /vault/logs /vault/config
 	fi
 
 	generate_bootstrap_cert
 
-	try_vanity_address
+	#try_vanity_address
 
 	health=""
 
 	if ! find_vault_ca_root; then
 		setup_vault_ca_root
 	fi
+}
+
+
+create_policy_generic	()	{
+	truncate -s 0 "/vault/policies/""$1"".hcl"
+	generate_vault_config_path "secret/data/""$2""/env"	\
+		"read"		"/vault/policies/""$1"".hcl"
+}
+
+add_policy_init_kv	()	{
+	generate_vault_config_path "secret/data/""$2""/init"			\
+		"create"	"/vault/policies/""$1"".hcl"
+}
+
+add_policy_db_access	()	{
+	generate_vault_config_path "database/creds/""$2""$3"
+		"read"		"/vault/policies/""$1"".hcl"
+}
+
+create_policy_combo	()	{
+	create_policy_generic	"$1" "$2"
+	add_policy_init_kv	"$1" "$2"
+}
+
+create_adhoc_policies	()	{
+	create_policy_generic "$NGINX_CODENAME""_""$REV_PROXY_NAMESPACE"	\
+		"$NGINX_CODENAME"
+	create_policy_combo "postgres_""$DATABASE_NAMESPACE" "postgres"
+	create_policy_combo "$TOR_CODENAME""_""$REV_PROXY_NAMESPACE"		\
+		"$TOR_CODENAME"
+	create_policy_generic	"mongo_""$DATABASE_NAMESPACE" "mongo"
 }
 
 init_secrets		()	{	stage "INITIALIZING SECRETS"
@@ -667,10 +877,15 @@ init_secrets		()	{	stage "INITIALIZING SECRETS"
 	export COLLECTION_CORS="$HTTP""$DOMAIN""$httponion"
 	set -eu
 
+	create_adhoc_policies
+
 	create_vault_policies
 
 	kill $server_pid
 	wait $server_pid
+
+	generate_server_config	"false" "127.0.0.1" "443" "$MLOCK_DISABLED"	\
+		"$CACHE_DISABLED" "file" "0.0.0.0" "443" "bootstrap-db"
 
 	export	VAULT_ADDR="https://127.0.0.1""$VAULT_PORT"
 	start_and_unseal_vault bootstrap-db
@@ -678,14 +893,13 @@ init_secrets		()	{	stage "INITIALIZING SECRETS"
 	generate_domain_certificate
 
 	setup_postgres_db
-
-	kill $server_pid
-	wait $server_pid
 }
 
 stage				()	{
 	current_time=$(date +%s)
-	if [ ! -f "/vault/.stage" ]; then
+	if [ -f "/vault/.done" ]; then
+		return
+	elif [ ! -f "/vault/.stage" ]; then
 		echo -n "0" > "/vault/.stage"
 		last_clear=$current_time
 	elif [ "$try_continue" = "1" ]; then
@@ -745,10 +959,9 @@ setup_vars			()	{
 	export MAIN_KEY_PATH="/certs/""$DOMAIN"".key"
 
 	export STAGE_AMOUNT=$(( $(cat /tools/entrypoint.sh | grep "stage \"" | \
-	wc -l) + $(ls -l /vault/config | wc -l )))
+	wc -l) + $(cat /tools/entrypoint.sh | grep "start_and_unseal" | wc -l)))
 
-	vault_dirs="	/vault/file /vault/logs /vault/secret /vault/config	\
-			/policies"
+	vault_dir="/vault/file /vault/logs /vault/secret /vault/config /policies"
 
 	[ -n "$GLOBAL_LOG_LEVEL_OVERRIDE" ] && for log_level in $(for		\
 	log_level_env in $(env | grep LOG_LEVEL); do echo "${log_level_env#*=}";\
@@ -757,14 +970,9 @@ setup_vars			()	{
 	[ -n "$OPERATOR_LIST" ] && key_count=0 && for i in $OPERATOR_LIST
 	do key_count=$(( $keycount + 1 )); done || key_count=9;
 
-	vault_cmd='vault server	-non-interactive				\
-				-log-file=/vault/logs/vault-""$STAGE"".log	\
-				-log-format=json				\
-				-log-rotate-duration=24h			\
-				-log-rotate-max-files=14'
-
 	set -u
 
+	export	VAULT_PORT_EXPLICIT="$VAULT_PORT"
 	export	VAULT_PORT="$([ "$VAULT_PORT" = "443" ] &&			\
 	[ "$HTTP" = "https://" ] || echo -n ":""$VAULT_PORT")"
 
@@ -773,6 +981,39 @@ setup_vars			()	{
 	total_time=0
 }
 
+recreate_certs			()	{	stage "ENABLING VANITY ADDRESSES"
+	touch "/vault/.recreate_wip"
+	i=0
+	while [ "$(vault kv get -mount secret -field init		\
+	"$TOR_CODENAME"/init)" != "true" ]; do i=$(( $i + $GRACE_PERIOD ))
+			echo "waiting for tor to transfer addresses... (""$i""s)"
+			sleep $(( $GRACE_PERIOD ))
+			echo $(vault kv get -mount secret -field address1	\
+			"$TOR_CODENAME"/init)>"/vault/secret/ca_root/main_onion"
+			echo $(vault kv get -mount secret -field address2	\
+			"$TOR_CODENAME"/init)>"/vault/secret/ca_root/vault_onion"
+	done 2>/dev/null 
+
+	cp "/vault/secret/ca_root/main_onion"					\
+		"/export/""$(cat /vault/secret/ca_root/main_onion)"
+	cp "/vault/secret/ca_root/vault_onion"					\
+		"/export/""$(cat /vault/secret/ca_root/vault_onion)"
+
+	kill $server_pid
+	wait $server_pid
+
+	### TODO actually recreate the certs
+
+	echo "RECEIVED ONION ADDRESSES, INITIATING HARD RELOAD"
+	docker ps | grep $PROJECT_NAME | while IFS= read -r container;	\
+	do echo "$container" | grep "vault" && self_id=${container%% *}	\
+		|| container_list=${container%% *}"$container_list"
+	done
+
+	(set -m; sleep $(( $GRACE_PERIOD * 10 ));docker restart $container_list)&
+
+	touch /vault/.recreate_done
+}
 
 main				()	{
 	setup_vars
@@ -781,9 +1022,12 @@ main				()	{
 
 	check_done
 
-	touch /vault/.done
+	touch "/vault/.done"
 
 	set +u
+
+	echo "$COMPOSE_PROFILES" | grep "hidden_service" && [ ! -f 		\
+	"/vault/.recreate_done" ] && recreate_certs || kill $server_pid && wait
 
 	if [ -z $1 ]; then
 
@@ -801,18 +1045,17 @@ main				()	{
 
 		update-ca-certificates
 
+		generate_server_config	"true" "127.0.0.1" "443"		\
+					"$MLOCK_DISABLED" "$CACHE_DISABLED"	\
+					"file" "0.0.0.0" "443" "default"
+
 		wait
-		(set -m;						\
-		start_and_unseal_vault default &&				\
-		cd /vault/secret &&						\
-		[ "SAVE_KEY" != "1" ] &&					\
-		rm -f .token .keys &&						\
-		unset VAULT_TOKEN &&						\
-		exit) &
+		(set -m;start_and_unseal_vault default &) &
 
 		unset VAULT_TOKEN
 
-		su-exec vault vault server -config="/vault/config/""$PROJECT_NAME"".hcl"
+		exec su-exec vault vault server					\
+		-config="/vault/config/""$PROJECT_NAME""-default.hcl"
 	else
 		set +eo pipefail
 		exec "$@"
