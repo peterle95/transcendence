@@ -98,6 +98,8 @@ const ONLINE_CFG = Object.freeze({
   REMOTE_BUFFER_MAX: 40,
 });
 
+const LOCAL_DQN_COMMAND_TTL_MS = 125;
+
 function normalizeAngle(angle) {
   let out = angle;
   while (out > 180) out -= 360;
@@ -874,7 +876,7 @@ update(dt) {
 class Player {
   /**
    * @param {number}   idx        0-3
-   * @param {string}   type       'local' | 'ai' | 'remote'
+   * @param {string}   type       'local' | 'remote'
    * @param {object}   controls   { forward, backward, left, right, shoot }
    * @param {AssetLoader} assets
    */
@@ -891,6 +893,7 @@ class Player {
     this.userId = null;            // set externally (from auth service)
     this.isAI = false;
     this._networkState = null;
+    this._networkStateReceivedAt = 0;
 
     // stats (for global rankings)
     this.stats = {
@@ -923,6 +926,7 @@ class Player {
 
   applyNetworkState(state) {
     this._networkState = state || null;
+    this._networkStateReceivedAt = this._networkState ? performance.now() : 0;
   }
 
   get currentShip() {
@@ -974,6 +978,13 @@ class Player {
         return this._createLaser(ship);
       }
     } else if (this.type === 'remote') {
+      if (this.isAI &&
+          this._networkStateReceivedAt > 0 &&
+          performance.now() - this._networkStateReceivedAt > LOCAL_DQN_COMMAND_TTL_MS) {
+        this._networkState = null;
+        this._networkStateReceivedAt = 0;
+      }
+
       const s = this._networkState;
       if (!s) return null;
 
@@ -1006,58 +1017,15 @@ class Player {
         this.shootCooldown = 180;
         return this._createLaser(ship);
       }
-    } else if (this.type === 'ai') {
-      return this._aiControl(dt, ship);
     }
 
     return null;
   }
 
-  /* ── simple AI ──────────────────────────────────────────────────── */
-  _aiTarget  = null;
-  _aiTimer   = 0;
 
-  _aiControl(dt, ship) {
-    this._aiTimer -= dt;
 
-    // pick a target every 2s or if current target dead
-    if (this._aiTimer <= 0 || !this._aiTarget || !this._aiTarget.alive) {
-      this._aiTimer = 2000;
-      this._aiTarget = null;
-    }
 
-    if (!this._aiTarget) {
-      // find a target – provided externally via game loop
-      return null; // game loop will set _aiTarget
-    }
 
-    const target = this._aiTarget;
-    const dx = target.x - ship.x;
-    const dy = target.y - ship.y;
-    const desiredAngle = radToDeg(Math.atan2(dx, -dy));
-    let diff = desiredAngle - ship.angle;
-    // normalise to -180..180
-    while (diff > 180) diff -= 360;
-    while (diff < -180) diff += 360;
-
-    if (diff > 3)       ship.rotateRight(dt);
-    else if (diff < -3) ship.rotateLeft(dt);
-
-    const distance = dist(ship, target);
-    if (distance > 250)      ship.thrustForward(dt);
-    else if (distance < 120) ship.thrustBackward(dt);
-
-    // shoot when roughly aimed
-    this.shootCooldown -= dt;
-    if (Math.abs(diff) < 12 && this.shootCooldown <= 0 && ship.canShoot()) {
-      ship.consumeShot();
-      this.stats.shotsFired++;
-      this.shootCooldown = 250;
-      return this._createLaser(ship);
-    }
-
-    return null;
-  }
 
   _createLaser(ship) {
     const rad = degToRad(ship.angle);
@@ -1101,6 +1069,16 @@ class Player {
     const ship = this.currentShip;
     if (ship && ship.alive) ship.draw(ctx);
   }
+}
+
+function isRemoteAIPlayer(player) {
+  return Boolean(player && player.type === 'remote' && player.isAI);
+}
+
+function createLocalDQNPlayer(idx, assets) {
+  const player = new Player(idx, 'remote', {}, assets);
+  player.isAI = true;
+  return player;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1242,14 +1220,17 @@ class Game {
     this.socketMgr = null;
     this._onlineInputAccumulator = 0;
 
-    // Local AI bridge (client local physics + ai_srvc commands over socket relay)
-    this.networkSocket = null;
+    // Local AI bridge (client local physics + ai_srvc DQN commands over socket relay)
     this.networkRoomId = (typeof window !== 'undefined' && window.GAME_ROOM_ID)
       ? window.GAME_ROOM_ID
       : 'gameplay-room';
-    this._aiBridgeClientId = null;
-    this._availableAISlots = new Set();
-    this._lastInputSend = 0;
+    this.localAIBridge = (typeof window !== 'undefined' && typeof window.LocalDQNBridge === 'function')
+      ? new window.LocalDQNBridge({
+          roomId: this.networkRoomId,
+          onCommand: (payload) => this.onAICommand(payload),
+          onAvailabilityChange: () => this._syncLocalAIStatusLabels(),
+        })
+      : null;
     this._onlineJoinNonce = 0;
     this._onlineJoinPendingMessage = '';
     this._onlineNoticeText = '';
@@ -1257,88 +1238,26 @@ class Game {
   }
 
   _disconnectAIBridge() {
-    if (this.networkSocket) {
-      this.networkSocket.disconnect();
-      this.networkSocket = null;
+    if (this.localAIBridge) {
+      this.localAIBridge.disconnect();
     }
-    this._aiBridgeClientId = null;
-    this._setAvailableAISlots([]);
-  }
-
-  _createAIBridgeClientId() {
-    return `local-ai-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  }
-
-  _setAvailableAISlots(slots = []) {
-    const normalizedSlots = Array.isArray(slots)
-      ? slots
-          .map((slot) => Number(slot))
-          .filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < 4)
-      : [];
-
-    this._availableAISlots = new Set(normalizedSlots);
-    this._syncLocalAIStatusLabels();
   }
 
   _syncLocalAIStatusLabels() {
     this.players.forEach((player) => {
-      if (!(player && player.type === 'remote' && player.isAI)) return;
-      player.displayName = this._availableAISlots.has(player.idx) ? 'AI' : 'AI (offline)';
+      if (!isRemoteAIPlayer(player)) return;
+      const isOnline = this.localAIBridge && this.localAIBridge.hasAvailableSlot(player.idx);
+      player.displayName = isOnline ? 'AI' : 'AI (offline)';
+      if (!isOnline) {
+        player.applyNetworkState(null);
+      }
     });
   }
 
   _connectAIBridge() {
-    if (this.networkSocket || typeof io === 'undefined') return;
-    if (!this._aiBridgeClientId) {
-      this._aiBridgeClientId = this._createAIBridgeClientId();
+    if (this.localAIBridge) {
+      this.localAIBridge.connect();
     }
-
-    const socketPort = (typeof window !== 'undefined' && window.GAME_SOCKET_PORT)
-      ? window.GAME_SOCKET_PORT
-      : 4000;
-    
-    const socketUrl = typeof window !== 'undefined'
-      ? window.location.origin
-      : `http://localhost:${socketPort}`;
-
-    const opts = {
-      transports: ['websocket'],
-      auth: {
-        bridge_role: 'local_ai_client',
-        room_id: this.networkRoomId,
-        bridge_client_id: this._aiBridgeClientId,
-      },
-    };
-    if (typeof window !== 'undefined') {
-      opts.path = '/game/socket.io/';
-    }
-
-    this.networkSocket = io(socketUrl, opts);
-    this.networkSocket.on('connect', () => {
-      console.log('[AIBridge] connected to', socketUrl, '| room=', this.networkRoomId, '| client=', this._aiBridgeClientId);
-    });
-    this.networkSocket.on('disconnect', () => {
-      console.log('[AIBridge] disconnected');
-      this._setAvailableAISlots([]);
-    });
-    this.networkSocket.on('ai_bridge_ready', (payload = {}) => {
-      if (payload.roomId !== this.networkRoomId) return;
-      if (typeof payload.bridgeClientId === 'string' && payload.bridgeClientId) {
-        this._aiBridgeClientId = payload.bridgeClientId;
-      }
-      this._setAvailableAISlots(payload.availableSlots);
-      console.log('[AIBridge] ready | available slots:', [...this._availableAISlots].join(',') || 'none');
-    });
-    this.networkSocket.on('ai_service_status', (payload = {}) => {
-      if (payload.roomId !== this.networkRoomId) return;
-      this._setAvailableAISlots(payload.availableSlots);
-      console.log('[AIBridge] AI service status | available slots:', [...this._availableAISlots].join(',') || 'none');
-    });
-    this.networkSocket.on('ai_command', (payload) => {
-      if (!payload || payload.roomId !== this.networkRoomId) return;
-      if (payload.bridgeClientId && payload.bridgeClientId !== this._aiBridgeClientId) return;
-      this.onAICommand(payload);
-    });
   }
 
   /* ─── asset registration ─────────────────────────────────────── */
@@ -1653,19 +1572,19 @@ class Game {
 
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      this.players.push(new Player(1, 'ai', {}, this.assets));
+      this.players.push(createLocalDQNPlayer(1, this.assets));
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai', {}, this.assets));
+      this.players.push(createLocalDQNPlayer(2, this.assets));
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai', {}, this.assets));
-      this.players.push(new Player(3, 'ai', {}, this.assets));
+      this.players.push(createLocalDQNPlayer(2, this.assets));
+      this.players.push(createLocalDQNPlayer(3, this.assets));
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1685,10 +1604,14 @@ class Game {
       this._beginOnlineJoin(socketUrl, joinNonce);
     }
 
+    if (this.players.some((player) => isRemoteAIPlayer(player))) {
+      this._connectAIBridge();
+    }
+
     // Assign display names and user IDs
     const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
     this.players.forEach(p => {
-      if (p.type === 'ai' || (p.type === 'remote' && p.isAI)) {
+      if (isRemoteAIPlayer(p)) {
         p.displayName = 'AI';
         p.userId = null;
       } else if (p.type === 'remote') {
@@ -1905,24 +1828,6 @@ class Game {
 
     const now = performance.now();
 
-    // ── AI target assignment ──
-    this.players.forEach(p => {
-      if (p.type === 'ai' && p.alive) {
-        const ship = p.currentShip;
-        if (!ship || !ship.alive) return;
-        // pick closest enemy ship
-        let bestDist = Infinity;
-        let bestTarget = null;
-        this.players.forEach(other => {
-          if (other === p || !other.alive) return;
-          const os = other.currentShip;
-          if (!os || !os.alive) return;
-          const d = dist(ship, os);
-          if (d < bestDist) { bestDist = d; bestTarget = os; }
-        });
-        p._aiTarget = bestTarget;
-      }
-    });
 
     // ── player input & laser creation ──
     this.players.forEach(p => {
@@ -1943,53 +1848,9 @@ class Game {
     this.particles.forEach(p => p.update(dt));
     this.particles = this.particles.filter(p => p.alive);
 
-    // ── send AI state snapshots to ai_srvc through Socket.IO bridge ──
-    if (this.networkSocket && this.networkSocket.connected && this.networkRoomId && now - this._lastInputSend > 33) {
-      this.players.forEach(p => {
-        if (!(p.type === 'remote' && p.isAI) || !p.alive) return;
-        const ship = p.currentShip;
-        if (!ship || !ship.alive) return;
-
-        this.networkSocket.emit('ai_game_state', {
-          roomId: this.networkRoomId,
-          slot: p.idx,
-          bridgeClientId: this._aiBridgeClientId,
-          dt_ms: dt,
-          my_ship: {
-            x: ship.x,
-            y: ship.y,
-            angle: ship.angle,
-            vx: ship.vx,
-            vy: ship.vy,
-            energy: ship.energy,
-            hp: ship.hp,
-            alive: ship.alive,
-            radius: ship.radius,
-          },
-          enemies: this.players
-            .filter(other => other !== p && other.alive)
-            .map(other => {
-              const os = other.currentShip;
-              return os ? {
-                x: os.x,
-                y: os.y,
-                angle: os.angle,
-                hp: os.hp,
-                alive: os.alive,
-              } : null;
-            })
-            .filter(Boolean),
-          lasers: this.lasers.map(l => ({
-            x: l.x,
-            y: l.y,
-            is_enemy: l.ownerIdx !== p.idx,
-          })),
-          meteors: this.meteors
-            .filter(m => m.alive)
-            .map(m => ({ x: m.x, y: m.y, radius: m.radius, alive: m.alive })),
-        });
-      });
-      this._lastInputSend = now;
+    // ── send local AI state snapshots to ai_srvc through the DQN bridge ──
+    if (this.localAIBridge) {
+      this.localAIBridge.maybeEmitGameState(this.players, this.lasers, this.meteors, dt, now);
     }
 
     // ── collisions: lasers ↔ ships ──

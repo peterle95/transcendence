@@ -465,56 +465,16 @@ function hasTrainingVirtualSlots() {
   return [...virtualSlots].some((slot) => !gameAISlots.has(slot));
 }
 
-function hasLiveAIServiceForSlot(slot, roomId = GAME_ROOM_ID) {
-  for (const meta of aiServiceSockets.values()) {
-    if (meta.roomId === roomId && meta.slot === slot) return true;
-  }
-  return false;
+function hasAIServiceForSlot(slot, roomId = GAME_ROOM_ID) {
+  return getAvailableAISlots(roomId).includes(slot);
 }
 
-function buildFallbackAIInput(slot) {
-  const player = ROOM.players[slot];
-  const ship = player && player.currentShip ? player.currentShip : null;
+function buildIdleAIInput(slot) {
   const nextSeq = Math.max(
     ROOM.inputBuffer[slot]?.seq || 0,
-    player?.lastProcessedInputSeq || 0
+    ROOM.players[slot]?.lastProcessedInputSeq || 0
   ) + 1;
-  const input = { ...DEFAULT_INPUT, seq: nextSeq };
-
-  if (!player || !player.alive || !ship || !ship.alive) return input;
-
-  let bestTarget = null;
-  let bestDist = Infinity;
-  ROOM.players.forEach((other, otherSlot) => {
-    if (otherSlot === slot || !other || !other.alive) return;
-    const otherShip = other.currentShip;
-    if (!otherShip || !otherShip.alive) return;
-    const distance = dist2(ship, otherShip);
-    if (distance < bestDist) {
-      bestDist = distance;
-      bestTarget = otherShip;
-    }
-  });
-
-  if (!bestTarget) return input;
-
-  const dx = bestTarget.x - ship.x;
-  const dy = bestTarget.y - ship.y;
-  let diff = (Math.atan2(dx, -dy) * 180 / Math.PI) - ship.angle;
-  while (diff > 180) diff -= 360;
-  while (diff < -180) diff += 360;
-
-  if (diff > 3) input.right = true;
-  else if (diff < -3) input.left = true;
-
-  if (bestDist > 250) input.forward = true;
-  else if (bestDist < 120) input.backward = true;
-
-  if (Math.abs(diff) < 12 && ship.canShoot() && player.shootCooldown <= 0) {
-    input.shoot = true;
-  }
-
-  return input;
+  return { ...DEFAULT_INPUT, seq: nextSeq };
 }
 
 function spawnFreshParticipant(slot, displayName = '') {
@@ -785,7 +745,8 @@ function handleAIServiceConnection(socket, auth = {}) {
 
 /**
  * Fill every empty online slot with AI once at least two humans are present.
- * External AI services can drive matching slots, otherwise fallback AI does.
+ * External AI services drive matching slots. If a service is offline,
+ * the slot remains idle until the DQN agent reconnects.
  */
 function fillAISlots() {
   clearGameAISlots();
@@ -1163,8 +1124,8 @@ function gameTick() {
   gameAISlots.forEach((slot) => {
     if (!virtualSlots.has(slot)) return;
     if (!ROOM.players[slot] || !ROOM.players[slot].alive) return;
-    if (hasLiveAIServiceForSlot(slot)) return;
-    ROOM.inputBuffer[slot] = buildFallbackAIInput(slot);
+    if (hasAIServiceForSlot(slot)) return;
+    ROOM.inputBuffer[slot] = buildIdleAIInput(slot);
   });
 
   // Apply buffered inputs → ship physics
