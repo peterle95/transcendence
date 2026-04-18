@@ -874,7 +874,7 @@ update(dt) {
 class Player {
   /**
    * @param {number}   idx        0-3
-   * @param {string}   type       'local' | 'ai' | 'remote'
+   * @param {string}   type       'local' | 'remote'
    * @param {object}   controls   { forward, backward, left, right, shoot }
    * @param {AssetLoader} assets
    */
@@ -1627,19 +1627,19 @@ class Game {
 
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      this.players.push(new Player(1, 'ai', {}, this.assets));
+      this.players.push(createMLAIPlayer(1));
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai', {}, this.assets));
+      this.players.push(createMLAIPlayer(2));
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(new Player(2, 'ai', {}, this.assets));
-      this.players.push(new Player(3, 'ai', {}, this.assets));
+      this.players.push(createMLAIPlayer(2));
+      this.players.push(createMLAIPlayer(3));
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1662,7 +1662,7 @@ class Game {
     // Assign display names and user IDs
     const currentUser = typeof window !== 'undefined' ? window.currentUser : null;
     this.players.forEach(p => {
-      if (p.type === 'ai' || (p.type === 'remote' && p.isAI)) {
+      if (p.type === 'remote' && p.isAI) {
         p.displayName = 'AI';
         p.userId = null;
       } else if (p.type === 'remote') {
@@ -1685,6 +1685,11 @@ class Game {
     } else {
       // spawn first ships
       this.players.forEach(p => p.spawnCurrent());
+    }
+
+    const hasLocalAI = this.players.some((player) => player && player.type === 'remote' && player.isAI);
+    if (hasLocalAI) {
+      this._connectAIBridge();
     }
 
     // create meteors

@@ -740,7 +740,7 @@ function handleAIServiceConnection(socket, auth = {}) {
 
 /**
  * Fill every empty online slot with AI once at least two humans are present.
- * External AI services can drive matching slots, otherwise fallback AI does.
+ * Live AI services drive matching slots when available.
  */
 function fillAISlots() {
   clearGameAISlots();
