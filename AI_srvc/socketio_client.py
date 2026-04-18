@@ -33,12 +33,13 @@ log = logging.getLogger("socketio_client")
 
 GAME_SVC_URL    = os.getenv("GAME_SVC_URL",    "http://game_srvc:4000")
 SERVICE_SECRET  = os.getenv("SERVICE_SECRET",  "inter-service-shared-secret-change-in-production")
-MODEL_PATH      = os.getenv("MODEL_PATH",      "/app/models/dqn_latest.pt")
+MODEL_PATH      = os.getenv("MODEL_PATH",      "/app/models/live/dqn_latest.pt")
 AI_SLOT         = int(os.getenv("AI_SLOT",     "1"))
 ROOM_ID         = os.getenv("ROOM_ID",         "local")
 SOCKET_PATH     = os.getenv("SOCKET_PATH",     "/socket.io")
 MODEL_AUTO_RELOAD = os.getenv("MODEL_AUTO_RELOAD", "true").lower() == "true"
 MODEL_RELOAD_INTERVAL_S = float(os.getenv("MODEL_RELOAD_INTERVAL_S", "5"))
+TRAINING_MODE   = os.getenv("TRAINING_MODE",   "false").lower() == "true"
 
 CANVAS_W  = 1280
 CANVAS_H  = 720
@@ -435,27 +436,58 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
     return sio
 
 
+def _load_model_with_retry(ai_slot: int) -> DQNNetwork:
+    """
+    Load the model from MODEL_PATH with retry loop.
+    Returns the loaded model, or raises an exception if loading fails.
+    Only returns after successful load; blocks until model is available.
+    """
+    import hashlib
+    
+    while True:
+        if not os.path.exists(MODEL_PATH):
+            log.warning(
+                "slot=%d model not found at %s — retrying in %.1fs",
+                ai_slot, MODEL_PATH, MODEL_RELOAD_INTERVAL_S
+            )
+            time.sleep(MODEL_RELOAD_INTERVAL_S)
+            continue
+        
+        try:
+            model = load_model(MODEL_PATH)
+            # Compute a fingerprint of the weights so you can verify all containers
+            # loaded the same model. Check logs: all three slots must show same hash.
+            weight_bytes = b"".join(
+                p.data.cpu().numpy().tobytes()
+                for p in model.parameters()
+            )
+            weight_hash = hashlib.sha256(weight_bytes).hexdigest()[:16]
+            file_size = os.path.getsize(MODEL_PATH)
+            file_mtime = os.path.getmtime(MODEL_PATH)
+            log.info(
+                "slot=%d model loaded | path=%s | size=%d | mtime=%.0f | weight_hash=%s",
+                ai_slot, MODEL_PATH, file_size, file_mtime, weight_hash
+            )
+            return model
+        except Exception as e:
+            log.warning(
+                "slot=%d failed to load model from %s: %s — retrying in %.1fs",
+                ai_slot, MODEL_PATH, e, MODEL_RELOAD_INTERVAL_S
+            )
+            time.sleep(MODEL_RELOAD_INTERVAL_S)
+            continue
+
+
 async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
-    if os.path.exists(MODEL_PATH):
-        import hashlib, json
-        model = load_model(MODEL_PATH)
-        # Compute a fingerprint of the weights so you can verify all containers
-        # loaded the same model. Check logs: all three slots must show same hash.
-        weight_bytes = b"".join(
-            p.data.cpu().numpy().tobytes()
-            for p in model.parameters()
-        )
-        weight_hash = hashlib.sha256(weight_bytes).hexdigest()[:16]
-        file_size = os.path.getsize(MODEL_PATH)
-        file_mtime = os.path.getmtime(MODEL_PATH)
-        log.info(
-            "slot=%d model loaded | path=%s | size=%d | mtime=%.0f | weight_hash=%s",
-            ai_slot, MODEL_PATH, file_size, file_mtime, weight_hash
-        )
+    # For inference, require the model to be loaded before connecting.
+    # For training, we'll use a different startup path (see training worker).
+    if not TRAINING_MODE:
+        model = _load_model_with_retry(ai_slot)
+        model.eval()
     else:
-        log.warning("slot=%d model not found — using untrained network", ai_slot)
-        model = DQNNetwork()
-    model.eval()
+        # Training mode should use its own startup logic
+        log.error("slot=%d training mode not supported in serve() — use training worker", ai_slot)
+        return
 
     sio = create_client(model, ai_slot, room_id)
 

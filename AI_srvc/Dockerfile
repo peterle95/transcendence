@@ -27,11 +27,15 @@ RUN pip install --no-cache-dir --retries 5 torch --index-url https://download.py
 # ── application source ───────────────────────────────────────────────────────
 COPY . .
 
-# ── create dirs for model persistence ────────────────────────────────────────
-RUN mkdir -p /app/models /app/logs
+# ── create dirs for model persistence (inference uses live/, training uses train/)
+RUN mkdir -p /app/models/live /app/models/train /app/logs
 
 # ── default env (overridable in docker-compose) ──────────────────────────────
-ENV PYTHONUNBUFFERED=1 \
+ENV PYTHONUNBUFFERED=1 \\
+    GAME_SVC_URL=http://game_srvc:4000 \\
+    MODEL_PATH=/app/models/live/dqn_latest.pt \\
+    TRAINING_MODE=false \\
+    LOG_LEVEL=INFO
     GAME_SVC_URL=http://game_srvc:4000 \
     MODEL_PATH=/app/models/dqn_latest.pt \
     TRAINING_MODE=false \

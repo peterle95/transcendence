@@ -28,12 +28,18 @@
         // Path must include Next.js basePath '/game' (see game_srvc/next.config.js).
         (async function () {
             try {
-                // Fetch capability flags
+                // Fetch runtime config
                 try {
                     const cfgRes = await fetch('/game/api/config');
                     if (cfgRes.ok) {
                         const cfg = await cfgRes.json();
                         window.REMOTE_MULTIPLAYER_ENABLED = cfg.remoteMultiplayerEnabled === true;
+                        if (cfg && typeof cfg.socketPath === 'string' && cfg.socketPath) {
+                            window.GAME_SOCKET_PATH = cfg.socketPath;
+                        }
+                        if (cfg && typeof cfg.gameRoomId === 'string' && cfg.gameRoomId) {
+                            window.GAME_ROOM_ID = cfg.gameRoomId;
+                        }
                     }
                 } catch (_) {
                     window.REMOTE_MULTIPLAYER_ENABLED = false;

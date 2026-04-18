@@ -164,7 +164,7 @@ services:
       - SOCKET_PORT=4000
       - SOCKET_IO_ALLOWLIST=http://localhost:8080
       - SOCKET_PATH=/game/socket.io/
-      - GAME_ROOM_ID=training-room
+      - GAME_ROOM_ID=gameplay-room
       - ENABLE_TRAINING_ROOM=true
       - NODE_ENV=development
     depends_on:

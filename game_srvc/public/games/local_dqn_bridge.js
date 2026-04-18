@@ -45,7 +45,8 @@
       };
 
       if (global.location) {
-        options.path = '/game/socket.io/';
+        // Use runtime socket path from config, fallback to default
+        options.path = global.GAME_SOCKET_PATH || '/game/socket.io/';
       }
 
       this.socket = global.io(socketUrl, options);

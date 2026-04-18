@@ -15,7 +15,7 @@ from socketio_client import build_state_vector
 
 log = logging.getLogger("trainer")
 
-MODEL_PATH = os.getenv("MODEL_PATH", "/app/models/dqn_latest.pt")
+MODEL_PATH = os.getenv("MODEL_PATH", "/app/models/train/dqn_latest.pt")
 TRAIN_STEPS = int(os.getenv("TRAIN_STEPS", "5000"))
 SAVE_EVERY = int(os.getenv("SAVE_EVERY", "500"))
 GAME_SVC_URL = os.getenv("GAME_SVC_URL", "http://game_srvc:4000")

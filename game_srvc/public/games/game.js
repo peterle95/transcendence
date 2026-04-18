@@ -283,7 +283,8 @@ class SocketManager {
       };
     }
     if (typeof window !== 'undefined') {
-      opts.path = '/game/socket.io/';
+      // Use runtime socket path from config, fallback to default
+      opts.path = window.GAME_SOCKET_PATH || '/game/socket.io/';
     }
     this.socket = io(url, opts);
 

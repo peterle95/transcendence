@@ -126,10 +126,11 @@ services:
       - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - SOCKET_IO_ALLOWLIST=${PUBLIC_URL:-http://localhost:3002}
-      - SOCKET_PATH=/socket.io
+      - SOCKET_PATH=/game/socket.io/
       - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
       - NEXT_PUBLIC_GAME_SERVICE_URL=/game
       - SOCKET_PORT=4000
+      - GAME_ROOM_ID=gameplay-room
       - REMOTE_MULTIPLAYER_ENABLED=true
       - NODE_ENV=production
     depends_on:
@@ -145,7 +146,7 @@ services:
     container_name: ai_service
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
-      - SOCKET_PATH=/socket.io
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - ROOM_ID=gameplay-room
       - AI_SLOT=1
@@ -168,7 +169,7 @@ services:
     container_name: ai_service_slot2
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
-      - SOCKET_PATH=/socket.io
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - ROOM_ID=gameplay-room
       - AI_SLOT=2
@@ -191,7 +192,7 @@ services:
     container_name: ai_service_slot3
     environment:
       - GAME_SVC_URL=http://game_srvc:4000
-      - SOCKET_PATH=/socket.io
+      - SOCKET_PATH=/game/socket.io/
       - SERVICE_SECRET=${INTERNAL_SERVICE_SECRET}
       - ROOM_ID=gameplay-room
       - AI_SLOT=3
