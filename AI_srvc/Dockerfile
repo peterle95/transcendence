@@ -21,8 +21,8 @@ WORKDIR /app
 # ── python deps ──────────────────────────────────────────────────────────────
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir --retries 5 torch --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir --retries 5 -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=1000 --retries 10 torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir --default-timeout=1000 --retries 10 -r requirements.txt
 
 # ── application source ───────────────────────────────────────────────────────
 COPY . .

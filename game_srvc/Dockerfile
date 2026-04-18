@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY prisma ./prisma
 
 # Install dependencies
-RUN npm ci
+RUN npm config set fetch-timeout 120000 && npm config set fetch-retries 10 && npm ci
 
 # Generate Prisma client (requires schema to be present)
 RUN npx prisma generate
