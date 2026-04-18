@@ -1006,60 +1006,11 @@ class Player {
         this.shootCooldown = 180;
         return this._createLaser(ship);
       }
-    } else if (this.type === 'ai') {
-      return this._aiControl(dt, ship);
-    }
-
+    } 
     return null;
   }
 
-  /* ── simple AI ──────────────────────────────────────────────────── */
-  _aiTarget  = null;
-  _aiTimer   = 0;
-
-  _aiControl(dt, ship) {
-    this._aiTimer -= dt;
-
-    // pick a target every 2s or if current target dead
-    if (this._aiTimer <= 0 || !this._aiTarget || !this._aiTarget.alive) {
-      this._aiTimer = 2000;
-      this._aiTarget = null;
-    }
-
-    if (!this._aiTarget) {
-      // find a target – provided externally via game loop
-      return null; // game loop will set _aiTarget
-    }
-
-    const target = this._aiTarget;
-    const dx = target.x - ship.x;
-    const dy = target.y - ship.y;
-    const desiredAngle = radToDeg(Math.atan2(dx, -dy));
-    let diff = desiredAngle - ship.angle;
-    // normalise to -180..180
-    while (diff > 180) diff -= 360;
-    while (diff < -180) diff += 360;
-
-    if (diff > 3)       ship.rotateRight(dt);
-    else if (diff < -3) ship.rotateLeft(dt);
-
-    const distance = dist(ship, target);
-    if (distance > 250)      ship.thrustForward(dt);
-    else if (distance < 120) ship.thrustBackward(dt);
-
-    // shoot when roughly aimed
-    this.shootCooldown -= dt;
-    if (Math.abs(diff) < 12 && this.shootCooldown <= 0 && ship.canShoot()) {
-      ship.consumeShot();
-      this.stats.shotsFired++;
-      this.shootCooldown = 250;
-      return this._createLaser(ship);
-    }
-
-    return null;
-  }
-
-  _createLaser(ship) {
+   _createLaser(ship) {
     const rad = degToRad(ship.angle);
     const tipX = ship.x + Math.sin(rad) * 28;
     const tipY = ship.y - Math.cos(rad) * 28;
@@ -1270,15 +1221,30 @@ class Game {
   }
 
   _setAvailableAISlots(slots = []) {
-    const normalizedSlots = Array.isArray(slots)
-      ? slots
-          .map((slot) => Number(slot))
-          .filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < 4)
-      : [];
+  const normalizedSlots = Array.isArray(slots)
+    ? slots
+        .map((slot) => Number(slot))
+        .filter((slot) => Number.isInteger(slot) && slot >= 0 && slot < 4)
+    : [];
 
-    this._availableAISlots = new Set(normalizedSlots);
-    this._syncLocalAIStatusLabels();
-  }
+  this._availableAISlots = new Set(normalizedSlots);
+
+  this.players.forEach((player) => {
+    if (!(player && player.type === 'remote' && player.isAI)) return;
+
+    if (!this._availableAISlots.has(player.idx)) {
+      player.applyNetworkState({
+        slot: player.idx,
+        movimento: 0,
+        rotazione: 0,
+        sparo: 0,
+        shoot: false,
+      });
+    }
+  });
+
+  this._syncLocalAIStatusLabels();
+}
 
   _syncLocalAIStatusLabels() {
     this.players.forEach((player) => {
@@ -1651,6 +1617,14 @@ class Game {
       shoot:    'Tab',
     };
 
+    const createMLAIPlayer = (idx) => {
+      const player = new Player(idx, 'remote', {}, this.assets);
+      player.isAI = true;
+      player.displayName = 'AI';
+      player.userId = null;
+      return player;
+    };
+
     if (mode === 'solo') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'ai', {}, this.assets));
@@ -1904,25 +1878,6 @@ class Game {
     }
 
     const now = performance.now();
-
-    // ── AI target assignment ──
-    this.players.forEach(p => {
-      if (p.type === 'ai' && p.alive) {
-        const ship = p.currentShip;
-        if (!ship || !ship.alive) return;
-        // pick closest enemy ship
-        let bestDist = Infinity;
-        let bestTarget = null;
-        this.players.forEach(other => {
-          if (other === p || !other.alive) return;
-          const os = other.currentShip;
-          if (!os || !os.alive) return;
-          const d = dist(ship, os);
-          if (d < bestDist) { bestDist = d; bestTarget = os; }
-        });
-        p._aiTarget = bestTarget;
-      }
-    });
 
     // ── player input & laser creation ──
     this.players.forEach(p => {

@@ -372,6 +372,19 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
                 except Exception as e:
                     log.warning("model hot-reload skipped: %s", e)
 
+        if active_model is None:
+            noop_payload = {
+                "roomId": room_id,
+                "slot": ai_slot,
+                "movimento": 0,
+                "rotazione": 0,
+                "sparo": 0,
+            }
+            if bridge_client_id:
+                noop_payload["bridgeClientId"] = bridge_client_id
+            await sio.emit("ai_command", noop_payload)
+            return
+
         # Aggiorna lo stato locale con l'ultima snapshot autorevole.
         my_ship = data.get("my_ship") or {}
         ship_state.sync_from_server(my_ship, now_ms)
@@ -425,13 +438,17 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
     Entry point: carica il modello e mantiene la connessione attiva.
     Chiamato da main.py in modalità TRAINING_MODE=false.
     """
+    model = None
     if os.path.exists(MODEL_PATH):
-        model = load_model(MODEL_PATH)
-        log.info("modello caricato da %s", MODEL_PATH)
+        try:
+            model = load_model(MODEL_PATH)
+            model.eval()
+            log.info("modello caricato da %s", MODEL_PATH)
+        except Exception as e:
+            model = None
+            log.warning("impossibile caricare il modello %s: %s", MODEL_PATH, e)
     else:
-        log.warning("modello non trovato — uso rete non addestrata")
-        model = DQNNetwork()
-    model.eval()
+        log.warning("modello non trovato — AI inattiva (noop only)")
 
     sio = create_client(model, ai_slot, room_id)
 

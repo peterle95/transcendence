@@ -472,51 +472,6 @@ function hasLiveAIServiceForSlot(slot, roomId = GAME_ROOM_ID) {
   return false;
 }
 
-function buildFallbackAIInput(slot) {
-  const player = ROOM.players[slot];
-  const ship = player && player.currentShip ? player.currentShip : null;
-  const nextSeq = Math.max(
-    ROOM.inputBuffer[slot]?.seq || 0,
-    player?.lastProcessedInputSeq || 0
-  ) + 1;
-  const input = { ...DEFAULT_INPUT, seq: nextSeq };
-
-  if (!player || !player.alive || !ship || !ship.alive) return input;
-
-  let bestTarget = null;
-  let bestDist = Infinity;
-  ROOM.players.forEach((other, otherSlot) => {
-    if (otherSlot === slot || !other || !other.alive) return;
-    const otherShip = other.currentShip;
-    if (!otherShip || !otherShip.alive) return;
-    const distance = dist2(ship, otherShip);
-    if (distance < bestDist) {
-      bestDist = distance;
-      bestTarget = otherShip;
-    }
-  });
-
-  if (!bestTarget) return input;
-
-  const dx = bestTarget.x - ship.x;
-  const dy = bestTarget.y - ship.y;
-  let diff = (Math.atan2(dx, -dy) * 180 / Math.PI) - ship.angle;
-  while (diff > 180) diff -= 360;
-  while (diff < -180) diff += 360;
-
-  if (diff > 3) input.right = true;
-  else if (diff < -3) input.left = true;
-
-  if (bestDist > 250) input.forward = true;
-  else if (bestDist < 120) input.backward = true;
-
-  if (Math.abs(diff) < 12 && ship.canShoot() && player.shootCooldown <= 0) {
-    input.shoot = true;
-  }
-
-  return input;
-}
-
 function spawnFreshParticipant(slot, displayName = '') {
   ROOM.players[slot] = new ServerPlayer(slot, displayName);
   ROOM.players[slot].spawnCurrent();
@@ -1164,8 +1119,17 @@ function gameTick() {
     if (!virtualSlots.has(slot)) return;
     if (!ROOM.players[slot] || !ROOM.players[slot].alive) return;
     if (hasLiveAIServiceForSlot(slot)) return;
-    ROOM.inputBuffer[slot] = buildFallbackAIInput(slot);
-  });
+
+    const nextSeq = Math.max(
+      ROOM.inputBuffer[slot]?.seq || 0,
+      ROOM.players[slot]?.lastProcessedInputSeq || 0
+    ) + 1;
+
+    ROOM.inputBuffer[slot] = {
+      ...DEFAULT_INPUT,
+      seq: nextSeq,
+    };
+});
 
   // Apply buffered inputs → ship physics
   ROOM.players.forEach(p => {
