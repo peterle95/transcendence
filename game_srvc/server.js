@@ -1164,7 +1164,9 @@ function gameTick() {
     if (!virtualSlots.has(slot)) return;
     if (!ROOM.players[slot] || !ROOM.players[slot].alive) return;
     if (hasLiveAIServiceForSlot(slot)) return;
-    ROOM.inputBuffer[slot] = buildFallbackAIInput(slot);
+    // Fallback disabled: ship does nothing if AI service is not connected.
+    // If AI ships sit still, the DQN containers are not sending commands.
+    ROOM.inputBuffer[slot] = { ...DEFAULT_INPUT };
   });
 
   // Apply buffered inputs → ship physics
