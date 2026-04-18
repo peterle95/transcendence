@@ -391,11 +391,26 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
             return
 
         try:
-            # Usa lo stato locale predetto come input della rete.
-            state = build_state_vector(data, my_ship_override=ship_state.as_dict())
-            action  = active_model.get_action(state)
+            # Use server-authoritative state as network input, not the drifting local sim.
+            # The local ShipState is kept only for sync bookkeeping (invuln tracking etc).
+            state = build_state_vector(data)
+            action = active_model.get_action(state)
 
-            # Replica del tick JS: applica comando e integra fisica localmente.
+            # Diagnostic: log action every ~10 seconds at 30fps to compare across slots
+            if not hasattr(on_game_state, '_diag_count'):
+                on_game_state._diag_count = 0
+            on_game_state._diag_count += 1
+            if on_game_state._diag_count % 300 == 0:
+                my = data.get("my_ship") or {}
+                log.info(
+                    "slot=%d action=%s | pos=(%.0f,%.0f) angle=%.0f hp=%s energy=%s",
+                    ai_slot, action,
+                    my.get("x", 0), my.get("y", 0), my.get("angle", 0),
+                    my.get("hp", "?"), my.get("energy", "?")
+                )
+
+            # Still tick locally so sync_from_server has a meaningful previous state to
+            # correct against, but do NOT feed this into the network.
             ship_state.apply_command(action, dt_ms)
             ship_state.tick(dt_ms, now_ms)
 
@@ -421,15 +436,24 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
 
 
 async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
-    """
-    Entry point: carica il modello e mantiene la connessione attiva.
-    Chiamato da main.py in modalità TRAINING_MODE=false.
-    """
     if os.path.exists(MODEL_PATH):
+        import hashlib, json
         model = load_model(MODEL_PATH)
-        log.info("modello caricato da %s", MODEL_PATH)
+        # Compute a fingerprint of the weights so you can verify all containers
+        # loaded the same model. Check logs: all three slots must show same hash.
+        weight_bytes = b"".join(
+            p.data.cpu().numpy().tobytes()
+            for p in model.parameters()
+        )
+        weight_hash = hashlib.sha256(weight_bytes).hexdigest()[:16]
+        file_size = os.path.getsize(MODEL_PATH)
+        file_mtime = os.path.getmtime(MODEL_PATH)
+        log.info(
+            "slot=%d model loaded | path=%s | size=%d | mtime=%.0f | weight_hash=%s",
+            ai_slot, MODEL_PATH, file_size, file_mtime, weight_hash
+        )
     else:
-        log.warning("modello non trovato — uso rete non addestrata")
+        log.warning("slot=%d model not found — using untrained network", ai_slot)
         model = DQNNetwork()
     model.eval()
 
