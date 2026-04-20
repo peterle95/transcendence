@@ -155,7 +155,6 @@ services:
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
     volumes:
-      - ai_models:/app/models:ro
       - ai_logs:/app/logs
     depends_on:
       - game_srvc
@@ -178,7 +177,6 @@ services:
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
     volumes:
-      - ai_models:/app/models:ro
       - ai_logs:/app/logs
     depends_on:
       - game_srvc
@@ -201,7 +199,6 @@ services:
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
     volumes:
-      - ai_models:/app/models:ro
       - ai_logs:/app/logs
     depends_on:
       - game_srvc
@@ -215,8 +212,6 @@ volumes:
   mongo_data:
     driver: local
   avatar_uploads:
-    driver: local
-  ai_models:
     driver: local
   ai_logs:
     driver: local
