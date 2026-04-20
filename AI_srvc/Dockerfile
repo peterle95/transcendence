@@ -18,8 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ── workdir ──────────────────────────────────────────────────────────────────
 WORKDIR /app
 
-# ── python deps ──────────────────────────────────────────────────────────────
+# ── python deps + bundled model files for fresh evaluation runs ─────────────
 COPY requirements.txt .
+COPY ai_models/ /app/models/
+# copy model files into the image so /app/models is available even when volumes start empty
 
 RUN pip install --no-cache-dir --default-timeout=1000 --retries 10 torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir --default-timeout=1000 --retries 10 -r requirements.txt

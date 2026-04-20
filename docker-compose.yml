@@ -201,8 +201,7 @@ services:
       - TRAINING_MODE=false   # true = training contro bot, false = inference live
       - LOG_LEVEL=INFO
     volumes:
-      - ai_models:/app/models:ro  # inference reads stable model only
-      - ai_logs:/app/logs
+      - ai_logs:/app/logs # keep only logs in a volume. The model is baked into the image 
     depends_on:
       - game_srvc
     networks:
@@ -224,7 +223,6 @@ services:
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
     volumes:
-      - ai_models:/app/models:ro
       - ai_logs:/app/logs
     depends_on:
       - game_srvc
@@ -247,7 +245,6 @@ services:
       - TRAINING_MODE=false
       - LOG_LEVEL=INFO
     volumes:
-      - ai_models:/app/models:ro
       - ai_logs:/app/logs
     depends_on:
       - game_srvc
