@@ -9,7 +9,7 @@ RUN apt update && apt install -y --no-install-recommends ca-certificates jq curl
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci
+RUN npm config set fetch-timeout 120000 && npm config set fetch-retries 10 && npm ci
 
 RUN npx prisma generate
 

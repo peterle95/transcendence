@@ -76,7 +76,7 @@ export default function DashboardPage() {
       <div className="min-h-screen flex items-center justify-center p-6 relative z-10" style={{ background: 'var(--cyber-bg)' }}>
         <div className="w-full max-w-md text-center space-y-6">
           <h1 className="text-3xl font-black tracking-widest" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)', textShadow: '0 0 20px rgba(0,229,255,0.4)' }}>
-            SPACE WARS
+            SPACE SUPREMACY
           </h1>
           <div className="border p-5 text-left" style={{ borderColor: 'rgba(255,34,68,0.4)', background: 'rgba(255,34,68,0.05)' }}>
             <p className="text-xs" style={{ color: 'var(--cyber-red)', fontFamily: 'Share Tech Mono, monospace' }}>
@@ -109,14 +109,27 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <span className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>//</span>
             <span className="font-black tracking-widest text-lg" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)', textShadow: '0 0 10px rgba(0,229,255,0.4)' }}>
-              SPACE WARS
+              SPACE SUPREMACY
             </span>
             <span className="text-xs hidden sm:inline" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>// COMMS</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--cyber-green)', boxShadow: '0 0 6px var(--cyber-green)' }} />
             <span className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
               USER: <span style={{ color: 'var(--cyber-cyan)' }}>{currentUser.username}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+          <span className="font-black tracking-widest text-lg" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--violet, #8B008B)', textShadow: '0 0 10px rgba(64, 0, 255, 0.68)' }}>            
+            <button
+                onClick={() => {
+                  // document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                  window.location.href = '/';
+                }}
+                className="text-xs hover:underline"
+              >
+                HOME
+              </button>
             </span>
           </div>
         </div>
