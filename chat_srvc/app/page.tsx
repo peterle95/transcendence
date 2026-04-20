@@ -123,7 +123,7 @@ export default function DashboardPage() {
           <span className="font-black tracking-widest text-lg" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--violet, #8B008B)', textShadow: '0 0 10px rgba(64, 0, 255, 0.68)' }}>            
             <button
                 onClick={() => {
-                  document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                  // document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                   window.location.href = '/';
                 }}
                 className="text-xs hover:underline"
