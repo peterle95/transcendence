@@ -39,7 +39,5 @@ ENV PYTHONUNBUFFERED=1 \
     TRAINING_MODE=false \
     LOG_LEVEL=INFO
 
-ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
-
 # ── entrypoint ───────────────────────────────────────────────────────────────
 CMD ["python", "main.py"]

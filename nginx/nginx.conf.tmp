@@ -38,7 +38,7 @@ http {
 		SecArgumentsLimit 1000
 		SecResponseBodyLimit 524288
 		SecResponseBodyLimitAction ProcessPartial
-		SecAuditEngine RelevantOnly
+		SecAuditEngine On
 		SecAuditLogParts ABIJDEFHZ
 		SecAuditLogType Serial
 		SecAuditLogRelevantStatus "^(?:5|4[0-9][0-35-9])"
@@ -97,7 +97,7 @@ http {
 		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_PORT};
 	}
 	upstream	game_ws		{
-		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_WS_PORT};
+		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${SOCKET_PORT};
 	}
 
 
@@ -150,7 +150,7 @@ http {
 			coraza	off;
 		}
 
-		location ${CHAT_PATH}${CHAT_WS_PATH} {
+		location ${CHAT_WS_PATH} {
 			proxy_pass ${HTTP}chat;
 			proxy_http_version	1.1;
 			proxy_set_header	Host			@host;
@@ -170,7 +170,7 @@ http {
 			${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
 		}
 
-		location ${GAME_PATH}${GAME_WS_PATH} {
+		location ${GAME_WS_PATH} {
 			proxy_pass ${HTTP}game_ws;
 			proxy_http_version	1.1;
 			proxy_set_header	Upgrade			@http_upgrade;

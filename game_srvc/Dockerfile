@@ -1,4 +1,6 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-alpine
+ARG NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
@@ -26,6 +28,5 @@ ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
 
 RUN npm run build
 
-ENTRYPOINT ["/bin/sh", "/inject/inject.sh"]
 # Start Next.js + Socket.IO together
 CMD ["sh", "/app/docker-start.sh"]

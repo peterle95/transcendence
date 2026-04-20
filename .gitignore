@@ -60,4 +60,7 @@ next-env.d.ts
 *_baks
 export/*
 
+# shellscript
+*.sh
+
 /src/generated/prisma

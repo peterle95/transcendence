@@ -8,12 +8,12 @@ x-vault-ro: &vault-ro
   source: "vault_data"
   read_only: true
 
-x-type-script: &type-script
+x-type-entry: &type-entry
     <<: *vault-ro
-    target: "/inject"
+    target: "/entry"
     volume:
       nocopy: true
-      subpath: "share/trust/me/bro"
+      subpath: "share/entry"
 
 x-type-ca-root: &type-ca-root
     <<: *vault-ro
@@ -37,19 +37,22 @@ x-health: &health
 
 x-depends-on-vault: &depends-on-vault
   depends_on:
-    vault_srvc:
+    vault:
       condition: "service_healthy"
       restart: "true"
 
 x-ai-srvc:  &ai-srvc
     build: "./AI_srvc"
     <<: *depends-on-vault 
+    entrypoint: &entrypoint
+      - "/entry/point"
+    command: [ "/usr/bin/python", "main.py" ]
     depends_on: [ "game_srvc" ]
     volumes:
       - "ai_models:/app/models:ro"
       - "ai_logs:/app/logs"
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -69,23 +72,25 @@ services:
   nginx:
     build:
       dockerfile_inline: |
-        FROM ghcr.io/coreruleset/coraza-crs:4.25.0-nginx-lts
         FROM scratch
-        COPY --from=0 / /
-        RUN apt-get update -qq&&apt-get upgrade -qq && apt-\
-        get install --no-install-recommends gosu curl -qq  \
-        jq ca-certificates&&rm -rf *r/*/*/l*s/* *r/c*e/apt/*
-    entrypoint: ["/bin/sh", "/inject/inject.sh"]
-    command: ["gosu","nginx", "nginx", "-g daemon off;"]
+        COPY --from=ghcr.io/coreruleset/coraza-crs:4.25.0-nginx-lts / /
+        RUN apt-get update -qq && apt-get upgrade -qq && apt-get    \
+        install --no-install-recommends -qq jq ca-certificates gosu \
+        curl jq && rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+    entrypoint: *entrypoint
+    command: [ "gosu","nginx", "nginx", "-g daemon off;" ]
     container_name: "${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
     hostname: "${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
-    ports:  ["${EXT}${NGINX_TCP}", "${EXT}${NGINX_TLS}", "${EXT}${NGINX_UDP}" ]
+    ports:
+      - "${LOCAL:+127.0.0.1:}${NGINX_TCP}"
+      - "${LOCAL:+127.0.0.1:}${NGINX_TLS}"
+      - "${LOCAL:+127.0.0.1:}${NGINX_UDP}"
     <<: *depends-on-vault 
     depends_on: [ "frontend" ]
     volumes:
-      - "./nginx_proxy/conf/nginx.conf:/nginx.conf.tmp:ro"
+      - "./nginx/nginx.conf.tmp:/nginx.conf.tmp:ro"
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -95,20 +100,22 @@ services:
       service_net:  {ipv4_address: "10.133.7.25"}
       proxy_net:  {ipv4_address: "${NGINX_PROXY_IP}"}
     healthcheck:
-      test: ["CMD-SHELL", "curl -kf ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
+      test: ["CMD-SHELL", "curl -f ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
       <<: *health
     restart: "unless-stopped"
 
   # ── Frontend ────────────────────────────────────────────────────
   frontend:
     build:  "./frontend"
+    entrypoint: *entrypoint
+    command: [ "npm", "run", "dev" ]
     container_name: "frontend_service"
     hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${FRONTEND_PORT}" ]
     depends_on: [ "game_srvc", "chat_srvc" ]
     volumes:
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -136,13 +143,15 @@ services:
   # ── Game Service ────────────────────────────────────────────────
   game_srvc:
     build: "./game_srvc"
+    entrypoint: *entrypoint
+    command: [ "/app/docker-start.sh" ]
     container_name: "game_service"
     hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
-    expose: [ "${GAME_PORT}", "${GAME_WS_PORT}" ]
+    expose: [ "${GAME_PORT}", "${SOCKET_PORT}" ]
     depends_on: [ "auth_srvc" ]
     volumes:
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -156,6 +165,8 @@ services:
   # ── Chat Service ────────────────────────────────────────────────
   chat_srvc:
     build: "./chat_srvc"
+    entrypoint: *entrypoint
+    command: [ "npm", "start" ]
     container_name: "chat_service"
     hostname: "chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${CHAT_PORT}" ]
@@ -164,7 +175,7 @@ services:
       auth_srvc:  {condition: "service_started"}
     volumes:
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -176,6 +187,8 @@ services:
   # ── Auth Service ────────────────────────────────────────────────
   auth_srvc:
     build: "./auth_srvc"
+    entrypoint: *entrypoint
+    command: [ "sh", "-c", "npx prisma migrate deploy && npm run dev" ]
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${AUTH_PORT}" ]
@@ -184,7 +197,7 @@ services:
     volumes:
       - "avatar_uploads:/app/uploads/avatars"
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -200,7 +213,7 @@ services:
         FROM postgres:15-alpine
         RUN apk add --no-cache \
         -q ca-certificates jq curl
-    entrypoint: [ "/bin/sh", "/inject/inject.sh" ]
+    entrypoint: *entrypoint
     command: [ "su-exec", "postgres", "postgres" ]
     container_name: "postgres_${DATABASE_NAMESPACE}"
     hostname: "postgres.${PROJECT_NAME}-${DATABASE_NAMESPACE}"
@@ -209,7 +222,7 @@ services:
     volumes:
       - "postgres_data:${POSTGRES_DATA_DIR}"
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -236,7 +249,7 @@ services:
         rm -rf /var/cache\
         /apt/archives /va\
         r/lib/apt/lists/*
-    entrypoint: [ "/bin/sh", "/inject/inject.sh" ]
+    entrypoint: *entrypoint
     command: [ "mongod", "--quiet", "--logpath", "/dev/null" ]
     container_name: "mongo_${DATABASE_NAMESPACE}"
     hostname: "mongo.${PROJECT_NAME}-${DATABASE_NAMESPACE}"
@@ -245,7 +258,7 @@ services:
     volumes:
       - "mongo_data:/data/db"
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -263,21 +276,18 @@ services:
     build:
       dockerfile_inline: |
         FROM alpine:3.23.3
-        RUN apk add curl \
-        --no-cache -q jq \
-        ca-certificates  \
-        tor su-exec &&   \
-        rm -rf /etc/tor/*
-    entrypoint: [ "/bin/sh", "/inject/inject.sh" ]
+        RUN apk add --no-cache -q tor \
+        jq curl ca-certificates su-exec
+    entrypoint: *entrypoint
     command: [ "su-exec", "tor", "/usr/bin/tor" ]
     container_name: "${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
     hostname: "${TOR_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
-    ports:  [ "${HIDDEN_SERVICE_PORT}:9050" ]
+    ports:  [ "${HIDDEN_SERVICE_PORT}" ]
     <<: *depends-on-vault
     volumes:
       - "tor_data:${TOR_DATA_DIR}"
       - type: "volume"
-        <<: *type-script
+        <<: *type-entry
       - type: "volume"
         <<: *type-ca-root
       - type: "volume"
@@ -286,28 +296,18 @@ services:
     networks: {proxy_net: {ipv4_address: "${TOR_PROXY_IP}"}}
     restart: "unless-stopped"
 
-  # ── Vault Service - Secret Management ───────────────────────────
-  vault_srvc:
+  # ── Vault - Secret Management ──────────────────────────────────
+  vault:
     env_file: ".env"
     build:
       dockerfile_inline: |
         # syntax=docker/dockerfile:1
-        FROM hashicorp/vault:1.21.4
-        FROM scratch
-        COPY --from=0 / /
-        RUN apk add --no-cache -q \
-        ca-certificates docker jq \
-        openssl gpg curl
-        COPY --chmod=400 ./vault_srvc/policies/env/*.env  /vault/policies/env/
-        COPY --parents --chmod=400 \
-        ./*/wants.secret  /wanted/
-        COPY --chmod=400 ./vault_srvc/policies/*.hcl      /vault/policies/
-        COPY --chmod=100 ./vault_srvc/tools/entrypoint.sh /tools/
-    entrypoint: ["/tools/entrypoint.sh"]
-    container_name: "vault_service"
+        FROM 42jk/project-vault:1337
+        COPY --parents --chmod=400 ./*/wants.* /wanted/
+    container_name: "vault_secret_service"
     hostname: "${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}"
     expose: [ "${VAULT_PORT}" ]
-    volumes: [ "./export:/export", "/var/run/docker.sock:/var/run/docker.sock",  "vault_data:/vault" ]
+    volumes: [ "./export:/export", "vault_data:/vault" ]
     networks:
       service_net:  {ipv4_address: "10.133.7.18"}
       proxy_net:  {ipv4_address: "${VAULT_PROXY_IP}"}
@@ -316,11 +316,7 @@ services:
       test: ["CMD-SHELL", "curl -f ${HTTP}${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}:${VAULT_PORT}/v1/sys/health"]
       <<: *health
     restart: "on-failure:1"
-    cap_add: [ "IPC_LOCK" ]
-    develop:
-      watch:
-        - path: "./vault_srvc/tools/entrypoint.sh"
-          action: "rebuild"
+    cap_add: [ "${MLOCK_ENABLED:+IPC_LOCK}" ]
 
 volumes:  { "postgres_data", "mongo_data", "avatar_uploads",
           "ai_models", "ai_logs", "tor_data", "vault_data" }

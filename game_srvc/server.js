@@ -13,12 +13,6 @@ const http       = require("http");
 const path	 = require("path");
 const fs         = require("fs");
 
-//const ROOTCERT	= process.env.PGSSLROOTCERT || "/usr/local/share/ca-certificates/ca_transcendence_root.crt";
-//process.env.PGSSLKEY || 
-//process.env.PGSSLCERT ||
-//const CERT_PATH	= "certs/key.pem";
-//const KEY_PATH	=  "certs/cert.pem";
-
 const projectDir	= process.cwd();
 const keyPath		= path.resolve(projectDir, '../certs/key.pem');
 const certPath		= path.resolve(projectDir, '../certs/cert.pem');
@@ -31,13 +25,6 @@ if (process.env.HTTP === 'https://' && fs.existsSync(keyPath) && fs.existsSync(c
 } else {
     console.warn(`[WARN] SSL certificates not found at ${keyPath} and ${certPath}. Falling back to HTTP server.`);
 }
-
-
-//const tls	 =	{
-//	key:	fs.readFileSync('${KEY_PATH}'),
-//	cert:	fs.readFileSync('${CERT_PATH}')//,
-//	ca:	fs.readFileSync('${ROOTCERT}')
-//};
 
 const HOSTNAME		= process.env.HOSTNAME || '0.0.0.0';
 const HTTP		= process.env.HTTP || 'https://';
