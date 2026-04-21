@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import random
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -19,15 +20,25 @@ log = logging.getLogger("trainer")
 
 TRAINING_ENV_KEYS = [
     "GAME_SVC_URL",
+    "SOCKET_PATH",
+    "SERVICE_SECRET",
+    "MODEL_PATH",
     "ROOM_ID",
     "AI_SLOT",
     "TRAIN_AI_SLOTS",
-    "TRAIN_STEPS",
-    "MODEL_PATH",
     "TRAIN_CHECKPOINT_PATH",
     "TRAIN_AUDIT_LOG_PATH",
     "TRAIN_AUDIT_EVERY",
     "WIN_RATE_WINDOW_EPISODES",
+    "TRAINING_SCENARIO",
+    "TRAIN_STEPS",
+    "DQN_EPSILON_START",
+    "DQN_EPSILON_END",
+    "DQN_EPSILON_DECAY_STEPS",
+    "DQN_LR",
+    "TRAINING_MODE",
+    "TRAIN_EVAL_ONLY",
+    "TRAIN_RESUME",
     "REWARD_WIN",
     "REWARD_DEATH",
     "REWARD_HIT",
@@ -35,22 +46,15 @@ TRAINING_ENV_KEYS = [
     "REWARD_HURT_LASER",
     "REWARD_ALIVE_STEP",
     "REWARD_METEOR_DANGER",
-    "REWARD_WASTED_SHOT",
-    "REWARD_ROTATE_STEP",
-    "REWARD_ROTATE_DANGER",
     "METEOR_DANGER_DISTANCE_NORM",
+    "REWARD_ROTATE_DANGER",
+    "REWARD_ROTATE_STEP",
     "ROTATION_DANGER_DISTANCE_NORM",
-    "DQN_EPSILON_START",
-    "DQN_EPSILON_END",
-    "DQN_EPSILON_DECAY_STEPS",
-    "DQN_LR",
-    "TRAINING_MODE",
-    "TRAINING_SCENARIO",
-    "TRAIN_DASHBOARD_AUTO",
-    "TRAIN_DASHBOARD_PATH",
+    "REWARD_APPROACH_ENEMY",
+    "REWARD_WASTED_SHOT",
+    "REWARD_LOW_ENERGY",
+    "LOW_ENERGY_THRESHOLD",
     "LOG_LEVEL",
-    "TRAIN_RESUME",
-    "TRAIN_EVAL_ONLY",
 ]
 
 
@@ -65,11 +69,15 @@ MODEL_PATH = os.getenv("MODEL_PATH", "/app/models/dqn_latest.pt")
 TRAIN_STEPS = int(os.getenv("TRAIN_STEPS", "5000"))
 SAVE_EVERY = int(os.getenv("SAVE_EVERY", "500"))
 GAME_SVC_URL = os.getenv("GAME_SVC_URL", "http://game_srvc:4000")
+SOCKET_PATH = os.getenv("SOCKET_PATH", "/game/socket.io/")
 SERVICE_SECRET = os.getenv("SERVICE_SECRET", "inter-service-shared-secret-change-in-production")
 ROOM_ID = os.getenv("ROOM_ID", "local")
 AI_SLOT = int(os.getenv("AI_SLOT", "1"))
 TRAIN_AI_SLOTS = os.getenv("TRAIN_AI_SLOTS", "1,2")
 STATE_TIMEOUT_S = float(os.getenv("TRAIN_STATE_TIMEOUT_S", "15"))
+TRAIN_CONNECT_RETRY_BASE_S = float(os.getenv("TRAIN_CONNECT_RETRY_BASE_S", "1.0"))
+TRAIN_CONNECT_RETRY_MAX_S = float(os.getenv("TRAIN_CONNECT_RETRY_MAX_S", "15.0"))
+TRAIN_CONNECT_RETRY_JITTER_S = float(os.getenv("TRAIN_CONNECT_RETRY_JITTER_S", "0.5"))
 TRAIN_RESUME = os.getenv("TRAIN_RESUME", "true").lower() == "true"
 TRAIN_EVAL_ONLY = os.getenv("TRAIN_EVAL_ONLY", "false").lower() == "true"
 TRAIN_CHECKPOINT_PATH = os.getenv("TRAIN_CHECKPOINT_PATH", "/app/models/dqn_training_checkpoint.pt")
@@ -91,6 +99,9 @@ REWARD_ROTATE_STEP = float(_env_required("REWARD_ROTATE_STEP"))
 REWARD_ROTATE_DANGER = float(_env_required("REWARD_ROTATE_DANGER"))
 METEOR_DANGER_DISTANCE_NORM = float(_env_required("METEOR_DANGER_DISTANCE_NORM"))
 ROTATION_DANGER_DISTANCE_NORM = float(_env_required("ROTATION_DANGER_DISTANCE_NORM"))
+REWARD_APPROACH_ENEMY = float(_env_required("REWARD_APPROACH_ENEMY"))
+REWARD_LOW_ENERGY = float(_env_required("REWARD_LOW_ENERGY"))
+LOW_ENERGY_THRESHOLD = float(_env_required("LOW_ENERGY_THRESHOLD"))
 
 
 class Trainer:
@@ -379,6 +390,16 @@ class Trainer:
         my_x = float(my_ship.get("x", 0.0))
         my_y = float(my_ship.get("y", 0.0))
         nearest_meteor_norm = 1.0
+        nearest_enemy_norm = 1.0
+        for e in enemies:
+            if not e.get("alive", True) or float(e.get("hp", 0.0)) <= 0.0:
+                continue
+            dx = float(e.get("x", 0.0)) - my_x
+            dy = float(e.get("y", 0.0)) - my_y
+            dist_norm = (dx * dx + dy * dy) ** 0.5 / max(1.0, 1470.0)
+            if dist_norm < nearest_enemy_norm:
+                nearest_enemy_norm = dist_norm
+
         for m in meteors:
             if not m.get("alive", True):
                 continue
@@ -396,6 +417,7 @@ class Trainer:
             "my_energy": float(my_ship.get("energy", 0.0)),
             "enemy_hp_total": enemy_hp_total,
             "alive_enemies": float(alive_enemies),
+            "nearest_enemy_norm": float(nearest_enemy_norm),
             "nearest_meteor_norm": float(nearest_meteor_norm),
             "player_inflicted_damage": float(damage_metrics.get("player_inflicted_damage", 0.0)),
             "total_damage_received": float(damage_metrics.get("total_damage_received", 0.0)),
@@ -448,9 +470,17 @@ class Trainer:
         curr_danger = max(0.0, METEOR_DANGER_DISTANCE_NORM - curr_metrics["nearest_meteor_norm"])
         reward += REWARD_METEOR_DANGER * (curr_danger - prev_danger)
 
+        # Reward moving closer to the nearest alive enemy, but never penalize backing off.
+        enemy_approach_delta = prev_metrics["nearest_enemy_norm"] - curr_metrics["nearest_enemy_norm"]
+        reward += REWARD_APPROACH_ENEMY * max(0.0, enemy_approach_delta)
+
         # Penalize spending energy without causal hit confirmation.
         if my_energy_delta > 0.0 and player_inflicted_damage <= 0.0:
             reward += REWARD_WASTED_SHOT * my_energy_delta
+
+        # Penalize low energy state (continuous shooting drains energy fast).
+        if curr_metrics["my_energy"] < LOW_ENERGY_THRESHOLD:
+            reward += REWARD_LOW_ENERGY
 
         # Anti-spin shaping: discourage persistent rotation, especially near meteors.
         if prev_action is not None and int(prev_action.get("rotazione", 0) or 0) != 0:
@@ -616,28 +646,63 @@ class Trainer:
             except Exception:
                 log.exception("error while processing ai_game_state")
 
-        await sio.connect(
-            GAME_SVC_URL,
-            auth={
-                "service_secret": SERVICE_SECRET,
-                "room_id": ROOM_ID,
-                "ai_slot": AI_SLOT,
-            },
-            transports=["websocket"],
-        )
+        attempt = 0
+        while True:
+            attempt += 1
+            try:
+                await sio.connect(
+                    GAME_SVC_URL,
+                    auth={
+                        "service_secret": SERVICE_SECRET,
+                        "room_id": ROOM_ID,
+                        "ai_slot": AI_SLOT,
+                    },
+                    transports=["websocket"],
+                    socketio_path=SOCKET_PATH.strip("/") or "socket.io",
+                )
+                break
+            except Exception as exc:
+                delay = min(TRAIN_CONNECT_RETRY_MAX_S, TRAIN_CONNECT_RETRY_BASE_S * (2 ** max(0, attempt - 1)))
+                delay += random.uniform(0.0, max(0.0, TRAIN_CONNECT_RETRY_JITTER_S))
+                log.warning(
+                    "trainer connect failed (attempt=%d, room=%s, slot=%d, path=%s): %s. retry in %.2fs",
+                    attempt,
+                    ROOM_ID,
+                    AI_SLOT,
+                    SOCKET_PATH,
+                    exc,
+                    delay,
+                )
+                await asyncio.sleep(delay)
 
         # Ask training-enabled game_srvc instance to bootstrap an AI-only room.
         ai_slots = [int(s.strip()) for s in TRAIN_AI_SLOTS.split(',') if s.strip().isdigit()]
         if not ai_slots:
             ai_slots = [AI_SLOT, (AI_SLOT + 1) % 4]
-        ack = await sio.call(
-            "training_start",
-            {"roomId": ROOM_ID, "aiSlots": ai_slots},
-            timeout=10,
-        )
-        if not ack or not ack.get("ok"):
-            await sio.disconnect()
-            raise RuntimeError(f"Training session bootstrap failed: {ack}")
+        bootstrap_attempt = 0
+        while True:
+            bootstrap_attempt += 1
+            try:
+                ack = await sio.call(
+                    "training_start",
+                    {"roomId": ROOM_ID, "aiSlots": ai_slots},
+                    timeout=10,
+                )
+                if ack and ack.get("ok"):
+                    break
+                raise RuntimeError(f"training_start returned not ok: {ack}")
+            except Exception as exc:
+                delay = min(TRAIN_CONNECT_RETRY_MAX_S, TRAIN_CONNECT_RETRY_BASE_S * (2 ** max(0, bootstrap_attempt - 1)))
+                delay += random.uniform(0.0, max(0.0, TRAIN_CONNECT_RETRY_JITTER_S))
+                log.warning(
+                    "training_start bootstrap failed (attempt=%d, room=%s slots=%s): %s. retry in %.2fs",
+                    bootstrap_attempt,
+                    ROOM_ID,
+                    ai_slots,
+                    exc,
+                    delay,
+                )
+                await asyncio.sleep(delay)
         log.info("training room bootstrap acknowledged: room=%s slots=%s", ROOM_ID, ai_slots)
 
         try:
@@ -666,6 +731,15 @@ class Trainer:
             save_model(self.agent.online, MODEL_PATH, metadata=self._build_model_metadata())
             applied_updates = self._save_checkpoint()
             self._append_audit_log(event="session_end", applied_updates=applied_updates)
+
+            try:
+                await sio.call(
+                    "training_complete",
+                    {"roomId": ROOM_ID, "trainSteps": TRAIN_STEPS, "slot": AI_SLOT},
+                    timeout=10,
+                )
+            except Exception:
+                log.exception("failed to notify game server about training completion")
 
             log.info(
                 "live training completed: session_transitions=%d session_episodes=%d total_transitions=%d total_episodes=%d model=%s checkpoint=%s",

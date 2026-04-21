@@ -13,6 +13,7 @@ import asyncio
 import logging
 import math
 import os
+import random
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -50,6 +51,10 @@ SOCKET_PATH     = os.getenv("SOCKET_PATH",     "/socket.io")
 MODEL_AUTO_RELOAD = os.getenv("MODEL_AUTO_RELOAD", "true").lower() == "true"
 MODEL_RELOAD_INTERVAL_S = float(os.getenv("MODEL_RELOAD_INTERVAL_S", "5"))
 BOT_MODE = os.getenv("BOT_MODE", "model").lower()
+CONNECT_RETRY_BASE_S = float(os.getenv("CONNECT_RETRY_BASE_S", "1.0"))
+CONNECT_RETRY_MAX_S = float(os.getenv("CONNECT_RETRY_MAX_S", "15.0"))
+CONNECT_RETRY_JITTER_S = float(os.getenv("CONNECT_RETRY_JITTER_S", "0.5"))
+CONNECT_MAX_ATTEMPTS = int(os.getenv("CONNECT_MAX_ATTEMPTS", "0"))
 
 CANVAS_W  = 1280
 CANVAS_H  = 720
@@ -595,20 +600,58 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
         model = None
         log.error("modello non trovato in %s: il bot resta senza modello", MODEL_PATH)
 
-    sio = create_client(model, ai_slot, room_id, bot_mode=BOT_MODE)
+    attempt = 0
 
-    await sio.connect(
-        GAME_SVC_URL,
-        auth={
-            "service_secret": SERVICE_SECRET,
-            "ai_slot":        ai_slot,
-            "room_id":        room_id,
-        },
-        transports=["websocket"],   # forza WebSocket puro, salta il polling HTTP
-        socketio_path=SOCKET_PATH.strip("/") or "socket.io",
-    )
+    while True:
+        sio = create_client(model, ai_slot, room_id, bot_mode=BOT_MODE)
+        connected_once = False
 
-    await sio.wait()  # rimane connesso finché il processo non viene killato
+        try:
+            await sio.connect(
+                GAME_SVC_URL,
+                auth={
+                    "service_secret": SERVICE_SECRET,
+                    "ai_slot":        ai_slot,
+                    "room_id":        room_id,
+                },
+                transports=["websocket"],   # forza WebSocket puro, salta il polling HTTP
+                socketio_path=SOCKET_PATH.strip("/") or "socket.io",
+            )
+
+            connected_once = True
+            attempt = 0
+            await sio.wait()  # rimane connesso finché il processo non viene killato
+            log.warning("socket session ended unexpectedly, reconnecting")
+
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            attempt += 1
+            if CONNECT_MAX_ATTEMPTS > 0 and attempt > CONNECT_MAX_ATTEMPTS:
+                log.error(
+                    "unable to connect after %d attempts (max=%d): %s",
+                    attempt - 1,
+                    CONNECT_MAX_ATTEMPTS,
+                    exc,
+                )
+                raise
+
+            delay = min(CONNECT_RETRY_MAX_S, CONNECT_RETRY_BASE_S * (2 ** max(0, attempt - 1)))
+            delay += random.uniform(0.0, max(0.0, CONNECT_RETRY_JITTER_S))
+            log.warning(
+                "socket connection failed (attempt=%d, connected_once=%s): %s; retry in %.2fs",
+                attempt,
+                connected_once,
+                exc,
+                delay,
+            )
+            await asyncio.sleep(delay)
+        finally:
+            try:
+                if sio.connected:
+                    await sio.disconnect()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":

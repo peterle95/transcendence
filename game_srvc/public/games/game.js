@@ -1617,29 +1617,30 @@ class Game {
       shoot:    'Tab',
     };
 
-    const createMLAIPlayer = (idx) => {
-      const player = new Player(idx, 'remote', {}, this.assets);
-      player.isAI = true;
-      player.displayName = 'AI';
-      player.userId = null;
-      return player;
+    const createRemoteAIPlayer = (idx) => {
+      const aiPlayer = new Player(idx, 'remote', {}, this.assets);
+      aiPlayer.isAI = true;
+      return aiPlayer;
     };
 
-    if (mode === 'solo') {
+    const isCombatMode = mode === 'combat';
+    const meteorCountCombatMode = isCombatMode ? 0 : CFG.METEOR_COUNT;
+
+    if (mode === 'solo' || isCombatMode) {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
-      this.players.push(createMLAIPlayer(1));
+      this.players.push(createRemoteAIPlayer(1));
     } else if (mode === 'local2') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
     } else if (mode === 'local3') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(createMLAIPlayer(2));
+      this.players.push(createRemoteAIPlayer(2));
     } else if (mode === 'local4') {
       this.players.push(new Player(0, 'local', p1Controls, this.assets));
       this.players.push(new Player(1, 'local', p2Controls, this.assets));
-      this.players.push(createMLAIPlayer(2));
-      this.players.push(createMLAIPlayer(3));
+      this.players.push(createRemoteAIPlayer(2));
+      this.players.push(createRemoteAIPlayer(3));
     } else if (mode === 'online') {
       // All 4 slots are view-only; the server owns all physics.
       // We identify ourselves by playerIdx from 'init' and send key inputs.
@@ -1679,6 +1680,11 @@ class Game {
 
     this._syncLocalAIStatusLabels();
 
+    const hasRemoteAISlots = this.players.some((player) => player.type === 'remote' && player.isAI);
+    if (hasRemoteAISlots) {
+      this._connectAIBridge();
+    }
+
 
     if (mode === 'online') {
       this.players.forEach((player) => this._clearOnlinePlayerState(player));
@@ -1693,7 +1699,7 @@ class Game {
     }
 
     // create meteors
-    for (let i = 0; i < CFG.METEOR_COUNT; i++) {
+    for (let i = 0; i < meteorCountCombatMode; i++) {
       this.meteors.push(new Meteor(this.assets));
     }
     if (mode === 'online') {
