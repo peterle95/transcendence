@@ -43,7 +43,6 @@ x-depends-on-vault: &depends-on-vault
 
 x-ai-srvc:  &ai-srvc
     build: "./ai_srvc"
-    <<: *depends-on-vault 
     entrypoint: &entrypoint
       - "/entry/point"
     command: [ "python", "main.py" ]
