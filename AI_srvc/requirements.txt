@@ -1,9 +1,0 @@
-# ── deep learning (CPU) ──────────────────────────────────────────────────────
-torch==2.11.0+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
- 
-# ── socket.io client ─────────────────────────────────────────────────────────
-python-socketio[asyncio_client]==5.11.3
- 
-# ── numeric ──────────────────────────────────────────────────────────────────
-numpy==1.26.4

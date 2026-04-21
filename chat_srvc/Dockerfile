@@ -1,4 +1,8 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-alpine
+ARG NEXT_TELEMETRY_DISABLED=1
+
+RUN apk add --no-cache jq curl ca-certificates
 
 WORKDIR /app
 
@@ -7,9 +11,6 @@ COPY package*.json ./
 RUN npm config set fetch-timeout 120000 && npm config set fetch-retries 10 && npm ci
 
 COPY . .
-
-EXPOSE 3001
-
 # Accept build-time variable so it gets baked into the JS bundle
 ARG NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
 ARG NEXT_PUBLIC_GAME_SERVICE_URL=/game

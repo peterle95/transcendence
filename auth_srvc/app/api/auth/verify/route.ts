@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
 	// Reconstruct a synthetic request that has the token as the NextAuth cookie
 	// so getToken can decode and verify it using the shared AUTH_SECRET.
-	const syntheticReq = new NextRequest('http://localhost', {
+	const syntheticReq = new NextRequest('https://localhost', {
 		headers: { cookie: `next-auth.session-token=${bearerToken}` },
 	})
 

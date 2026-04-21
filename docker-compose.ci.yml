@@ -18,5 +18,5 @@ services:
       - chat_srvc
       - game_srvc
     networks:
-      - app_network
+      - backend_net
     restart: "no"
