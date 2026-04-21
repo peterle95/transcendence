@@ -4,7 +4,7 @@
   "description": "Authentication and User Management Service",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p ${AUTH_PORT:-3000} -H ${HOSTNAME:-0.0.0.0} --experimental-https --experimental-https-key ${KEY_PATH:-/certs/key.pem} --experimental-https-cert ${CERT_PATH:-/certs/cert.pem} --experimental-https-ca ${NODE_EXTRA_CA_CERTS:-/usr/local/share/ca-certificates/root_transcendence_ca.crt}",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",

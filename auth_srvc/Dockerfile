@@ -1,4 +1,8 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-bookworm-slim
+ARG NEXT_TELEMETRY_DISABLED=1
+
+RUN apt update && apt upgrade -y && apt install -y --no-install-recommends curl jq ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

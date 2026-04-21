@@ -1,9 +1,11 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-alpine
+ARG NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
 # Prisma requires OpenSSL on Alpine
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl jq curl ca-certificates
 
 # Copy package files and prisma schema first (needed for prisma generate)
 COPY package*.json ./

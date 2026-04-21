@@ -1,4 +1,8 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-alpine
+ARG NEXT_TELEMETRY_DISABLED=1
+
+RUN apk add --no-cache curl jq ca-certificates
 
 WORKDIR /app
 

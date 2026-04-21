@@ -9,7 +9,7 @@ import path from 'path';
 import { socketHandler } from './socket/socketHandler';
 
 const dev = process.env.NODE_ENV !== 'production';
-const port = parseInt(process.env.PORT ?? '3001', 10);
+const port = parseInt(process.env.CHAT_PORT ?? '3001', 10);
 const hostname = process.env.HOSTNAME ?? '0.0.0.0';
 
 // Load .env.local before anything else
@@ -18,10 +18,10 @@ loadEnvConfig(projectDir);
 
 // Load SSL certificates (safe lazy-loading/fallback approach)
 let httpsOptions: any = undefined;
-const keyPath = path.resolve(projectDir, 'certs/key.pem');
-const certPath = path.resolve(projectDir, 'certs/cert.pem');
+const keyPath = path.resolve(projectDir, '../certs/key.pem');
+const certPath = path.resolve(projectDir, '../certs/cert.pem');
 
-if (process.env.USE_SSL === 'true' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+if (process.env.HTTP === 'https://' && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     httpsOptions = {
         key: fs.readFileSync(keyPath),
         cert: fs.readFileSync(certPath),
@@ -56,7 +56,7 @@ app.prepare().then(() => {
 
     const io = new SocketIOServer(server, {
         // Default matches nginx `/chat/socket.io` and client `CHAT_SOCKET_PATH` (see chatPublicBase.ts).
-        path: process.env.SOCKET_PATH || '/chat/socket.io/',
+        path: process.env.CHAT_WS_PATH || '/chat/socket.io/',
         cors: {
             origin: allowedOrigins,
             methods: ["GET", "POST"]
