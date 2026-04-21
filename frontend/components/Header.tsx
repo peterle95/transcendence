@@ -73,9 +73,10 @@ export default function Header() {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
 
         {/* Brand name — updated */}
-        <span className="text-white font-bold text-lg tracking-wide">
+        <Link href="/" className="text-white font-bold text-lg tracking-wide hover:opacity-80 transition-opacity">
           Space Supremacy – Transcendence
-        </span>
+        </Link>
+
 
         {user && (
           <div className="relative">
