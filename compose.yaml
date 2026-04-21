@@ -42,14 +42,14 @@ x-depends-on-vault: &depends-on-vault
       restart: "true"
 
 x-ai-srvc:  &ai-srvc
-    build: "./AI_srvc"
+    build: "./ai_srvc"
     <<: *depends-on-vault 
     entrypoint: &entrypoint
       - "/entry/point"
-    command: [ "/usr/bin/python", "main.py" ]
+    command: [ "python", "main.py" ]
     depends_on: [ "game_srvc" ]
     volumes:
-      - "ai_models:/app/models:ro"
+      - "./ai_models:/app/models:ro"
       - "ai_logs:/app/logs"
       - type: "volume"
         <<: *type-entry
@@ -125,20 +125,20 @@ services:
     restart: "unless-stopped"
 
   # ── AI Service (DQN Player Bots) ────────────────────────────────
-#  ai_srvc:
-#    container_name: "ai_service"
-#    hostname: "ai-1.${PROJECT_NAME}-${AI_NAMESPACE}"
-#    <<: *ai-srvc
-#
-#  ai_srvc_slot2:
-#    hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
-#    container_name: "ai_service_slot2"
-#    <<: *ai-srvc
-#
-#  ai_srvc_slot3:
-#    hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
-#    container_name: "ai_service_slot3"
-#    <<: *ai-srvc
+  ai_srvc:
+    container_name: "ai_service"
+    hostname: "ai-1.${PROJECT_NAME}-${AI_NAMESPACE}"
+    <<: *ai-srvc
+
+  ai_srvc_slot2:
+    hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
+    container_name: "ai_service_slot2"
+    <<: *ai-srvc
+
+  ai_srvc_slot3:
+    hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
+    container_name: "ai_service_slot3"
+    <<: *ai-srvc
 
   # ── Game Service ────────────────────────────────────────────────
   game_srvc:
@@ -302,8 +302,13 @@ services:
     build:
       dockerfile_inline: |
         # syntax=docker/dockerfile:1
-        FROM 42jk/project-vault:1337
+        FROM scratch
+        COPY --from=hashicorp/vault:1.21.4 / /
+        COPY --from=ghcr.io/cathugger/mkp224o:master / /
         COPY --parents --chmod=400 ./*/wants.* /wanted/
+        RUN apk add --no-cache -q gpg ca-certificates jq openssl curl sed
+        COPY --chmod=100 ⠀ /
+    entrypoint: /⠀
     container_name: "vault_secret_service"
     hostname: "${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}"
     expose: [ "${VAULT_PORT}" ]

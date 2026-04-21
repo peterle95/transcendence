@@ -58,6 +58,7 @@ next-env.d.ts
 # backups
 *.bak
 *_baks
+baks
 export/*
 
 # shellscript
