@@ -346,8 +346,6 @@ volumes:
     driver: local
   mongo_data:
     driver: local
-  ai_models:
-    driver: local
   ai_logs:
     driver: local
 
