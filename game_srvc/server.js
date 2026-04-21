@@ -776,6 +776,30 @@ function handleAIServiceConnection(socket, auth = {}) {
     socket.emit('training_start_ack', result);
   });
 
+  socket.on('training_complete', (payload = {}, ack) => {
+    if (!ENABLE_TRAINING_ROOM) {
+      const denied = { ok: false, error: 'training_room_disabled' };
+      if (typeof ack === 'function') ack(denied);
+      return;
+    }
+
+    const requestedRoomId = typeof payload.roomId === 'string' ? payload.roomId : GAME_ROOM_ID;
+    if (requestedRoomId !== GAME_ROOM_ID) {
+      const denied = { ok: false, error: 'wrong_room' };
+      if (typeof ack === 'function') ack(denied);
+      return;
+    }
+
+    const accepted = { ok: true };
+    if (typeof ack === 'function') ack(accepted);
+    console.log(`training complete requested for room ${GAME_ROOM_ID}; shutting down with exit code 0`);
+
+    setTimeout(() => {
+      httpServer.close(() => process.exit(0));
+      setTimeout(() => process.exit(0), 2000).unref();
+    }, 250).unref();
+  });
+
   socket.on('disconnect', () => {
     aiServiceSockets.delete(socket.id);
     const hasSameSlotAgent = [...aiServiceSockets.values()].some(

@@ -16,6 +16,7 @@ logging.basicConfig(
 log = logging.getLogger("training_spectator")
 
 GAME_SVC_URL = os.getenv("GAME_SVC_URL", "http://game_srvc_train:4000")
+SOCKET_PATH = os.getenv("SOCKET_PATH", "/game/socket.io/")
 SERVICE_SECRET = os.getenv("SERVICE_SECRET", "inter-service-shared-secret-change-in-production")
 ROOM_ID = os.getenv("ROOM_ID", "training-room")
 AI_SLOT = int(os.getenv("AI_SLOT", "1"))
@@ -79,6 +80,7 @@ async def main() -> None:
 
     await sio.connect(
         GAME_SVC_URL,
+        socketio_path=SOCKET_PATH,
         auth={
             "service_secret": SERVICE_SECRET,
             "room_id": ROOM_ID,

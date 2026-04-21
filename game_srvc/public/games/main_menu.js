@@ -11,6 +11,7 @@
 
       this.options = [
         { label: 'Solo (vs ML AI)', mode: 'solo' },
+        { label: 'Combat (1 Player vs AI)', mode: 'combat' },
         { label: '2 Players (Local)', mode: 'local2' },
         { label: '3 Players (2 Local + 1 ML AI)', mode: 'local3' },
         { label: '4 Players (2 Local + 2 ML AI)', mode: 'local4' },
@@ -197,7 +198,7 @@
       ctx.font = '14px monospace';
       ctx.fillStyle = '#666';
       ctx.fillText('Mouse / ↑↓  Select   •   Enter / Space / Click  Start', width / 2, height - 60);
-      ctx.fillText('P1: Arrows + Space   •   P2: WASD + Tab', width / 2, height - 35);
+      ctx.fillText('P1: Arrows + Space   •   Combat mode requires docker compose up', width / 2, height - 35);
       ctx.textAlign = 'left';
     }
 

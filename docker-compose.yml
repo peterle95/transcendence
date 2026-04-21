@@ -166,8 +166,14 @@ services:
       - SOCKET_PATH=/game/socket.io/
       - GAME_ROOM_ID=training-room
       - ENABLE_TRAINING_ROOM=true
-      - TRAINING_SCENARIO=${TRAINING_SCENARIO:-baseline}
+      - TRAINING_SCENARIO=${TRAINING_SCENARIO:-combat}
       - NODE_ENV=development
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     depends_on:
       postgres:
         condition: service_healthy
@@ -177,7 +183,7 @@ services:
       - training
     networks:
       - app_network
-    restart: unless-stopped
+    restart: "no"
 
 # ============================================================================
 # Aggiungi questo blocco al docker-compose.yml esistente, nella sezione services:
@@ -272,12 +278,13 @@ services:
     volumes:
       - ai_logs:/app/logs
     depends_on:
-      - game_srvc_train
+      game_srvc_train:
+        condition: service_healthy
     profiles:
       - training
     networks:
       - app_network
-    restart: "no"
+    restart: on-failure
 
   # Continuous training worker, launched on demand with training profile
   ai_train:
@@ -293,42 +300,47 @@ services:
       - TRAIN_AI_SLOTS=1,2
       - TRAIN_CHECKPOINT_PATH=/app/models/train/dqn_training_checkpoint.pt
       - TRAIN_AUDIT_LOG_PATH=/app/training/AI_Training_Log.md
-      - TRAIN_AUDIT_EVERY=100
-      - WIN_RATE_WINDOW_EPISODES=100
-      - TRAINING_SCENARIO=${TRAINING_SCENARIO:-meteor-only}	#meteor-only, combat, baseline
-      - TRAIN_STEPS=60000
+      - TRAIN_AUDIT_EVERY=250
+      - WIN_RATE_WINDOW_EPISODES=50
+      - TRAINING_SCENARIO=${TRAINING_SCENARIO:-baseline}	#curriculum bootstrap: baseline -> combat
+      - TRAIN_STEPS=100000
       - DQN_EPSILON_START=1
-      - DQN_EPSILON_END=0.05
-      - DQN_EPSILON_DECAY_STEPS=40000
-      - DQN_LR=0.0003	#
+      - DQN_EPSILON_END=0.09
+      - DQN_EPSILON_DECAY_STEPS=100000
+      - DQN_LR=0.00003
       - TRAINING_MODE=true
       - TRAIN_EVAL_ONLY=false
-      - TRAIN_RESUME=true
-      - REWARD_WIN=1.0
-      - REWARD_DEATH=-1.0
-      - REWARD_HIT=0
-      - REWARD_HURT_METEOR=-0.3
-      - REWARD_HURT_LASER=-0.0
-      - REWARD_ALIVE_STEP=0.05
+      - TRAIN_RESUME=false
+      - REWARD_WIN=1.2
+      - REWARD_DEATH=-1
+      - REWARD_HIT=1.2
+      - REWARD_HURT_METEOR=-0.50
+      - REWARD_HURT_LASER=-0.50
+      - REWARD_ALIVE_STEP=0.35
       - REWARD_METEOR_DANGER=-0.05
-      - REWARD_WASTED_SHOT=0
-      - REWARD_ROTATE_STEP=0.000
+      - METEOR_DANGER_DISTANCE_NORM=0.12
       - REWARD_ROTATE_DANGER=0.0000
-      - METEOR_DANGER_DISTANCE_NORM=0.00
+      - REWARD_ROTATE_STEP=0.000
       - ROTATION_DANGER_DISTANCE_NORM=0
+      - REWARD_APPROACH_ENEMY=0.02
+      - REWARD_WASTED_SHOT=0
+      - REWARD_LOW_ENERGY=-0.1	#Laser energy ant-waste policy
+      - LOW_ENERGY_THRESHOLD=20 #Laser
       - LOG_LEVEL=INFO
     volumes:
       - ai_models:/app/models
-      - ai_logs:/app/logs
+      - ai_logs:/app/logs 
       - ./AI_srvc/training:/app/training
     depends_on:
-      - game_srvc_train
-      - ai_train_bot
+      game_srvc_train:
+        condition: service_healthy
+      ai_train_bot:
+        condition: service_started
     profiles:
       - training
     networks:
       - app_network
-    restart: "no"
+    restart: on-failure
 
   # ========================================
   # Nginx Gateway (Local Proxy)
