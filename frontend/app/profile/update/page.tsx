@@ -236,7 +236,7 @@ export default function UpdateProfilePage() {
 										? avatarPreview
 										: currentAvatarUrl
 											? `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}${currentAvatarUrl}`
-											: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
+											: '/default-avatar.png'
 								}
 								alt="Avatar preview"
 								className="rounded-full object-cover border-4 border-blue-500/30"

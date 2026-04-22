@@ -286,7 +286,7 @@ export default function ProfilePage() {
 								src={
 									profile.avatarUrl
 										? `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}${profile.avatarUrl}`
-										: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
+										: '/default-avatar.png'
 								}
 								alt={`${profile.username}'s avatar`}
 								className="rounded-full object-cover border-4 border-blue-500/30"
