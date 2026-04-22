@@ -1,9 +1,11 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-alpine
+ARG NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
 # Prisma requires OpenSSL on Alpine
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl ca-certificates jq curl
 
 # Copy package files and prisma schema first (needed for prisma generate)
 COPY package*.json ./
@@ -25,9 +27,6 @@ ENV NEXT_PUBLIC_AUTH_SERVICE_URL=${NEXT_PUBLIC_AUTH_SERVICE_URL}
 ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
 
 RUN npm run build
-
-# Expose ports
-EXPOSE 3002 4000 
 
 # Start Next.js + Socket.IO together
 CMD ["sh", "-c", "npx prisma migrate deploy && (npm run start:socket & npx next start -H 0.0.0.0 -p 3002)"]

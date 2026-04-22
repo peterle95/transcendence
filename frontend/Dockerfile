@@ -1,6 +1,10 @@
+ARG NEXT_TELEMETRY_DISABLED=1
 FROM node:20-alpine
+ARG NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
+
+RUN apk add --no-cache jq curl ca-certificates
 
 COPY package*.json ./
 
@@ -22,6 +26,4 @@ ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
 
 RUN npm run build
 
-EXPOSE 3003
-
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

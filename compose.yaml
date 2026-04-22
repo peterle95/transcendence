@@ -1,0 +1,338 @@
+# ============================================================================
+# Docker Compose – Secret Management
+# ============================================================================
+
+name: "${PROJECT_NAME?check example.env}"
+
+x-vault-ro: &vault-ro
+  source: "vault_data"
+  read_only: true
+
+x-type-entry: &type-entry
+    <<: *vault-ro
+    target: "/entry"
+    volume:
+      nocopy: true
+      subpath: "share/entry"
+
+x-type-ca-root: &type-ca-root
+    <<: *vault-ro
+    target: "/usr/local/share/ca-certificates"
+    volume:
+      nocopy: true
+      subpath: "share/ca_root"
+
+x-type-ca-cert: &type-ca-cert
+    <<: *vault-ro
+    target: "/certs"
+    volume:
+      nocopy: true
+
+x-health: &health
+  start_period:   "${GRACE_PERIOD}m"
+  start_interval: "${GRACE_PERIOD}0s"
+  interval:       "${GRACE_PERIOD}m"
+  timeout:        "${GRACE_PERIOD}0s"
+  retries:        "${GRACE_PERIOD}"
+
+x-depends-on-vault: &depends-on-vault
+  depends_on:
+    vault:
+      condition: "service_healthy"
+      restart: "true"
+
+x-ai-srvc:  &ai-srvc
+    build: "./ai_srvc"
+    <<: *depends-on-vault 
+    entrypoint: &entrypoint
+      - "/entry/point"
+    command: [ "python", "main.py" ]
+    depends_on: [ "game_srvc" ]
+    volumes:
+      - "./ai_models:/app/models:ro"
+      - "ai_logs:/app/logs"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/ai_srvc"}
+    networks: [ "ai_net" ]
+    restart: "unless-stopped"
+
+x-net: &net
+  driver: "bridge"
+  attachable: false
+  enable_ipv6: false
+
+
+services:
+  # ── nginx - Reverse Proxy ───────────────────────────────────────
+  nginx:
+    build:
+      dockerfile_inline: |
+        FROM scratch
+        COPY --from=ghcr.io/coreruleset/coraza-crs:4.25.0-nginx-lts / /
+        RUN apt-get update -qq && apt-get upgrade -qq && apt-get    \
+        install --no-install-recommends -qq jq ca-certificates gosu \
+        curl jq && rm -rf /var/cache/apt/archives /var/lib/apt/lists/*
+    entrypoint: *entrypoint
+    command: [ "gosu","nginx", "nginx", "-g daemon off;" ]
+    container_name: "${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"
+    hostname: "${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
+    ports:
+      - "${LOCAL:+127.0.0.1:}${NGINX_TCP}"
+      - "${LOCAL:+127.0.0.1:}${NGINX_TLS}"
+      - "${LOCAL:+127.0.0.1:}${NGINX_UDP}"
+    <<: *depends-on-vault 
+    depends_on: [ "frontend" ]
+    volumes:
+      - "./nginx/nginx.conf.tmp:/nginx.conf.tmp:ro"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/${NGINX_CODENAME}_${REV_PROXY_NAMESPACE}"}
+    networks:
+      service_net:  {ipv4_address: "10.133.7.25"}
+      proxy_net:  {ipv4_address: "${NGINX_PROXY_IP}"}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
+      <<: *health
+    restart: "unless-stopped"
+
+  # ── Frontend ────────────────────────────────────────────────────
+  frontend:
+    build:  "./frontend"
+    entrypoint: *entrypoint
+    command: [ "npm", "run", "dev" ]
+    container_name: "frontend_service"
+    hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
+    expose: [ "${FRONTEND_PORT}" ]
+    depends_on: [ "game_srvc", "chat_srvc" ]
+    volumes:
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/frontend"}
+    networks: {service_net: {ipv4_address: "10.133.7.20"}}
+    restart: "unless-stopped"
+
+  # ── AI Service (DQN Player Bots) ────────────────────────────────
+  ai_srvc:
+    container_name: "ai_service"
+    hostname: "ai-1.${PROJECT_NAME}-${AI_NAMESPACE}"
+    <<: *ai-srvc
+
+  ai_srvc_slot2:
+    hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
+    container_name: "ai_service_slot2"
+    <<: *ai-srvc
+
+  ai_srvc_slot3:
+    hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
+    container_name: "ai_service_slot3"
+    <<: *ai-srvc
+
+  # ── Game Service ────────────────────────────────────────────────
+  game_srvc:
+    build: "./game_srvc"
+    entrypoint: *entrypoint
+    command: [ "/app/docker-start.sh" ]
+    container_name: "game_service"
+    hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
+    expose: [ "${GAME_PORT}", "${SOCKET_PORT}" ]
+    depends_on: [ "auth_srvc" ]
+    volumes:
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/game_srvc"}
+    networks:
+      service_net: {ipv4_address: "10.133.7.19"}
+      ai_net: {ipv4_address: "10.133.7.3"}
+    restart: "unless-stopped"
+
+  # ── Chat Service ────────────────────────────────────────────────
+  chat_srvc:
+    build: "./chat_srvc"
+    entrypoint: *entrypoint
+    command: [ "npm", "start" ]
+    container_name: "chat_service"
+    hostname: "chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
+    expose: [ "${CHAT_PORT}" ]
+    depends_on:
+      mongo:  {condition: "service_healthy"}
+      auth_srvc:  {condition: "service_started"}
+    volumes:
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/chat_srvc"}
+    networks: {service_net: {ipv4_address: "10.133.7.21"}}
+    restart: "unless-stopped"
+
+  # ── Auth Service ────────────────────────────────────────────────
+  auth_srvc:
+    build: "./auth_srvc"
+    entrypoint: *entrypoint
+    command: [ "sh", "-c", "npx prisma migrate deploy && npm run dev" ]
+    container_name: "auth_service"
+    hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
+    expose: [ "${AUTH_PORT}" ]
+    depends_on:
+      {postgres:  {condition: "service_healthy"}}
+    volumes:
+      - "avatar_uploads:/app/uploads/avatars"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/auth_srvc"}
+    networks: {service_net: {ipv4_address: "10.133.7.22"}}
+    restart: "unless-stopped"
+
+  # ── PostgreSQL ──────────────────────────────────────────────────
+  postgres:
+    build:
+      dockerfile_inline: |
+        FROM postgres:15-alpine
+        RUN apk add --no-cache \
+        -q ca-certificates jq curl
+    entrypoint: *entrypoint
+    command: [ "su-exec", "postgres", "postgres" ]
+    container_name: "postgres_${DATABASE_NAMESPACE}"
+    hostname: "postgres.${PROJECT_NAME}-${DATABASE_NAMESPACE}"
+    expose: [ "${POSTGRES_PORT}" ]
+    <<: *depends-on-vault 
+    volumes:
+      - "postgres_data:${POSTGRES_DATA_DIR}"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/postgres_${DATABASE_NAMESPACE}"}
+    networks: {service_net: {ipv4_address: "10.133.7.24"}}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -p ${POSTGRES_PORT}"]
+      <<: *health
+    restart: "unless-stopped"
+
+  # ── MongoDB ─────────────────────────────────────────────────────
+  mongo:
+    build:
+      dockerfile_inline: |
+        FROM mongo:7-jammy
+        RUN  apt-get -qq \
+        update &&apt-get \
+        upgrade -qq &&apt\
+        -get install -qq \
+        curl --no-install\
+        -recommends jq ca\
+        -certificates && \
+        rm -rf /var/cache\
+        /apt/archives /va\
+        r/lib/apt/lists/*
+    entrypoint: *entrypoint
+    command: [ "mongod", "--quiet", "--logpath", "/dev/null" ]
+    container_name: "mongo_${DATABASE_NAMESPACE}"
+    hostname: "mongo.${PROJECT_NAME}-${DATABASE_NAMESPACE}"
+    expose: [ "${MONGO_PORT}" ]
+    <<: *depends-on-vault 
+    volumes:
+      - "mongo_data:/data/db"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/mongo_${DATABASE_NAMESPACE}"}
+    networks: {service_net: {ipv4_address: "10.133.7.23"}}
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      <<: *health
+    restart: "unless-stopped"
+
+  # ── Tor - Hidden Service ────────────────────────────────────────
+  tor:
+    profiles: [ "hidden_service" ]
+    build:
+      dockerfile_inline: |
+        FROM alpine:3.23.3
+        RUN apk add --no-cache -q tor \
+        jq curl ca-certificates su-exec
+    entrypoint: *entrypoint
+    command: [ "su-exec", "tor", "/usr/bin/tor" ]
+    container_name: "${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
+    hostname: "${TOR_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
+    ports:  [ "${HIDDEN_SERVICE_PORT}" ]
+    <<: *depends-on-vault
+    volumes:
+      - "tor_data:${TOR_DATA_DIR}"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"}
+    networks: {proxy_net: {ipv4_address: "${TOR_PROXY_IP}"}}
+    restart: "unless-stopped"
+
+  # ── Vault - Secret Management ──────────────────────────────────
+  vault:
+    env_file: ".env"
+    build:
+      dockerfile_inline: |
+        # syntax=docker/dockerfile:1
+        FROM scratch
+        COPY --from=hashicorp/vault:1.21.4 / /
+        COPY --from=ghcr.io/cathugger/mkp224o:master / /
+        COPY --parents --chmod=400 ./*/wants.* /wanted/
+        RUN apk add --no-cache -q gpg ca-certificates jq openssl curl sed
+        COPY --chmod=100 ⠀ /
+    entrypoint: /⠀
+    container_name: "vault_secret_service"
+    hostname: "${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}"
+    expose: [ "${VAULT_PORT}" ]
+    volumes: [ "./export:/export", "vault_data:/vault" ]
+    networks:
+      service_net:  {ipv4_address: "10.133.7.18"}
+      proxy_net:  {ipv4_address: "${VAULT_PROXY_IP}"}
+      ai_net: {ipv4_address: "10.133.7.2"}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f ${HTTP}${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}:${VAULT_PORT}/v1/sys/health"]
+      <<: *health
+    restart: "on-failure:1"
+    cap_add: [ "${MLOCK_ENABLED:+IPC_LOCK}" ]
+
+volumes:  { "postgres_data", "mongo_data", "avatar_uploads",
+          "ai_models", "ai_logs", "tor_data", "vault_data" }
+
+networks:
+  service_net:
+    <<: *net
+    ipam: {config: [subnet: "${SERVICE_SUBNET}"]}
+  proxy_net:
+    <<: *net
+    ipam: {config: [subnet: "${PROXY_SUBNET}"]}
+  ai_net:
+    <<: *net
+    ipam: {config: [subnet: "${AI_SUBNET}"]}
