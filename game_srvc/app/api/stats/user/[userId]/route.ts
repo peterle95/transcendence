@@ -50,6 +50,19 @@ export async function GET(
     })
   } catch (error) {
     console.error('[stats/user]', error)
-    return NextResponse.json({ error: 'Failed to fetch user stats' }, { status: 500 })
+    return NextResponse.json({
+      playerId: userId,
+      username: null,
+      totalGamesPlayed: 0,
+      totalWins: 0,
+      totalLosses: 0,
+      totalDraws: 0,
+      totalShipsDestroyed: 0,
+      totalShipsLost: 0,
+      totalShotsFired: 0,
+      totalShotsHit: 0,
+      winRate: null,
+      accuracy: null,
+    })
   }
 }

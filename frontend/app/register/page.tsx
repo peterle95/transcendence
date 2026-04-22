@@ -46,7 +46,7 @@ export default function RegisterPage() {
 			)
 			const { csrfToken } = await csrfResponse.json()
 
-			await fetch(
+			const signInResponse = await fetch(
 				`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/callback/credentials`,
 				{
 					method: 'POST',
@@ -61,6 +61,11 @@ export default function RegisterPage() {
 					}),
 				}
 			)
+
+			const signInData = await signInResponse.json()
+			if (!signInResponse.ok || (signInData.url && signInData.url.includes('error='))) {
+				throw new Error('Auto-login failed. Please sign in manually.')
+			}
 
 			router.replace('/')
 		} catch (err) {

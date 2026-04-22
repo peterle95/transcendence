@@ -30,4 +30,4 @@ RUN npm run build
 EXPOSE 3002 4000 
 
 # Start Next.js + Socket.IO together
-CMD ["sh", "/app/docker-start.sh"]
+CMD ["sh", "-c", "npx prisma migrate deploy && (npm run start:socket & npx next start -H 0.0.0.0 -p 3002)"]
