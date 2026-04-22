@@ -208,7 +208,7 @@ export default function ChatInterface({ myId, myUsername, participants, authToke
   };
 
   const handleLaunchGame = async () => {
-    const gameUrl = '/game';
+    const gameUrl = '/game/games/space_supremacy/index.html?mode=online';
     for (const p of participants) {
       try {
         await fetch(`${CHAT_PUBLIC_BASE}/api/game-invite`, {

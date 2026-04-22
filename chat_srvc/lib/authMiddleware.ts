@@ -49,9 +49,9 @@ export async function authenticateRequest(request: Request): Promise<AuthResult 
 
     return {
       authenticated: true,
-      userId: data.userId,
+      userId: Number(data.userId),
       user: {
-        userId: data.userId,
+        userId: Number(data.userId),
         username: data.username,
         email: data.email,
       },
