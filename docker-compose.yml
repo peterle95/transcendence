@@ -1,0 +1,377 @@
+# ============================================================================
+# Docker Compose - Architecture Blueprint
+# ============================================================================
+
+services:
+  # ========================================
+  # PostgreSQL Database
+  # Used by: Auth Service (future), Game Service (future)
+  # ========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      # Create multiple databases for different services
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Initialize multiple databases on startup
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # MongoDB Database
+  # Used by: Chat Service (functional)
+  # ========================================
+  mongo:
+    image: mongo:7-jammy
+    container_name: mongo_db
+    command: ["mongod", "--quiet", "--logpath", "/dev/null"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Auth Service - ✅ FUNCTIONAL
+  # Handles authentication, user management, and friendships
+  # ========================================
+  auth_srvc:
+    build: ./auth_srvc
+    container_name: auth_service
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/auth_db
+      - AUTH_SECRET=3f4b9c1c0c6a2f2a8e7d9c4b1a5e6f0c3b7d2a1f9e8c6b5d4a3f2c1e0b9a8d7
+      - NEXTAUTH_URL=http://localhost:8080/auth
+      - CORS_ALLOWED_ORIGIN=http://localhost:8080
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - NODE_ENV=production
+    command: sh -c "npx prisma migrate deploy && npx next start -H 0.0.0.0 -p 3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # ========================================
+  # Chat Service - ✅ FUNCTIONAL
+  # The ONLY fully implemented service
+  # ========================================
+  chat_srvc:
+    build: ./chat_srvc
+    container_name: chat_service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/chat-service
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+      - NEXT_PUBLIC_GAME_SERVICE_URL=/game
+      - SOCKET_IO_ALLOWLIST=http://localhost:8080
+      - SOCKET_PATH=/chat/socket.io/
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - HOSTNAME=0.0.0.0
+      - NODE_ENV=development
+    depends_on:
+      mongo:
+        condition: service_healthy
+      auth_srvc:
+        condition: service_started
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # Frontend
+  #
+  #
+  frontend:
+    build: ./frontend
+    container_name: frontend_service
+    ports:
+      - "3003:3003"
+    environment:
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
+      - NEXT_PUBLIC_AUTH_SERVICE_URL=/auth
+      - CHAT_SERVICE_URL=http://chat_srvc:3001
+      - NEXT_PUBLIC_CHAT_SERVICE_URL=/chat
+      - GAME_SERVICE_URL=http://game_srvc:3002
+      - NEXT_PUBLIC_GAME_SERVICE_URL=/game
+      - NODE_ENV=production
+    command: npx next start -H 0.0.0.0 -p 3003
+    depends_on:
+      - auth_srvc
+      - chat_srvc
+    networks:
+      - app_network
+
+  # Game Service - Serves games from public/games/
+  game_srvc:
+    build: ./game_srvc
+    container_name: game_service
+    ports:
+      - "3002:3002"
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - SOCKET_CORS_ORIGIN=http://localhost:8080
+      - SOCKET_PORT=4000
+      - SOCKET_IO_ALLOWLIST=http://localhost:8080
+      - SOCKET_PATH=/game/socket.io/
+      - GAME_ROOM_ID=gameplay-room
+      - ENABLE_TRAINING_ROOM=false
+      - REMOTE_MULTIPLAYER_ENABLED=false
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth_srvc:
+        condition: service_started
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # Dedicated training game server instance (isolated from player gameplay)
+  game_srvc_train:
+    build: ./game_srvc
+    container_name: game_train_service
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/game_db
+      - AUTH_SERVICE_URL=http://auth_srvc:3000/auth
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - SOCKET_CORS_ORIGIN=http://localhost:8080
+      - SOCKET_PORT=4000
+      - SOCKET_IO_ALLOWLIST=http://localhost:8080
+      - SOCKET_PATH=/game/socket.io/
+      - GAME_ROOM_ID=training-room
+      - ENABLE_TRAINING_ROOM=true
+      - NODE_ENV=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth_srvc:
+        condition: service_started
+    profiles:
+      - training
+    networks:
+      - app_network
+    restart: unless-stopped
+
+# ============================================================================
+# Aggiungi questo blocco al docker-compose.yml esistente, nella sezione services:
+# ============================================================================
+
+  # ========================================
+  # AI Service - DQN Player
+  # Socket.IO client: riceve ai_game_state e invia ai_command
+  # ========================================
+  ai_srvc:
+    build: ./AI_srvc
+    container_name: ai_service
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/game/socket.io/
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - ROOM_ID=gameplay-room
+      - AI_SLOT=1
+      - MODEL_PATH=/app/models/live/dqn_latest.pt
+      - MODEL_AUTO_RELOAD=true
+      - MODEL_RELOAD_INTERVAL_S=5
+      - TRAINING_MODE=false   # true = training contro bot, false = inference live
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models:ro  # inference reads stable model only
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  ai_srvc_slot2:
+    build: ./AI_srvc
+    container_name: ai_service_slot2
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/game/socket.io/
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - ROOM_ID=gameplay-room
+      - AI_SLOT=2
+      - MODEL_PATH=/app/models/live/dqn_latest.pt
+      - MODEL_AUTO_RELOAD=true
+      - MODEL_RELOAD_INTERVAL_S=5
+      - TRAINING_MODE=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models:ro
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  ai_srvc_slot3:
+    build: ./AI_srvc
+    container_name: ai_service_slot3
+    environment:
+      - GAME_SVC_URL=http://game_srvc:4000
+      - SOCKET_PATH=/game/socket.io/
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - ROOM_ID=gameplay-room
+      - AI_SLOT=3
+      - MODEL_PATH=/app/models/live/dqn_latest.pt
+      - MODEL_AUTO_RELOAD=true
+      - MODEL_RELOAD_INTERVAL_S=5
+      - TRAINING_MODE=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models:ro
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # One-shot training worker, launched on demand: docker compose up ai_train
+  ai_train_bot:
+    build: ./AI_srvc
+    container_name: ai_train_bot_service
+    environment:
+      - GAME_SVC_URL=http://game_srvc_train:4000
+      - SOCKET_PATH=/game/socket.io/
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - ROOM_ID=training-room
+      - AI_SLOT=2
+      - MODEL_PATH=/app/models/train/opponent_latest.pt
+      - TRAINING_MODE=false
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc_train
+    profiles:
+      - training
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # Continuous training worker, launched on demand with training profile
+  ai_train:
+    build: ./AI_srvc
+    container_name: ai_train_service
+    environment:
+      - GAME_SVC_URL=http://game_srvc_train:4000
+      - SOCKET_PATH=/game/socket.io/
+      - SERVICE_SECRET=inter-service-shared-secret-change-in-production
+      - ROOM_ID=training-room
+      - AI_SLOT=1
+      - TRAIN_AI_SLOTS=1,2
+      - TRAIN_STEPS=0
+      - MODEL_PATH=/app/models/train/dqn_latest.pt
+      - TRAIN_CHECKPOINT_PATH=/app/models/train/dqn_training_checkpoint.pt
+      - TRAINING_MODE=true
+      - LOG_LEVEL=INFO
+    volumes:
+      - ai_models:/app/models
+      - ai_logs:/app/logs
+    depends_on:
+      - game_srvc_train
+      - ai_train_bot
+    profiles:
+      - training
+    networks:
+      - app_network
+    restart: unless-stopped
+
+  # Promote trained model to live path atomically
+  ai_promote:
+    build: ./AI_srvc
+    container_name: ai_promote_service
+    command: ["python", "tools/promote_model.py"]
+    environment:
+      - PROMOTE_SOURCE_PATH=/app/models/train/dqn_latest.pt
+      - PROMOTE_TARGET_PATH=/app/models/live/dqn_latest.pt
+      - PROMOTE_VALIDATE=true
+      - PROMOTE_BACKUP=true
+    volumes:
+      - ai_models:/app/models
+    profiles:
+      - training
+    networks:
+      - app_network
+    restart: "no"
+
+  # ========================================
+  # Nginx Gateway (Local Proxy)
+  # ========================================
+  nginx:
+    image: nginx:alpine
+    container_name: local_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - auth_srvc
+      - chat_srvc
+      - game_srvc
+    networks:
+      - app_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
+  ai_models:
+    driver: local
+  ai_logs:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
+
+# ============================================================================
+# Quick Start
+# ============================================================================
+#
+# Access Chat Service:
+#   http://localhost:8080/chat/api/chat/send
+#   http://localhost:8080/chat/api/chat/history
+#
+# Connect to databases:
+#   PostgreSQL: postgresql://postgres:password@localhost:5433/
+#   MongoDB: mongodb://localhost:27017/
+#
+# View logs:
+#   docker-compose logs -f chat_srvc
+#
+# Stop services:
+#   docker-compose down
+# ============================================================================
