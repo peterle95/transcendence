@@ -35,53 +35,43 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const friend_id_str = searchParams.get('friend_id');
+    const explicit_room_id = searchParams.get('room_id');
 
-    if (!friend_id_str) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'friend_id query parameter is required',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    let room_id: string;
 
-    const friend_id = parseInt(friend_id_str, 10);
-
-    if (isNaN(friend_id) || friend_id <= 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'friend_id must be a valid positive number',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    //don't query self
-    if (user_id === friend_id) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Cannot retrieve conversation with yourself',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+    if (explicit_room_id && explicit_room_id.startsWith('group_')) {
+      const ids = explicit_room_id.slice(6).split('_').map(Number);
+      if (ids.some(isNaN) || ids.length < 2 || !ids.includes(user_id)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid group room_id or user not a member' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      room_id = explicit_room_id;
+    } else {
+      if (!friend_id_str) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'friend_id or room_id query parameter is required' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      const friend_id = parseInt(friend_id_str, 10);
+      if (isNaN(friend_id) || friend_id <= 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'friend_id must be a valid positive number' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      if (user_id === friend_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cannot retrieve conversation with yourself' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      room_id = Message.generateRoomId(user_id, friend_id);
     }
 
     await dbConnect();
-
-    //room_id
-    const room_id = Message.generateRoomId(user_id, friend_id);
 
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100);
     const before = searchParams.get('before');
