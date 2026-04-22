@@ -7,17 +7,23 @@ import Link from 'next/link'
 interface UserProfile {
 	username: string
 	avatarUrl: string | null
-	wins: number
-	losses: number
-	points: number
 }
 
 interface Friend {
 	id: number
 	username: string
-	wins: number
-	losses: number
-	points: number
+}
+
+interface UserStats {
+	totalGamesPlayed: number
+	totalWins: number
+	totalLosses: number
+	totalShipsDestroyed: number
+	totalShipsLost: number
+	totalShotsFired: number
+	totalShotsHit: number
+	winRate: number | null
+	accuracy: number | null
 }
 
 interface GameOpponent {
@@ -48,6 +54,7 @@ export default function ProfilePage() {
 	const params = useParams()
 	const router = useRouter()
 	const [profile, setProfile] = useState<UserProfile | null>(null)
+	const [userStats, setUserStats] = useState<UserStats | null>(null)
 	const [friends, setFriends] = useState<Friend[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState('')
@@ -103,6 +110,17 @@ export default function ProfilePage() {
 					}
 				}
 
+				try {
+					const statsResponse = await fetch(
+						`${process.env.NEXT_PUBLIC_GAME_SERVICE_URL}/api/stats/user/${userId}`
+					)
+					if (statsResponse.ok) {
+						const statsData = await statsResponse.json()
+						setUserStats(statsData)
+					}
+				} catch {
+					// stats unavailable — page renders with null state
+				}
 
 				try {
 					const historyResponse = await fetch(
@@ -114,7 +132,7 @@ export default function ProfilePage() {
 						setHistoryTotal(historyData.total || 0)
 					}
 				} catch {
-					
+
 				}
 			} catch (err) {
 				setError((err as Error).message)
@@ -138,7 +156,7 @@ export default function ProfilePage() {
 				setHistoryOffset(nextOffset)
 			}
 		} catch {
-			
+
 		}
 	}
 
@@ -283,21 +301,33 @@ export default function ProfilePage() {
 								</dd>
 							</div>
 							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
+								<dt className="text-sm font-medium text-blue-200">Games Played</dt>
+								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
+									{userStats?.totalGamesPlayed ?? '--'}
+								</dd>
+							</div>
+							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
 								<dt className="text-sm font-medium text-blue-200">Wins</dt>
 								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
-									{profile.wins}
+									{userStats?.totalWins ?? '--'}
 								</dd>
 							</div>
 							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
 								<dt className="text-sm font-medium text-blue-200">Losses</dt>
 								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
-									{profile.losses}
+									{userStats?.totalLosses ?? '--'}
 								</dd>
 							</div>
 							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
-								<dt className="text-sm font-medium text-blue-200">Points</dt>
+								<dt className="text-sm font-medium text-blue-200">Win Rate</dt>
 								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
-									{profile.points}
+									{userStats?.winRate != null ? Math.round(userStats.winRate) + '%' : '--'}
+								</dd>
+							</div>
+							<div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-white/5 transition-colors">
+								<dt className="text-sm font-medium text-blue-200">Accuracy</dt>
+								<dd className="mt-1 text-sm font-semibold text-white sm:mt-0 sm:col-span-2">
+									{userStats?.accuracy != null ? Math.round(userStats.accuracy) + '%' : '--'}
 								</dd>
 							</div>
 						</dl>
@@ -305,7 +335,7 @@ export default function ProfilePage() {
 				</div>
 
 				{isOwnProfile && (
-					<div 
+					<div
 						style={{
 							background: 'rgba(255,255,255,0.06)',
 							border: '1px solid rgba(255,255,255,0.12)',
@@ -340,7 +370,7 @@ export default function ProfilePage() {
 					</div>
 				)}
 
-				{isOwnProfile && <div 
+				{isOwnProfile && <div
 					style={{
 						background: 'rgba(255,255,255,0.06)',
 						border: '1px solid rgba(255,255,255,0.12)',
@@ -380,11 +410,6 @@ export default function ProfilePage() {
 														<p className="text-sm font-bold text-blue-400 group-hover:text-blue-300 transition-colors truncate">
 															{friend.username}
 														</p>
-														<div className="mt-1 flex items-center gap-4 text-xs font-semibold text-gray-400">
-															<span>Wins: <span className="text-gray-200">{friend.wins}</span></span>
-															<span>Losses: <span className="text-gray-200">{friend.losses}</span></span>
-															<span>Points: <span className="text-blue-300">{friend.points}</span></span>
-														</div>
 													</div>
 													<div>
 														<svg
