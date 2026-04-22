@@ -83,33 +83,42 @@ export default function ChatInterface({ myId, myUsername, participants, authToke
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const fetchHistory = useCallback(async () => {
+    if (isGroup) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const queryParam = isGroup
-        ? `room_id=${encodeURIComponent(roomId)}`
-        : `friend_id=${participants[0].id}`;
-      const res = await fetch(`${CHAT_PUBLIC_BASE}/api/chat/history?${queryParam}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
+      const res = await fetch(
+        `${CHAT_PUBLIC_BASE}/api/chat/history?friend_id=${participants[0].id}`,
+        {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${authToken}` },
+          signal: controller.signal,
+        },
+      );
+
+      if (controller.signal.aborted) return;
 
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.messages) {
-          setMessages((prev) => {
-            const combined = [...data.messages, ...prev];
-            const uniqueMap = new Map();
-            combined.forEach((msg: MessageWithUsername) => { if (msg._id) uniqueMap.set(msg._id, msg); });
-            return Array.from(uniqueMap.values()).sort((a: any, b: any) =>
+          setMessages(
+            [...data.messages].sort((a: any, b: any) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            );
-          });
+            ),
+          );
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return;
       console.error("Fetch history error:", err);
     }
-  }, [participants, authToken, roomId, isGroup]);
+  }, [participants, authToken, isGroup]);
 
   const roomIdRef = useRef(roomId);
   const fetchHistoryRef = useRef(fetchHistory);
