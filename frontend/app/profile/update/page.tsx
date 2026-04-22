@@ -184,9 +184,21 @@ export default function UpdateProfilePage() {
 				throw new Error('Failed to delete account')
 			}
 
+			const csrfResponse = await fetch(
+				`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`,
+				{ credentials: 'include' }
+			)
+			const { csrfToken } = await csrfResponse.json()
+
 			await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
 				method: 'POST',
 				credentials: 'include',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({
+					csrfToken,
+					callbackUrl: '/login',
+					json: 'true',
+				}),
 			})
 
 			router.push('/login')
