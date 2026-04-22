@@ -2844,7 +2844,17 @@ for (let i = 0; i < this.players.length; i++) {
    ═══════════════════════════════════════════════════════════════════════ */
 function startGame(canvas) {
   const game = new Game(canvas);
-  game.init();
+  game.init().then(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const autoMode = params.get('mode');
+      if (autoMode === 'online' && window.REMOTE_MULTIPLAYER_ENABLED !== false) {
+        game.selectedMode = 'online';
+        game._setupPlayers('online');
+        game.state = 'playing';
+      }
+    }
+  });
   return game;
 }
 
