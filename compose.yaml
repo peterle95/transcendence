@@ -250,7 +250,7 @@ services:
         /apt/archives /va\
         r/lib/apt/lists/*
     entrypoint: *entrypoint
-    command: [ "mongod", "--quiet", "--logpath", "/dev/null" ]
+    command: [ "mongod", "--quiet", "--logpath", "/dev/null", "--bind_ip", "127.0.0.1, 10.133.7.23" ]
     container_name: "mongo_${DATABASE_NAMESPACE}"
     hostname: "mongo.${PROJECT_NAME}-${DATABASE_NAMESPACE}"
     expose: [ "${MONGO_PORT}" ]

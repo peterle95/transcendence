@@ -1,19 +1,24 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ChatInterface from './components/ChatInterface';
 import { CHAT_PUBLIC_BASE } from '@/lib/chatPublicBase';
 import type { User } from '@/types';
 
-// Changed fallback from http://localhost:3000 to /auth to work in production behind Nginx
 const AUTH_SERVICE_URL = process.env.NEXT_PUBLIC_AUTH_SERVICE_URL || '/auth';
+
+interface RoomParticipant {
+  id: number;
+  username: string;
+}
 
 export default function DashboardPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [friends, setFriends] = useState<User[]>([]);
-  const [activeChatFriend, setActiveChatFriend] = useState<number | null>(null);
+  const [roomParticipants, setRoomParticipants] = useState<RoomParticipant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
 
   useEffect(() => { authenticate(); }, []);
 
@@ -58,6 +63,43 @@ export default function DashboardPage() {
     }
   };
 
+  const handleFriendClick = (friend: User) => {
+    setRoomParticipants([{ id: friend.id, username: friend.username }]);
+  };
+
+  const handleDragStart = (e: React.DragEvent, friend: User) => {
+    e.dataTransfer.setData('text/friend-id', String(friend.id));
+    e.dataTransfer.effectAllowed = 'copy';
+    setDraggingId(friend.id);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingId(null);
+  };
+
+  const addParticipant = useCallback((friendId: number) => {
+    if (!currentUser) return;
+    if (friendId === currentUser.id) return;
+
+    setRoomParticipants(prev => {
+      if (prev.some(p => p.id === friendId)) return prev;
+      const friend = friends.find(f => f.id === friendId);
+      if (!friend) return prev;
+
+      if (prev.length === 0) {
+        return [{ id: friend.id, username: friend.username }];
+      }
+      return [...prev, { id: friend.id, username: friend.username }];
+    });
+  }, [currentUser, friends]);
+
+  const removeParticipant = (participantId: number) => {
+    setRoomParticipants(prev => {
+      const next = prev.filter(p => p.id !== participantId);
+      return next;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative z-10" style={{ background: 'var(--cyber-bg)' }}>
@@ -100,6 +142,8 @@ export default function DashboardPage() {
     );
   }
 
+  const hasRoom = roomParticipants.length > 0;
+
   return (
     <div className="min-h-screen relative z-10" style={{ background: 'var(--cyber-bg)' }}>
       {/* Header */}
@@ -123,7 +167,6 @@ export default function DashboardPage() {
           <span className="font-black tracking-widest text-lg" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--violet, #8B008B)', textShadow: '0 0 10px rgba(64, 0, 255, 0.68)' }}>            
             <button
                 onClick={() => {
-                  // document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                   window.location.href = '/';
                 }}
                 className="text-xs hover:underline"
@@ -139,16 +182,24 @@ export default function DashboardPage() {
 
         {/* System path */}
         <div className="text-xs tracking-widest pt-2" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
-          SYS://COMMS &gt; SELECT_CHANNEL
+          SYS://COMMS &gt; {hasRoom ? 'ACTIVE_CHANNEL' : 'SELECT_CHANNEL'}
+          {hasRoom && roomParticipants.length > 1 && ' // GROUP_MODE'}
         </div>
 
         {/* Friends / Channels */}
         <div style={{ border: '1px solid var(--cyber-border)', background: 'var(--cyber-surface)', clipPath: 'polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px))' }}>
-          <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'var(--cyber-border)' }}>
-            <div className="w-1 h-4" style={{ background: 'var(--cyber-cyan)', boxShadow: '0 0 6px var(--cyber-cyan)' }} />
-            <span className="text-xs font-bold tracking-widest" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)' }}>
-              NETWORK ({friends.length}_OPERATORS)
-            </span>
+          <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--cyber-border)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-4" style={{ background: 'var(--cyber-cyan)', boxShadow: '0 0 6px var(--cyber-cyan)' }} />
+              <span className="text-xs font-bold tracking-widest" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)' }}>
+                NETWORK ({friends.length}_OPERATORS)
+              </span>
+            </div>
+            {hasRoom && (
+              <span className="text-xs animate-pulse" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
+                DRAG_OPERATOR_TO_CHANNEL ↓
+              </span>
+            )}
           </div>
 
           <div className="p-5">
@@ -165,27 +216,34 @@ export default function DashboardPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {friends.map((friend) => {
-                  const isActive = activeChatFriend === friend.id;
+                  const isInRoom = roomParticipants.some(p => p.id === friend.id);
+                  const isDragging = draggingId === friend.id;
                   return (
                     <button
                       key={friend.id}
-                      onClick={() => setActiveChatFriend(friend.id)}
-                      className="p-4 text-left transition-all"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, friend)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => handleFriendClick(friend)}
+                      className="p-4 text-left transition-all select-none"
                       style={{
-                        border: `1px solid ${isActive ? 'var(--cyber-cyan)' : 'var(--cyber-border)'}`,
-                        background: isActive ? 'rgba(0,229,255,0.1)' : 'transparent',
-                        boxShadow: isActive ? '0 0 10px rgba(0,229,255,0.2)' : 'none',
+                        border: `1px solid ${isInRoom ? 'var(--cyber-cyan)' : 'var(--cyber-border)'}`,
+                        background: isInRoom ? 'rgba(0,229,255,0.1)' : 'transparent',
+                        boxShadow: isInRoom ? '0 0 10px rgba(0,229,255,0.2)' : 'none',
                         fontFamily: 'Share Tech Mono, monospace',
+                        opacity: isDragging ? 0.5 : 1,
+                        cursor: 'grab',
                       }}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: isActive ? 'var(--cyber-cyan)' : 'var(--cyber-muted)', boxShadow: isActive ? '0 0 4px var(--cyber-cyan)' : 'none' }} />
-                        <span className="text-xs font-bold truncate" style={{ color: isActive ? 'var(--cyber-cyan)' : 'var(--cyber-text)' }}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: isInRoom ? 'var(--cyber-cyan)' : 'var(--cyber-muted)', boxShadow: isInRoom ? '0 0 4px var(--cyber-cyan)' : 'none' }} />
+                        <span className="text-xs font-bold truncate" style={{ color: isInRoom ? 'var(--cyber-cyan)' : 'var(--cyber-text)' }}>
                           {friend.username}
                         </span>
+                        <span className="text-xs ml-auto" style={{ color: 'var(--cyber-muted)', opacity: 0.5 }}>⠿</span>
                       </div>
-                      {isActive && (
-                        <span className="text-xs" style={{ color: 'var(--cyber-muted)' }}>CHANNEL_OPEN</span>
+                      {isInRoom && (
+                        <span className="text-xs" style={{ color: 'var(--cyber-muted)' }}>IN_CHANNEL</span>
                       )}
                     </button>
                   );
@@ -195,19 +253,63 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Active room participants strip */}
+        {hasRoom && roomParticipants.length > 1 && (
+          <div
+            className="flex items-center gap-3 px-5 py-3"
+            style={{
+              border: '1px solid var(--cyber-border)',
+              background: 'rgba(0,229,255,0.03)',
+            }}
+          >
+            <span className="text-xs tracking-widest flex-shrink-0" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
+              ROOM:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {roomParticipants.map((p) => (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 text-xs"
+                  style={{
+                    border: '1px solid rgba(0,229,255,0.3)',
+                    background: 'rgba(0,229,255,0.08)',
+                    fontFamily: 'Share Tech Mono, monospace',
+                    color: 'var(--cyber-cyan)',
+                  }}
+                >
+                  {p.username}
+                  <button
+                    onClick={() => removeParticipant(p.id)}
+                    className="hover:opacity-100 transition-opacity"
+                    style={{ color: 'var(--cyber-red)', opacity: 0.6, cursor: 'pointer' }}
+                    title={`Remove ${p.username}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Chat window */}
-        {activeChatFriend && (
+        {hasRoom && (
           <ChatInterface
             myId={currentUser.id}
-            friendId={activeChatFriend}
+            myUsername={currentUser.username}
+            participants={roomParticipants}
             authToken={authToken}
+            onDrop={addParticipant}
           />
         )}
 
-        {!activeChatFriend && friends.length > 0 && (
-          <div className="py-8 text-center" style={{ border: '1px dashed var(--cyber-border)' }}>
+        {!hasRoom && friends.length > 0 && (
+          <div className="py-8 text-center space-y-3" style={{ border: '1px dashed var(--cyber-border)' }}>
             <p className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
               &gt; SELECT_AN_OPERATOR_TO_OPEN_CHANNEL
+            </p>
+            <p className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace', opacity: 0.5 }}>
+              Click to open 1:1 // Drag to channel for group comms
             </p>
           </div>
         )}
