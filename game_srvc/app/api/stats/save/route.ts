@@ -26,40 +26,6 @@ interface SaveStatsBody {
   players: PlayerPayload[]
 }
 
-async function syncStatsToAuthService(updates: PlayerPayload[]) {
-  if (!updates.length) return
-
-  const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth_srvc:3000/auth'
-  const token = process.env.AUTH_INTERNAL_API_TOKEN || process.env.SERVICE_SECRET
-
-  try {
-    const response = await fetch(`${authServiceUrl}/api/internal/stats/sync`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'x-internal-token': token } : {}),
-      },
-      body: JSON.stringify({
-        updates: updates.map((p) => ({
-          userId: p.userId,
-          shotsFired: p.shotsFired,
-          shotsHit: p.shotsHit,
-          shipsLost: p.shipsLost,
-          shipsDestroyed: p.shipsDestroyed,
-          isWinner: p.isWinner,
-        })),
-      }),
-    })
-
-    if (!response.ok) {
-      const errorBody = await response.text()
-      console.warn('[stats/save] auth sync failed:', response.status, errorBody)
-    }
-  } catch (error) {
-    console.warn('[stats/save] auth sync failed:', error)
-  }
-}
-
 export async function POST(request: NextRequest) {
   const { user, response: err } = await requireAuth(request)
   if (err) return err
@@ -185,15 +151,6 @@ export async function POST(request: NextRequest) {
       },
     })
   }
-
-  await syncStatsToAuthService(
-    normalizedPlayers
-      .filter((p) => p.playerId != null)
-      .map((p) => ({
-        ...p,
-        userId: p.playerId as number,
-      }))
-  )
 
   return NextResponse.json({ success: true, gameSessionId: session.id }, { status: 201 })
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 export default function RegisterPage() {
@@ -12,6 +12,13 @@ export default function RegisterPage() {
 	})
 	const [error, setError] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
+
+	useEffect(() => {
+		fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/session`, { credentials: 'include' })
+			.then(res => res.json())
+			.then(data => { if (data?.user) router.replace('/') })
+			.catch(() => {})
+	}, [])
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -33,7 +40,34 @@ export default function RegisterPage() {
 				throw new Error(data.error || 'Registration failed')
 			}
 
-			router.push('/login')
+			const csrfResponse = await fetch(
+				`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`,
+				{ credentials: 'include' }
+			)
+			const { csrfToken } = await csrfResponse.json()
+
+			const signInResponse = await fetch(
+				`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/callback/credentials`,
+				{
+					method: 'POST',
+					headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+					credentials: 'include',
+					body: new URLSearchParams({
+						email: formData.email,
+						password: formData.password,
+						csrfToken,
+						callbackUrl: '/',
+						json: 'true',
+					}),
+				}
+			)
+
+			const signInData = await signInResponse.json()
+			if (!signInResponse.ok || (signInData.url && signInData.url.includes('error='))) {
+				throw new Error('Auto-login failed. Please sign in manually.')
+			}
+
+			router.replace('/')
 		} catch (err) {
 			setError((err as Error).message)
 		} finally {
