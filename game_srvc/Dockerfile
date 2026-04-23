@@ -29,4 +29,4 @@ ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
 RUN npm run build
 
 # Start Next.js + Socket.IO together
-CMD ["sh", "-c", "npx prisma migrate deploy && (npm run start:socket & npx next start -H 0.0.0.0 -p 3002)"]
+CMD ["/app/docker-start.sh"]
