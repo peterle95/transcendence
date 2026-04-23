@@ -52,8 +52,17 @@ export const socketHandler = (io: SocketIOServer) => {
         // ── Chat rooms ──────────────────────────────────────────────────────────
         socket.on('join_room', (roomId: string) => {
             const userId = socket.data.userId;
-            const ids = roomId.split('_').map(Number);
-            if (ids.length !== 2 || ids.some(isNaN) || !ids.includes(userId)) {
+
+            let authorized = false;
+            if (roomId.startsWith('group_')) {
+                const ids = roomId.slice(6).split('_').map(Number);
+                authorized = ids.length >= 2 && !ids.some(isNaN) && ids.includes(userId);
+            } else {
+                const ids = roomId.split('_').map(Number);
+                authorized = ids.length === 2 && !ids.some(isNaN) && ids.includes(userId);
+            }
+
+            if (!authorized) {
                 console.warn(`[Socket] User ${userId} attempted to join unauthorized room ${roomId}`);
                 socket.emit('error', { message: 'Not authorized to join this room' });
                 return;

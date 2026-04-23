@@ -4,68 +4,128 @@ import { io, Socket } from 'socket.io-client';
 import { CHAT_PUBLIC_BASE, CHAT_SOCKET_PATH } from '@/lib/chatPublicBase';
 import type { Message } from '@/types';
 
+const PARTICIPANT_COLORS = [
+  '#d8b8ff',
+  '#ff6b6b',
+  '#4ecdc4',
+  '#ffe66d',
+  '#f38181',
+  '#95e1d3',
+  '#aa96da',
+  '#ffd93d',
+];
+
+interface Participant {
+  id: number;
+  username: string;
+}
+
 interface ChatInterfaceProps {
   myId: number;
-  friendId: number;
+  myUsername: string;
+  participants: Participant[];
   authToken: string;
+  onDrop?: (friendId: number) => void;
 }
 
-function generateRoomId(userId1: number, userId2: number): string {
-  const [smallerId, largerId] = [userId1, userId2].sort((a, b) => a - b);
-  return `${smallerId}_${largerId}`;
+type MessageWithUsername = Message & { sender_username?: string };
+
+function generateRoomId(myId: number, participants: Participant[]): string {
+  const allIds = [myId, ...participants.map(p => p.id)];
+  const sorted = [...new Set(allIds)].sort((a, b) => a - b);
+  if (sorted.length === 2) {
+    return `${sorted[0]}_${sorted[1]}`;
+  }
+  return `group_${sorted.join('_')}`;
 }
 
-export default function ChatInterface({ myId, friendId, authToken }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export default function ChatInterface({ myId, myUsername, participants, authToken, onDrop }: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<MessageWithUsername[]>([]);
   const [inputText, setInputText] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
-  const roomId = generateRoomId(myId, friendId);
+  const isGroup = participants.length > 1;
+  const roomId = generateRoomId(myId, participants);
+
+  const colorMap = useRef<Map<number, string>>(new Map());
+  useEffect(() => {
+    const map = new Map<number, string>();
+    participants.forEach((p, i) => {
+      map.set(p.id, PARTICIPANT_COLORS[i % PARTICIPANT_COLORS.length]);
+    });
+    colorMap.current = map;
+  }, [participants]);
+
+  const usernameMap = useRef<Map<number, string>>(new Map());
+  useEffect(() => {
+    const map = new Map<number, string>();
+    map.set(myId, myUsername);
+    participants.forEach(p => map.set(p.id, p.username));
+    usernameMap.current = map;
+  }, [myId, myUsername, participants]);
+
+  function getSenderColor(senderId: number): string {
+    if (senderId === myId) return 'var(--cyber-cyan)';
+    return colorMap.current.get(senderId) || '#d8b8ff';
+  }
+
+  function getSenderName(msg: MessageWithUsername): string {
+    if (msg.sender_username) return msg.sender_username;
+    return usernameMap.current.get(msg.sender_id) || `USER_${msg.sender_id}`;
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const fetchHistory = useCallback(async () => {
+    if (isGroup) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const res = await fetch(`${CHAT_PUBLIC_BASE}/api/chat/history?friend_id=${friendId}`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
+      const res = await fetch(
+        `${CHAT_PUBLIC_BASE}/api/chat/history?friend_id=${participants[0].id}`,
+        {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${authToken}` },
+          signal: controller.signal,
+        },
+      );
+
+      if (controller.signal.aborted) return;
 
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.messages) {
-          setMessages((prev) => {
-            const combined = [...data.messages, ...prev];
-            const uniqueMap = new Map();
-            combined.forEach((msg: Message) => { if (msg._id) uniqueMap.set(msg._id, msg); });
-            return Array.from(uniqueMap.values()).sort((a: any, b: any) =>
+          setMessages(
+            [...data.messages].sort((a: any, b: any) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            );
-          });
+            ),
+          );
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') return;
       console.error("Fetch history error:", err);
     }
-  }, [friendId, authToken]);
+  }, [participants, authToken, isGroup]);
 
-  // Keep refs so the socket lifecycle effect can always call the latest versions
-  // without needing to recreate the socket when friendId/fetchHistory changes.
   const roomIdRef = useRef(roomId);
   const fetchHistoryRef = useRef(fetchHistory);
   useEffect(() => { roomIdRef.current = roomId; }, [roomId]);
   useEffect(() => { fetchHistoryRef.current = fetchHistory; }, [fetchHistory]);
 
-  // Socket lifecycle — only recreated when authToken changes, not on every friend switch.
   useEffect(() => {
-    // Must pass (origin, options). io(options-only) can fall back to default path /socket.io on
-    // the site root — nginx sends that to the frontend → HTML 404 and broken polling.
     const origin = window.location.origin;
     const socketOptions: Record<string, unknown> = {
       path: CHAT_SOCKET_PATH,
@@ -78,7 +138,7 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     const socket = io(origin, socketOptions as any);
     socketRef.current = socket;
 
-    socket.on('receive_message', (message: Message) => {
+    socket.on('receive_message', (message: MessageWithUsername) => {
       setMessages((prev) => {
         if (prev.some(m => m._id === message._id)) return prev;
         return [...prev, message];
@@ -101,8 +161,6 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     };
   }, [authToken]);
 
-  // Room switching — leave old room, join new one, reload history.
-  // Runs when the user selects a different friend without recreating the socket.
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket?.connected) return;
@@ -116,7 +174,6 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     };
   }, [roomId]);
 
-
   const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputText.trim() || isLoading) return;
@@ -126,10 +183,17 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     setIsLoading(true);
 
     try {
+      const bodyPayload: any = { content: messageContent };
+      if (isGroup) {
+        bodyPayload.room_id = roomId;
+      } else {
+        bodyPayload.receiver_id = participants[0].id;
+      }
+
       const res = await fetch(`${CHAT_PUBLIC_BASE}/api/chat/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ receiver_id: friendId, content: messageContent }),
+        body: JSON.stringify(bodyPayload),
       });
 
       if (res.ok) {
@@ -152,14 +216,58 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
     }
   };
 
+  const handleLaunchGame = async () => {
+    const gameUrl = '/game/games/space_supremacy/index.html?mode=online';
+    for (const p of participants) {
+      try {
+        await fetch(`${CHAT_PUBLIC_BASE}/api/game-invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({ targetUserId: p.id }),
+        });
+      } catch (err) {
+        console.error(`Failed to invite ${p.username}:`, err);
+      }
+    }
+    window.open(gameUrl, '_blank');
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDropOnChat = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const friendId = parseInt(e.dataTransfer.getData('text/friend-id'), 10);
+    if (!isNaN(friendId) && friendId !== myId && onDrop) {
+      onDrop(friendId);
+    }
+  };
+
+  const participantLabel = isGroup
+    ? participants.map(p => p.username).join(', ')
+    : `CHANNEL::${participants[0]?.id}`;
+
   return (
     <div
       className="flex flex-col"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDropOnChat}
       style={{
         height: '600px',
-        border: '1px solid var(--cyber-border)',
+        border: `1px solid ${isDragOver ? 'var(--cyber-cyan)' : 'var(--cyber-border)'}`,
         background: 'var(--cyber-surface)',
         clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))',
+        boxShadow: isDragOver ? '0 0 20px rgba(0,229,255,0.3), inset 0 0 20px rgba(0,229,255,0.1)' : 'none',
+        transition: 'box-shadow 0.2s, border-color 0.2s',
       }}
     >
       {/* Header bar */}
@@ -167,13 +275,34 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
         className="flex-shrink-0 px-5 py-3 border-b flex items-center justify-between"
         style={{ borderColor: 'var(--cyber-border)', background: 'rgba(0,229,255,0.05)' }}
       >
-        <div className="flex items-center gap-3">
-          <div className="w-1 h-4" style={{ background: 'var(--cyber-cyan)', boxShadow: '0 0 6px var(--cyber-cyan)' }} />
-          <span className="text-xs font-bold tracking-widest" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)' }}>
-            CHANNEL::{friendId}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-1 h-4 flex-shrink-0" style={{ background: 'var(--cyber-cyan)', boxShadow: '0 0 6px var(--cyber-cyan)' }} />
+          <span className="text-xs font-bold tracking-widest truncate" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)' }}>
+            {participantLabel}
           </span>
+          {isGroup && (
+            <span className="text-xs flex-shrink-0" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
+              [{participants.length + 1}_USERS]
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {participants.length >= 1 && (
+            <button
+              onClick={handleLaunchGame}
+              className="px-3 py-1.5 text-xs font-bold tracking-widest transition-all hover:scale-105"
+              style={{
+                fontFamily: 'Orbitron, sans-serif',
+                border: '1px solid var(--cyber-green)',
+                color: 'var(--cyber-green)',
+                background: 'rgba(0,255,100,0.08)',
+                boxShadow: '0 0 8px rgba(0,255,100,0.2)',
+                cursor: 'pointer',
+              }}
+            >
+              LAUNCH_GAME
+            </button>
+          )}
           <div className="flex items-center gap-1.5">
             <span
               className="w-1.5 h-1.5 rounded-full"
@@ -186,11 +315,42 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
               {isConnected ? 'LIVE' : 'CONNECTING'}
             </span>
           </div>
-          <span className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
-            ID:{myId}
-          </span>
         </div>
       </div>
+
+      {/* Participant color legend for group chats */}
+      {isGroup && (
+        <div className="flex-shrink-0 px-5 py-2 border-b flex flex-wrap gap-3" style={{ borderColor: 'var(--cyber-border)', background: 'rgba(0,0,0,0.3)' }}>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ background: 'var(--cyber-cyan)', boxShadow: '0 0 4px var(--cyber-cyan)' }} />
+            <span className="text-xs" style={{ color: 'var(--cyber-cyan)', fontFamily: 'Share Tech Mono, monospace' }}>{myUsername}</span>
+          </span>
+          {participants.map((p) => {
+            const color = getSenderColor(p.id);
+            return (
+              <span key={p.id} className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full" style={{ background: color, boxShadow: `0 0 4px ${color}` }} />
+                <span className="text-xs" style={{ color, fontFamily: 'Share Tech Mono, monospace' }}>{p.username}</span>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Drop overlay */}
+      {isDragOver && (
+        <div
+          className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
+          style={{ background: 'rgba(0,229,255,0.08)' }}
+        >
+          <div className="text-center space-y-2 animate-pulse">
+            <div className="text-4xl" style={{ color: 'var(--cyber-cyan)' }}>+</div>
+            <p className="text-xs tracking-widest font-bold" style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--cyber-cyan)' }}>
+              DROP_TO_ADD_OPERATOR
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Messages */}
       <div
@@ -199,13 +359,23 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
       >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
-              &gt; CHANNEL_EMPTY // BEGIN_TRANSMISSION
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace' }}>
+                &gt; CHANNEL_EMPTY // BEGIN_TRANSMISSION
+              </p>
+              {isGroup && (
+                <p className="text-xs" style={{ color: 'var(--cyber-muted)', fontFamily: 'Share Tech Mono, monospace', opacity: 0.6 }}>
+                  GROUP_ROOM // {participants.length + 1}_OPERATORS
+                </p>
+              )}
+            </div>
           </div>
         ) : (
           messages.map((msg, i) => {
             const isMe = msg.sender_id === myId;
+            const senderColor = getSenderColor(msg.sender_id);
+            const borderColor = isMe ? 'rgba(0,229,255,0.4)' : `${senderColor}44`;
+            const bgColor = isMe ? 'rgba(0,229,255,0.08)' : `${senderColor}0f`;
             return (
               <div key={msg._id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div
@@ -213,14 +383,19 @@ export default function ChatInterface({ myId, friendId, authToken }: ChatInterfa
                   style={{
                     fontFamily: 'Share Tech Mono, monospace',
                     fontSize: '0.8rem',
-                    border: `1px solid ${isMe ? 'rgba(0,229,255,0.4)' : 'rgba(157,0,255,0.3)'}`,
-                    background: isMe ? 'rgba(0,229,255,0.08)' : 'rgba(157,0,255,0.06)',
+                    border: `1px solid ${borderColor}`,
+                    background: bgColor,
                     clipPath: isMe
                       ? 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)'
                       : 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
                   }}
                 >
-                  <p className="whitespace-pre-wrap break-words" style={{ color: isMe ? 'var(--cyber-text)' : '#d8b8ff' }}>
+                  {(isGroup || !isMe) && (
+                    <span className="text-xs block mb-1 font-bold" style={{ color: isMe ? 'var(--cyber-cyan)' : senderColor }}>
+                      {isMe ? myUsername : getSenderName(msg)}
+                    </span>
+                  )}
+                  <p className="whitespace-pre-wrap break-words" style={{ color: isMe ? 'var(--cyber-text)' : senderColor }}>
                     {msg.content}
                   </p>
                   {msg.timestamp && (
