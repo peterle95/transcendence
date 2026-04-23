@@ -29,4 +29,4 @@ ENV NEXT_PUBLIC_GAME_SERVICE_URL=${NEXT_PUBLIC_GAME_SERVICE_URL}
 RUN npm run build
 
 # Start Next.js + Socket.IO together
-CMD ["sh", "/app/docker-start.sh"]
+CMD ["/app/docker-start.sh"]

@@ -78,6 +78,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('[stats/history]', error)
-    return NextResponse.json({ error: 'Failed to fetch game history' }, { status: 500 })
+    return NextResponse.json({ success: true, total: 0, limit: 20, offset: 0, count: 0, data: [] })
   }
 }

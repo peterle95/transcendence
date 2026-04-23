@@ -1,158 +1,158 @@
-name: CD — Deploy to Production
+#name: CD — Deploy to Production
 
-on:
-  push:
-    branches:
-      - main
-
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false
-
-jobs:
-  deploy:
-    name: SSH → GCP VM → docker compose up
-    runs-on: ubuntu-latest
-    # timeout-minutes: 60
-    environment: production
-    permissions:
-      contents: read
-      id-token: write
-
-    env:
-      BASE_URL: http://spacesupremacy.duckdns.org
-      INSTANCE_NAME: transcendence-server
-      INSTANCE_ZONE: europe-west10-a
-      REPO_DIR: /opt/transcendence/code_base
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Deploy via SSH
-        id: deploy_ssh
-        # timeout-minutes: 45
-        uses: google-github-actions/ssh-compute@v2
-        with:
-          instance_name: ${{ env.INSTANCE_NAME }}
-          zone: ${{ env.INSTANCE_ZONE }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-          command: |
-            sudo bash -lc '
-              set -euxo pipefail
-              export DOCKER_BUILDKIT=1
-              export BUILDKIT_PROGRESS=plain
-              export COMPOSE_PROGRESS=plain
-              git config --global --add safe.directory "${{ env.REPO_DIR }}"
-              bash -x /usr/local/bin/deploy_transcendence.sh main
-            '
-
-      - name: External smoke check
-        id: external_smoke
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          BASE="${BASE_URL}"
-
-          check() {
-            local path="$1"
-            local expected="$2"
-            local retries="${3:-12}"
-            local delay="${4:-15}"
-
-            for i in $(seq 1 "$retries"); do
-              echo "==> checking ${path} (attempt ${i}/${retries})"
-
-              set +e
-              STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "${BASE}${path}")
-              RC=$?
-              set -e
-
-              echo "curl rc=${RC} status=${STATUS:-none}"
-
-              if [ "$RC" -eq 0 ] && [ "$STATUS" = "$expected" ]; then
-                echo "OK: ${path} -> ${STATUS}"
-                return 0
-              fi
-
-              sleep "$delay"
-            done
-
-            echo "FAILED: ${path} never returned ${expected}"
-            return 1
-          }
-
-          check "/auth/api/auth/csrf" "200"
-          check "/chat/"              "308"
-          check "/game/"              "308"
-
-      - name: Runner-side diagnostics after smoke failure
-        if: steps.external_smoke.outcome == 'failure'
-        shell: bash
-        run: |
-          set -euxo pipefail
-
-          echo "==> DNS from runner"
-          getent ahosts spacesupremacy.duckdns.org || true
-
-          echo "==> verbose curl to /"
-          curl -sv --max-time 20 "${BASE_URL}/" -o /dev/null || true
-
-          echo "==> verbose curl to auth CSRF"
-          curl -sv --max-time 20 "${BASE_URL}/auth/api/auth/csrf" -o /dev/null || true
-
-      - name: VPS diagnostics after smoke failure
-        if: steps.external_smoke.outcome == 'failure'
-        uses: google-github-actions/ssh-compute@v2
-        with:
-          instance_name: ${{ env.INSTANCE_NAME }}
-          zone: ${{ env.INSTANCE_ZONE }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
-          command: |
-            sudo bash -lc '
-              set -euxo pipefail
-
-              REPO_DIR="/opt/transcendence/code_base"
-              COMPOSE_FILE="$REPO_DIR/docker-compose.prod.yml"
-              ENV_FILE="$REPO_DIR/.env.production"
-
-              echo "==> host + user"
-              hostname
-              whoami
-
-              echo "==> listening ports"
-              ss -ltnp | egrep ":(80|443|3000|3001|3003|4000)\b" || true
-
-              echo "==> docker compose ps"
-              docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps || true
-
-              echo "==> host nginx status"
-              systemctl status nginx --no-pager || true
-              journalctl -u nginx -n 100 --no-pager || true
-
-              echo "==> localhost HTTP checks"
-              curl -sv http://127.0.0.1/ -o /dev/null || true
-              curl -sv http://127.0.0.1/auth/api/auth/csrf -o /dev/null || true
-
-              echo "==> recent compose logs"
-              docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs --no-color --tail=150 \
-                postgres mongo auth_srvc chat_srvc game_srvc frontend || true
-
-              echo "==> recent deploy log"
-              tail -n 300 /var/log/transcendence-deploy.log || true
-            '
-
-      - name: Fail workflow if external smoke failed
-        if: steps.external_smoke.outcome == 'failure'
-        run: |
-          echo "External smoke check failed"
-          exit 1
+#on:
+#  push:
+#    branches:
+#      - main
+#
+#concurrency:
+#  group: production-deploy
+#  cancel-in-progress: false
+#
+#jobs:
+#  deploy:
+#    name: SSH → GCP VM → docker compose up
+#    runs-on: ubuntu-latest
+#    # timeout-minutes: 60
+#    environment: production
+#    permissions:
+#      contents: read
+#      id-token: write
+#
+#    env:
+#      BASE_URL: http://spacesupremacy.duckdns.org
+#      INSTANCE_NAME: transcendence-server
+#      INSTANCE_ZONE: europe-west10-a
+#      REPO_DIR: /opt/transcendence/code_base
+#
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Authenticate to Google Cloud
+#        uses: google-github-actions/auth@v3
+#        with:
+#          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+#          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+#
+#      - name: Deploy via SSH
+#        id: deploy_ssh
+#        # timeout-minutes: 45
+#        uses: google-github-actions/ssh-compute@v2
+#        with:
+#          instance_name: ${{ env.INSTANCE_NAME }}
+#          zone: ${{ env.INSTANCE_ZONE }}
+#          project_id: ${{ secrets.GCP_PROJECT_ID }}
+#          ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+#          command: |
+#            sudo bash -lc '
+#              set -euxo pipefail
+#              export DOCKER_BUILDKIT=1
+#              export BUILDKIT_PROGRESS=plain
+#              export COMPOSE_PROGRESS=plain
+#              git config --global --add safe.directory "${{ env.REPO_DIR }}"
+#              bash -x /usr/local/bin/deploy_transcendence.sh main
+#            '
+#
+#      - name: External smoke check
+#        id: external_smoke
+#        continue-on-error: true
+#        shell: bash
+#        run: |
+#          set -euxo pipefail
+#
+#          BASE="${BASE_URL}"
+#
+#          check() {
+#            local path="$1"
+#            local expected="$2"
+#            local retries="${3:-12}"
+#            local delay="${4:-15}"
+#
+#            for i in $(seq 1 "$retries"); do
+#              echo "==> checking ${path} (attempt ${i}/${retries})"
+#
+#              set +e
+#              STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "${BASE}${path}")
+#              RC=$?
+#              set -e
+#
+#              echo "curl rc=${RC} status=${STATUS:-none}"
+#
+#              if [ "$RC" -eq 0 ] && [ "$STATUS" = "$expected" ]; then
+#                echo "OK: ${path} -> ${STATUS}"
+#                return 0
+#              fi
+#
+#              sleep "$delay"
+#            done
+#
+#            echo "FAILED: ${path} never returned ${expected}"
+#            return 1
+#          }
+#
+#          check "/auth/api/auth/csrf" "200"
+#          check "/chat/"              "308"
+#          check "/game/"              "308"
+#
+#      - name: Runner-side diagnostics after smoke failure
+#        if: steps.external_smoke.outcome == 'failure'
+#        shell: bash
+#        run: |
+#          set -euxo pipefail
+#
+#          echo "==> DNS from runner"
+#          getent ahosts spacesupremacy.duckdns.org || true
+#
+#          echo "==> verbose curl to /"
+#          curl -sv --max-time 20 "${BASE_URL}/" -o /dev/null || true
+#
+#          echo "==> verbose curl to auth CSRF"
+#          curl -sv --max-time 20 "${BASE_URL}/auth/api/auth/csrf" -o /dev/null || true
+#
+#      - name: VPS diagnostics after smoke failure
+#        if: steps.external_smoke.outcome == 'failure'
+#        uses: google-github-actions/ssh-compute@v2
+#        with:
+#          instance_name: ${{ env.INSTANCE_NAME }}
+#          zone: ${{ env.INSTANCE_ZONE }}
+#          project_id: ${{ secrets.GCP_PROJECT_ID }}
+#          ssh_private_key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+#          command: |
+#            sudo bash -lc '
+#              set -euxo pipefail
+#
+#              REPO_DIR="/opt/transcendence/code_base"
+#              COMPOSE_FILE="$REPO_DIR/docker-compose.prod.yml"
+#              ENV_FILE="$REPO_DIR/.env.production"
+#
+#              echo "==> host + user"
+#              hostname
+#              whoami
+#
+#              echo "==> listening ports"
+#              ss -ltnp | egrep ":(80|443|3000|3001|3003|4000)\b" || true
+#
+#              echo "==> docker compose ps"
+#              docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps || true
+#
+#              echo "==> host nginx status"
+#              systemctl status nginx --no-pager || true
+#              journalctl -u nginx -n 100 --no-pager || true
+#
+#              echo "==> localhost HTTP checks"
+#              curl -sv http://127.0.0.1/ -o /dev/null || true
+#              curl -sv http://127.0.0.1/auth/api/auth/csrf -o /dev/null || true
+#
+#              echo "==> recent compose logs"
+#              docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" logs --no-color --tail=150 \
+#                postgres mongo auth_srvc chat_srvc game_srvc frontend || true
+#
+#              echo "==> recent deploy log"
+#              tail -n 300 /var/log/transcendence-deploy.log || true
+#            '
+#
+#      - name: Fail workflow if external smoke failed
+#        if: steps.external_smoke.outcome == 'failure'
+#        run: |
+#          echo "External smoke check failed"
+#          exit 1

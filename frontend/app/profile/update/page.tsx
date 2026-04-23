@@ -7,13 +7,6 @@ interface UserProfile {
 	username: string
 	email?: string
 	avatarUrl: string | null
-	wins: number
-	losses: number
-	shotsFired: number
-	shotsHit: number
-	shipsLost: number
-	shipsDestroyed: number
-	isWinner: number
 }
 
 export default function UpdateProfilePage() {
@@ -191,9 +184,21 @@ export default function UpdateProfilePage() {
 				throw new Error('Failed to delete account')
 			}
 
+			const csrfResponse = await fetch(
+				`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/csrf`,
+				{ credentials: 'include' }
+			)
+			const { csrfToken } = await csrfResponse.json()
+
 			await fetch(`${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/api/auth/signout`, {
 				method: 'POST',
 				credentials: 'include',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: new URLSearchParams({
+					csrfToken,
+					callbackUrl: '/login',
+					json: 'true',
+				}),
 			})
 
 			router.push('/login')
@@ -243,7 +248,7 @@ export default function UpdateProfilePage() {
 										? avatarPreview
 										: currentAvatarUrl
 											? `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}${currentAvatarUrl}`
-											: `${process.env.NEXT_PUBLIC_AUTH_SERVICE_URL}/default-avatar.png`
+											: '/default-avatar.png'
 								}
 								alt="Avatar preview"
 								className="rounded-full object-cover border-4 border-blue-500/30"

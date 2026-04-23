@@ -185,19 +185,13 @@ export async function getFriends(userId: number) {
 				requester: {
 					select: {
 						id: true,
-						username: true,
-						wins: true,
-						losses: true,
-						points: true
+						username: true
 					}
 				},
 				addressee: {
 					select: {
 						id: true,
-						username: true,
-						wins: true,
-						losses: true,
-						points: true
+						username: true
 					}
 				}
 			}
