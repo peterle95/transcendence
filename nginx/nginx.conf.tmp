@@ -133,17 +133,27 @@ http {
 
 		location = /api/auth/me {
 			proxy_pass ${HTTP}game${GAME_PATH}/api/auth/me;
+			coraza off;
 		}
 
 		location / {
 			proxy_pass ${HTTP}frontend;
-			proxy_hide_header Cookie;
 			coraza	off;
+                        proxy_http_version      1.1;
+                        proxy_set_header        Host                    @host;
+                        proxy_set_header        X-Real-IP               @remote_addr;
+                        proxy_set_header        X-Forwarded-For         @proxy_add_x_forwarded_for;
+                        proxy_set_header        X-Forwarded-Proto       @scheme;
+                        proxy_set_header        X-Forwarded-Host        @host;
+                        proxy_set_header        Upgrade                 @http_upgrade;
+                        proxy_set_header        Connection              "upgrade";
+                        proxy_read_timeout      86400s;
+                        proxy_send_timeout      86400s;
 		}
 
 		location ${AUTH_PATH} {
 			proxy_pass ${HTTP}auth;
-			coraza	off;
+			coraza off;
 		}
 
 		location ${CHAT_PATH} {
@@ -153,6 +163,7 @@ http {
 
 		location ${CHAT_WS_PATH} {
 			proxy_pass ${HTTP}chat;
+			coraza off;
 			proxy_http_version	1.1;
 			proxy_set_header	Host			@host;
 			proxy_set_header	X-Real-IP		@remote_addr;
@@ -169,11 +180,13 @@ http {
 
 		location ${GAME_PATH} {
 			proxy_pass ${HTTP}game;
+			coraza off;
 			${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
 		}
 
 		location ${GAME_WS_PATH} {
 			proxy_pass ${HTTP}game_ws;
+			coraza off;
 			proxy_http_version	1.1;
 			proxy_set_header	Upgrade			@http_upgrade;
 			proxy_set_header	Host			@host;
