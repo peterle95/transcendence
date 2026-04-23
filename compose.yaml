@@ -85,7 +85,6 @@ services:
       - "${LOCAL:+127.0.0.1:}${NGINX_TCP}"
       - "${LOCAL:+127.0.0.1:}${NGINX_TLS}"
       - "${LOCAL:+127.0.0.1:}${NGINX_UDP}"
-    <<: *depends-on-vault 
     depends_on: [ "frontend" ]
     volumes:
       - "./nginx/nginx.conf.tmp:/nginx.conf.tmp:ro"
