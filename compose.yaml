@@ -210,9 +210,9 @@ services:
   postgres:
     build:
       dockerfile_inline: |
-        FROM postgres:15-alpine
-        RUN apk add --no-cache \
-        -q ca-certificates jq curl
+        FROM scratch
+        COPY --from=postgres:15-alpine / /
+        RUN apk add --no-cache -q ca-certificates jq curl
     entrypoint: *entrypoint
     command: [ "su-exec", "postgres", "postgres" ]
     container_name: "postgres_${DATABASE_NAMESPACE}"
