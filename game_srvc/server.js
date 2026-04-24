@@ -796,7 +796,7 @@ function resetGame() {
    HTTP + SOCKET.IO
    ═══════════════════════════════════════════════════════════════════════ */
 const httpsServer = https.createServer(tls, (req, res) => {
-  const requestUrl = new URL(req.url, '${HTTP}${HOSTNAME}');
+  const requestUrl = new URL(req.url, `${HTTP}${HOSTNAME}`);
 
   if (ENABLE_TRAINING_ROOM && requestUrl.pathname === '/training/start') {
     const aiSlots = (requestUrl.searchParams.get('slots') || '1,2')

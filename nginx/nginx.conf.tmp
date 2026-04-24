@@ -139,6 +139,12 @@ http {
 
 		location ${AUTH_PATH}	{
 			proxy_pass	http://auth;
+    			proxy_set_header    Host                @host;
+    			proxy_set_header    X-Real-IP           @remote_addr;
+    			proxy_set_header    X-Forwarded-For     @proxy_add_x_forwarded_for;
+    			proxy_set_header    X-Forwarded-Proto   https;
+    			proxy_set_header    X-Forwarded-Host    @host;
+    			proxy_set_header    Cookie              @http_cookie;
 			coraza_rules	'SecRuleRemoveByID 911100';
 		}
 
@@ -152,13 +158,13 @@ http {
 		}
 
 		location ~ ^${GAME_WS_PATH}	{
-			proxy_pass	${HTTP}game_ws;
+			proxy_pass	http://game_ws;
 			coraza		off;
 		}
 
 		location ~ ^(${GAME_PATH}|/api/auth/me|/assets/)	{
 			rewrite ^/assets/(.*) ${GAME_PATH}/assets/@1 break;
-			proxy_pass ${HTTP}game;
+			proxy_pass http://game;
 			${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
 		}
 	}

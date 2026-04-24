@@ -194,6 +194,7 @@ services:
     command: [ "sh", "-c", "npx prisma migrate deploy && npm run start" ]
     environment:
       NODE_ENV: production
+      NEXTAUTH_URL: https://spacesupremacy.duckdns.org/auth
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${AUTH_PORT}" ]
