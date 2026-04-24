@@ -145,7 +145,7 @@ http {
     			proxy_set_header    X-Forwarded-Proto   https;
     			proxy_set_header    X-Forwarded-Host    @host;
     			proxy_set_header    Cookie              @http_cookie;
-			coraza_rules	'SecRuleRemoveByID 911100';
+		coraza_rules	'SecRuleRemoveByID 911100';
 		}
 
 		location ~ ^${CHAT_WS_PATH} {
@@ -153,44 +153,42 @@ http {
 			coraza		off;
 		}
 
-		location ${CHAT_PATH} {
-    proxy_pass ${HTTP}chat;
-}
+		location ${CHAT_PATH}	{
+			proxy_pass	${HTTP}chat;
+		}
 
-location ~ ^${CHAT_PATH}/_next/ {
-    proxy_pass ${HTTP}chat;
-    coraza off;
-}
+		location = ${GAME_PATH} {
+    			return 302 ${GAME_PATH}/games/space_supremacy/index.html;
+		}
 
-location = ${GAME_PATH} {
-    return 302 ${GAME_PATH}/games/space_supremacy/index.html;
-}
+		location = ${GAME_PATH}/ {
+    			return 302 ${GAME_PATH}/games/space_supremacy/index.html;
+		}
 
-location = ${GAME_PATH}/ {
-    return 302 ${GAME_PATH}/games/space_supremacy/index.html;
-}
+		location ~ ^${CHAT_PATH}/_next/ {
+    			proxy_pass ${HTTP}chat;
+    			coraza off;
+		}
 
-location ~ ^${GAME_WS_PATH} {
-    proxy_pass ${HTTP}game_ws;
-    coraza off;
-}
+		location ~ ^${GAME_PATH}/_next/ {
+    			proxy_pass http://game;
+    			coraza off;
+		}
 
-location ~ ^${GAME_PATH}/_next/ {
-    proxy_pass http://game;
-    coraza off;
-}
+		location ~ ^${GAME_PATH}/games/ {
+    			proxy_pass http://game;
+    			coraza off;
+		}
 
-location ~ ^${GAME_PATH}/games/ {
-    proxy_pass http://game;
-    coraza off;
+		location ~ ^${GAME_WS_PATH} {
+ 			   proxy_pass  ${HTTP}game_ws;
+		coraza      off;
 }
-
-location ~ ^(${GAME_PATH}|/api/auth/me|/assets/) {
-    rewrite ^/assets/(.*) ${GAME_PATH}/assets/$1 break;
-    proxy_pass http://game;
-    ${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
-}
-
+		location ~ ^(${GAME_PATH}|/api/auth/me|/assets/)	{
+			rewrite ^/assets/(.*) ${GAME_PATH}/assets/@1 break;
+			proxy_pass http://game;
+			${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
+		}
 	}
 
 	server {
