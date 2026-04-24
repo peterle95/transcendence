@@ -1,0 +1,6 @@
+services:
+  chat_srvc:
+    command: ["sh", "-lc", "export AUTH_SERVICE_URL=http://auth_srvc:4430/auth; exec npm start"]
+
+  game_srvc:
+    command: ["sh", "-lc", "export NODE_ENV=production AUTH_SERVICE_URL=http://auth_srvc:4430/auth; npx prisma db push; npm run start:socket & SOCKET_PID=$!; trap 'kill -TERM \"$SOCKET_PID\" 2>/dev/null || true' INT TERM; npm run start"]
