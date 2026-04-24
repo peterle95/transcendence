@@ -47,6 +47,8 @@ x-ai-srvc:  &ai-srvc
     entrypoint: &entrypoint
       - "/entry/point"
     command: [ "python", "main.py" ]
+    environment:
+      LOAD_AI_MODELS: "${LOAD_AI_MODELS:-true}"
     depends_on: [ "game_srvc" ]
     volumes:
       - "./ai_models:/app/models:ro"
