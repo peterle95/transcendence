@@ -1,10 +1,4 @@
 load_module	"/usr/lib/nginx/modules/ngx_http_coraza_module.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_geoip_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_js_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_xslt_filter_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_image_filter_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_stream_geoip_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_stream_js_module${NGINX_MODULE}.so";
 
 
 error_log	stderr	${NGINX_LOG_LEVEL};
@@ -30,7 +24,6 @@ http {
 		SecRuleEngine On
 		SecDebugLogLevel ${WAF_LOG_LEVEL}
 		SecDebugLog /dev/stderr
-		SecAuditLog /dev/stdout
 		SecRequestBodyAccess On
 		SecAuditLogFormat Native
 		SecRequestBodyLimit 13107200
@@ -142,7 +135,7 @@ http {
 			coraza_rules	'SecRuleRemoveByID 911100';
 		}
 
-		location ~ ^${CHAT_WS_PATH} {
+		location ~ ^(${CHAT_WS_PATH}|${CHAT_PATH}/_next/.*\.js) {
 			proxy_pass	${HTTP}chat;
 			coraza		off;
 		}
