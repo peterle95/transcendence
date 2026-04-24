@@ -29,6 +29,8 @@ http {
 	coraza_rules '
 		SecRuleEngine On
 		SecDebugLogLevel ${WAF_LOG_LEVEL}
+		SecDebugLog /dev/stderr
+		SecAuditLog /dev/stdout
 		SecRequestBodyAccess On
 		SecAuditLogFormat Native
 		SecRequestBodyLimit 13107200
@@ -82,6 +84,11 @@ http {
 	proxy_set_header	X-Forwarded-Proto	@scheme;
 	proxy_set_header	X-Forwarded-Host	@host;
 	proxy_set_header	Cookie			@http_cookie;
+	proxy_set_header        Upgrade                 @http_upgrade;
+	proxy_set_header        Connection              "upgrade";
+	proxy_http_version	1.1;
+	proxy_read_timeout	86400s;
+	proxy_send_timeout	86400s;
 	${ADD_HEADER}		${ONION_LOCATION}	${ONION_ADDRESS_MAIN_HEADER}${REQUEST_URI}
 
 	upstream	frontend	{
@@ -109,7 +116,7 @@ http {
 	}
 
 	ssl_client_certificate		${ROOTCERT};
-	ssl_protocols			TLSv1.2 TLSv1.3;
+	ssl_protocols			TLSv1.3;
 
 	server {
 		listen		${NGINX_TLS}	ssl;
@@ -121,82 +128,38 @@ http {
 
 		client_max_body_size		10M;
 
-		$using_at_because_envsubst_will_remove_all_strings
-		$that_start_with_a_dollarsign_and_arent_an_env_keyword
-		$using_sed_after_envsubst_to_change_at_back_to_dollarsigns
+		location ~ ^/_next/(webpack-hmr|.*\.js)$	{
+			proxy_pass	${HTTP}frontend;
+			coraza		off;
+		}
 
-		location /assets/ {
+		location /	{
+			proxy_pass	${HTTP}frontend;
+		}
+
+		location ${AUTH_PATH}	{
+			proxy_pass	${HTTP}auth;
+			coraza_rules	'SecRuleRemoveByID 911100';
+		}
+
+		location ~ ^${CHAT_WS_PATH} {
+			proxy_pass	${HTTP}chat;
+			coraza		off;
+		}
+
+		location ${CHAT_PATH}	{
+			proxy_pass	${HTTP}chat;
+		}
+
+		location ~ ^${GAME_WS_PATH}	{
+			proxy_pass	${HTTP}game_ws;
+			coraza		off;
+		}
+
+		location ~ ^(${GAME_PATH}|/api/auth/me|/assets/)	{
 			rewrite ^/assets/(.*) ${GAME_PATH}/assets/@1 break;
 			proxy_pass ${HTTP}game;
-			proxy_hide_header Cookie;
-		}
-
-		location = /api/auth/me {
-			proxy_pass ${HTTP}game${GAME_PATH}/api/auth/me;
-			coraza off;
-		}
-
-		location / {
-			proxy_pass ${HTTP}frontend;
-			coraza	off;
-                        proxy_http_version      1.1;
-                        proxy_set_header        Host                    @host;
-                        proxy_set_header        X-Real-IP               @remote_addr;
-                        proxy_set_header        X-Forwarded-For         @proxy_add_x_forwarded_for;
-                        proxy_set_header        X-Forwarded-Proto       @scheme;
-                        proxy_set_header        X-Forwarded-Host        @host;
-                        proxy_set_header        Upgrade                 @http_upgrade;
-                        proxy_set_header        Connection              "upgrade";
-                        proxy_read_timeout      86400s;
-                        proxy_send_timeout      86400s;
-		}
-
-		location ${AUTH_PATH} {
-			proxy_pass ${HTTP}auth;
-			coraza off;
-		}
-
-		location ${CHAT_PATH} {
-			proxy_pass ${HTTP}chat;
-			coraza	off;
-		}
-
-		location ${CHAT_WS_PATH} {
-			proxy_pass ${HTTP}chat;
-			proxy_http_version	1.1;
-			proxy_set_header	Host			@host;
-			proxy_set_header	X-Real-IP		@remote_addr;
-			proxy_set_header	X-Forwarded-For		@proxy_add_x_forwarded_for;
-			proxy_set_header	X-Forwarded-Proto	@scheme;
-			proxy_set_header	X-Forwarded-Host	@host;
-			proxy_set_header	Cookie			@http_cookie;
-			proxy_set_header	Upgrade			@http_upgrade;
-			proxy_set_header	Connection		"upgrade";
-			proxy_read_timeout	86400s;
-			proxy_send_timeout	86400s;
-			coraza off;
-		}
-
-		location ${GAME_PATH} {
-			proxy_pass ${HTTP}game;
-			coraza off;
 			${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
-		}
-
-		location ${GAME_WS_PATH} {
-			proxy_pass ${HTTP}game_ws;
-			coraza off;
-			proxy_http_version	1.1;
-			proxy_set_header	Upgrade			@http_upgrade;
-			proxy_set_header	Host			@host;
-			proxy_set_header	X-Real-IP		@remote_addr;
-			proxy_set_header	X-Forwarded-For		@proxy_add_x_forwarded_for;
-			proxy_set_header	X-Forwarded-Proto	@scheme;
-			proxy_set_header	X-Forwarded-Host	@host;
-			proxy_set_header	Cookie			@http_cookie;
-			proxy_set_header	Connection		"upgrade";
-			proxy_read_timeout	86400s;
-			proxy_send_timeout	86400s;
 		}
 	}
 
@@ -207,6 +170,8 @@ http {
 		server_name ${HOSTNAME};
 		ssl_certificate    		${CERT_PATH};
 		ssl_certificate_key		${KEY_PATH};
+
+		coraza			off;
 
 		location = /healthcheck {
 			access_log	off;

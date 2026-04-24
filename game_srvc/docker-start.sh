@@ -1,7 +1,6 @@
 #!/bin/sh
 set -e
 
-export NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/root_transcendence_ca.crt
 #script consider value of NODE_ENV and runs accordingly
 if [ "$NODE_ENV" = "production" ]; then
 npx prisma migrate deploy
