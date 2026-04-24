@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import os
 import random
 from datetime import datetime, timezone
@@ -51,6 +52,7 @@ TRAINING_ENV_KEYS = [
     "REWARD_ROTATE_STEP",
     "ROTATION_DANGER_DISTANCE_NORM",
     "REWARD_APPROACH_ENEMY",
+    "REWARD_AIM_ENEMY",
     "REWARD_WASTED_SHOT",
     "REWARD_LOW_ENERGY",
     "LOW_ENERGY_THRESHOLD",
@@ -100,6 +102,7 @@ REWARD_ROTATE_DANGER = float(_env_required("REWARD_ROTATE_DANGER"))
 METEOR_DANGER_DISTANCE_NORM = float(_env_required("METEOR_DANGER_DISTANCE_NORM"))
 ROTATION_DANGER_DISTANCE_NORM = float(_env_required("ROTATION_DANGER_DISTANCE_NORM"))
 REWARD_APPROACH_ENEMY = float(_env_required("REWARD_APPROACH_ENEMY"))
+REWARD_AIM_ENEMY = float(os.getenv("REWARD_AIM_ENEMY", "0.0"))
 REWARD_LOW_ENERGY = float(_env_required("REWARD_LOW_ENERGY"))
 LOW_ENERGY_THRESHOLD = float(_env_required("LOW_ENERGY_THRESHOLD"))
 
@@ -179,6 +182,7 @@ class Trainer:
             f"| Epsilon Now | {self.agent.epsilon:.4f} |\n",
             f"| Reward Hurt Meteor | {REWARD_HURT_METEOR:.6f} |\n",
             f"| Reward Hurt Laser | {REWARD_HURT_LASER:.6f} |\n",
+            f"| Reward Aim Enemy | {REWARD_AIM_ENEMY:.6f} |\n",
             f"| Replay Capacity | {int(self.agent.cfg.replay_capacity)} |\n",
             f"| Batch Size | {int(self.agent.cfg.batch_size)} |\n",
             f"| Learning Rate | {float(self.agent.cfg.lr):.6f} |\n",
@@ -389,16 +393,26 @@ class Trainer:
 
         my_x = float(my_ship.get("x", 0.0))
         my_y = float(my_ship.get("y", 0.0))
+        my_angle_rad = math.radians(float(my_ship.get("angle", 0.0)))
         nearest_meteor_norm = 1.0
         nearest_enemy_norm = 1.0
+        nearest_enemy_alignment = 0.0
         for e in enemies:
             if not e.get("alive", True) or float(e.get("hp", 0.0)) <= 0.0:
                 continue
             dx = float(e.get("x", 0.0)) - my_x
             dy = float(e.get("y", 0.0)) - my_y
-            dist_norm = (dx * dx + dy * dy) ** 0.5 / max(1.0, 1470.0)
+            dist = (dx * dx + dy * dy) ** 0.5
+            dist_norm = dist / max(1.0, 1470.0)
             if dist_norm < nearest_enemy_norm:
                 nearest_enemy_norm = dist_norm
+                if dist > 0.0:
+                    # Ship nose vector in world-space (same convention as thrustForward).
+                    forward_x = math.sin(my_angle_rad)
+                    forward_y = -math.cos(my_angle_rad)
+                    enemy_dir_x = dx / dist
+                    enemy_dir_y = dy / dist
+                    nearest_enemy_alignment = max(-1.0, min(1.0, forward_x * enemy_dir_x + forward_y * enemy_dir_y))
 
         for m in meteors:
             if not m.get("alive", True):
@@ -418,6 +432,7 @@ class Trainer:
             "enemy_hp_total": enemy_hp_total,
             "alive_enemies": float(alive_enemies),
             "nearest_enemy_norm": float(nearest_enemy_norm),
+            "enemy_aim_alignment": float(nearest_enemy_alignment),
             "nearest_meteor_norm": float(nearest_meteor_norm),
             "player_inflicted_damage": float(damage_metrics.get("player_inflicted_damage", 0.0)),
             "total_damage_received": float(damage_metrics.get("total_damage_received", 0.0)),
@@ -473,6 +488,15 @@ class Trainer:
         # Reward moving closer to the nearest alive enemy, but never penalize backing off.
         enemy_approach_delta = prev_metrics["nearest_enemy_norm"] - curr_metrics["nearest_enemy_norm"]
         reward += REWARD_APPROACH_ENEMY * max(0.0, enemy_approach_delta)
+
+        # Reward keeping the ship nose pointed at the nearest enemy.
+        # Weighted by proximity so this matters more in combat distance.
+        aim_alignment = max(0.0, curr_metrics.get("enemy_aim_alignment", 0.0))
+        aim_proximity = max(0.0, 1.0 - curr_metrics["nearest_enemy_norm"])
+        aim_score = aim_alignment * aim_proximity
+        reward += REWARD_AIM_ENEMY * aim_score
+        if prev_action is not None and int(prev_action.get("sparo", 0) or 0) == 1:
+            reward += 0.5 * REWARD_AIM_ENEMY * aim_score
 
         # Penalize spending energy without causal hit confirmation.
         if my_energy_delta > 0.0 and player_inflicted_damage <= 0.0:
