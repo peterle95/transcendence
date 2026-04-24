@@ -306,7 +306,7 @@ services:
         COPY --from=ghcr.io/cathugger/mkp224o:master / /
         COPY --parents --chmod=400 ./*/wants.* /wanted/
         RUN apk add --no-cache -q gpg ca-certificates jq openssl curl sed
-        COPY --chmod=100 ⠀ /
+        ADD ⠀ /
     entrypoint: /⠀
     container_name: "vault_secret_service"
     hostname: "${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}"
