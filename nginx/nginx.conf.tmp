@@ -129,16 +129,16 @@ http {
 		client_max_body_size		10M;
 
 		location ~ ^/_next/(webpack-hmr|.*\.js)$	{
-			proxy_pass	${HTTP}frontend;
+			proxy_pass	http://frontend;
 			coraza		off;
 		}
 
 		location /	{
-			proxy_pass	${HTTP}frontend;
+			proxy_pass	http://frontend;
 		}
 
 		location ${AUTH_PATH}	{
-			proxy_pass	${HTTP}auth;
+			proxy_pass	http://auth;
 			coraza_rules	'SecRuleRemoveByID 911100';
 		}
 

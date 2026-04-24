@@ -108,6 +108,8 @@ services:
     build:  "./frontend"
     entrypoint: *entrypoint
     command: [ "npm", "run", "start" ]
+    environment:
+      NODE_ENVIRONMENT: production
     container_name: "frontend_service"
     hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${FRONTEND_PORT}" ]
@@ -144,6 +146,8 @@ services:
     build: "./game_srvc"
     entrypoint: *entrypoint
     command: [ "/app/docker-start.sh" ]
+    environment:
+      NODE_ENVIRONMENT: production
     container_name: "game_service"
     hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${GAME_PORT}", "${SOCKET_PORT}" ]
@@ -188,6 +192,8 @@ services:
     build: "./auth_srvc"
     entrypoint: *entrypoint
     command: [ "sh", "-c", "npx prisma migrate deploy && npm run start" ]
+    environment:
+      NODE_ENVIRONMENT: production
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${AUTH_PORT}" ]
