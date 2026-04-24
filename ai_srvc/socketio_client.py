@@ -47,6 +47,7 @@ MODEL_PATH      = os.getenv("MODEL_PATH",      "/app/models/dqn_latest.pt")
 AI_SLOT         = int(os.getenv("AI_SLOT",     "1"))
 ROOM_ID         = os.getenv("ROOM_ID",         "local")
 SOCKET_PATH     = os.getenv("SOCKET_PATH",     "/socket.io")
+LOAD_AI_MODELS  = os.getenv("LOAD_AI_MODELS", "true").lower() == "true"
 MODEL_AUTO_RELOAD = os.getenv("MODEL_AUTO_RELOAD", "true").lower() == "true"
 MODEL_RELOAD_INTERVAL_S = float(os.getenv("MODEL_RELOAD_INTERVAL_S", "5"))
 
@@ -89,6 +90,13 @@ def _angle_diff_deg(a: float, b: float) -> float:
 
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
+
+
+def _shortest_axis_delta(target: float, current: float, size: float) -> float:
+    direct = target - current
+    wrapped_forward = direct - size
+    wrapped_backward = direct + size
+    return min((direct, wrapped_forward, wrapped_backward), key=abs)
 
 
 def _extract_dt_ms(data: dict, now_ms: float, last_tick_ms: Optional[float]) -> float:
@@ -320,9 +328,44 @@ def build_state_vector(data: dict, my_ship_override: Optional[dict] = None) -> t
     return torch.tensor(features, dtype=torch.float32)
 
 
+def hardcoded_action(data: dict, ship_state: ShipState) -> dict[str, int]:
+    """Simple fallback AI: face the nearest living enemy, move toward it, and shoot."""
+    enemies = [e for e in data.get("enemies", []) if e.get("alive", True)]
+    if not enemies:
+        return {"movimento": 0, "rotazione": 0, "sparo": 0}
+
+    def target_distance_sq(enemy: dict) -> float:
+        dx = _shortest_axis_delta(float(enemy.get("x", 0.0)), ship_state.x, CANVAS_W)
+        dy = _shortest_axis_delta(float(enemy.get("y", 0.0)), ship_state.y, CANVAS_H)
+        return dx * dx + dy * dy
+
+    target = min(enemies, key=target_distance_sq)
+    dx = _shortest_axis_delta(float(target.get("x", 0.0)), ship_state.x, CANVAS_W)
+    dy = _shortest_axis_delta(float(target.get("y", 0.0)), ship_state.y, CANVAS_H)
+    distance = math.sqrt(dx * dx + dy * dy)
+
+    desired_angle = math.degrees(math.atan2(dx, -dy))
+    turn_error = _angle_diff_deg(desired_angle, ship_state.angle)
+    abs_turn_error = abs(turn_error)
+
+    if abs_turn_error > 8.0:
+        rotazione = 2 if turn_error > 0 else 1
+    else:
+        rotazione = 0
+
+    movimento = 1 if distance > 160.0 and abs_turn_error < 75.0 else 0
+    sparo = 1 if distance < 700.0 and abs_turn_error < 12.0 and ship_state.can_shoot() else 0
+
+    return {
+        "movimento": movimento,
+        "rotazione": rotazione,
+        "sparo": sparo,
+    }
+
+
 # ─── Client Socket.io ─────────────────────────────────────────────────────────
 
-def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.AsyncClient:
+def create_client(model: Optional[DQNNetwork], ai_slot: int, room_id: str) -> socketio.AsyncClient:
     """
     Crea e configura il client Socket.io.
     Restituisce il client già decorato con gli event handler.
@@ -369,7 +412,7 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
 
         # Hot-reload promoted model in live inference mode.
         now_s = now_ms / 1000.0
-        if MODEL_AUTO_RELOAD and now_s - last_reload_check_s >= MODEL_RELOAD_INTERVAL_S:
+        if LOAD_AI_MODELS and MODEL_AUTO_RELOAD and now_s - last_reload_check_s >= MODEL_RELOAD_INTERVAL_S:
             last_reload_check_s = now_s
             if os.path.exists(MODEL_PATH):
                 try:
@@ -383,7 +426,7 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
                 except Exception as e:
                     log.warning("model hot-reload skipped: %s", e)
 
-        if active_model is None:
+        if LOAD_AI_MODELS and active_model is None:
             noop_payload = {
                 "roomId": room_id,
                 "slot": ai_slot,
@@ -415,9 +458,12 @@ def create_client(model: DQNNetwork, ai_slot: int, room_id: str) -> socketio.Asy
             return
 
         try:
-            # Usa lo stato locale predetto come input della rete.
-            state = build_state_vector(data, my_ship_override=ship_state.as_dict())
-            action  = active_model.get_action(state)
+            if LOAD_AI_MODELS:
+                # Usa lo stato locale predetto come input della rete.
+                state = build_state_vector(data, my_ship_override=ship_state.as_dict())
+                action = active_model.get_action(state)
+            else:
+                action = hardcoded_action(data, ship_state)
 
             # Replica del tick JS: applica comando e integra fisica localmente.
             ship_state.apply_command(action, dt_ms)
@@ -450,7 +496,9 @@ async def serve(room_id: str = ROOM_ID, ai_slot: int = AI_SLOT):
     Chiamato da main.py in modalità TRAINING_MODE=false.
     """
     model = None
-    if os.path.exists(MODEL_PATH):
+    if not LOAD_AI_MODELS:
+        log.info("LOAD_AI_MODELS=false — using hardcoded follow-and-shoot AI")
+    elif os.path.exists(MODEL_PATH):
         try:
             model = load_model(MODEL_PATH)
             model.eval()
