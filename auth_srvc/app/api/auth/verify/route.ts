@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { SESSION_TOKEN_COOKIE_NAME } from '@/lib/auth-cookie'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,12 +22,13 @@ export async function POST(req: NextRequest) {
 	// Reconstruct a synthetic request that has the token as the NextAuth cookie
 	// so getToken can decode and verify it using the shared AUTH_SECRET.
 	const syntheticReq = new NextRequest('https://localhost', {
-		headers: { cookie: `next-auth.session-token=${bearerToken}` },
+		headers: { cookie: `${SESSION_TOKEN_COOKIE_NAME}=${bearerToken}` },
 	})
 
 	const decoded = await getToken({
 		req: syntheticReq,
 		secret: process.env.AUTH_SECRET!,
+		cookieName: SESSION_TOKEN_COOKIE_NAME,
 	})
 
 	if (!decoded) {

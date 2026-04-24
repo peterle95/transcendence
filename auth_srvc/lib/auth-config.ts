@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "../prisma/prisma";
+import { SESSION_TOKEN_COOKIE_NAME } from "./auth-cookie";
 
 // Simple in-memory brute-force guard: lock an account for 15 minutes after
 // 10 consecutive failed login attempts. Resets on a successful login.
@@ -130,7 +131,7 @@ export const authOptions: NextAuthOptions = {
 	/* this configures the session cookie, and adding some security to it */
 	cookies: {
 		sessionToken: {
-			name: `next-auth.session-token`,
+			name: SESSION_TOKEN_COOKIE_NAME,
 			options: {
 				httpOnly: true,
 				// 'strict' prevents the cookie from being sent on cross-site navigations,

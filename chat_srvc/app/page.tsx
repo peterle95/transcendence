@@ -41,6 +41,11 @@ export default function DashboardPage() {
       }
 
       const { token } = await tokenRes.json();
+      if (typeof token !== 'string' || token.length === 0) {
+        setError('TOKEN_ACQUISITION_FAILED');
+        return;
+      }
+
       setAuthToken(token);
       setCurrentUser({
         id: parseInt(sessionData.user.id, 10),
@@ -49,12 +54,16 @@ export default function DashboardPage() {
       });
 
       const friendsRes = await fetch(`${CHAT_PUBLIC_BASE}/api/friends`, {
+        credentials: 'include',
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (friendsRes.ok) {
-        const friendsData = await friendsRes.json();
-        setFriends(friendsData.friends || []);
+      if (!friendsRes.ok) {
+        setError(friendsRes.status === 401 ? 'FRIEND_SYNC_UNAUTHORIZED' : 'FRIEND_SYNC_FAILED');
+        return;
       }
+
+      const friendsData = await friendsRes.json();
+      setFriends(friendsData.friends || []);
     } catch (err) {
       console.error('Auth error:', err);
       setError('CONNECTION_TO_AUTH_SERVICE_FAILED');

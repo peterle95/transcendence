@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../auth-config';
+import { SESSION_TOKEN_COOKIE_NAME } from '../auth-cookie';
 import { UnauthorizedError } from '../utils/api-response';
 import { prisma } from '../../prisma/prisma';
 
@@ -59,11 +60,12 @@ export async function requireAuthWithUserIdFromRequest(req: NextRequest) {
 
 	if (bearerToken) {
 		const syntheticReq = new NextRequest('http://localhost', {
-			headers: { cookie: `next-auth.session-token=${bearerToken}` },
+			headers: { cookie: `${SESSION_TOKEN_COOKIE_NAME}=${bearerToken}` },
 		});
 		const decoded = await getToken({
 			req: syntheticReq,
 			secret: process.env.AUTH_SECRET!,
+			cookieName: SESSION_TOKEN_COOKIE_NAME,
 		});
 
 		if (decoded?.userId != null) {
