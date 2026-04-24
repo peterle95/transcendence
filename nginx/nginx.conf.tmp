@@ -158,7 +158,7 @@ http {
 		}
 
 		location ~ ^${GAME_WS_PATH}	{
-			proxy_pass	http://game_ws;
+			proxy_pass	${HTTP}game_ws;
 			coraza		off;
 		}
 
