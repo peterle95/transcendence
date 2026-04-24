@@ -107,7 +107,7 @@ services:
   frontend:
     build:  "./frontend"
     entrypoint: *entrypoint
-    command: [ "npm", "run", "dev" ]
+    command: [ "npm", "run", "start" ]
     container_name: "frontend_service"
     hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${FRONTEND_PORT}" ]
@@ -187,7 +187,7 @@ services:
   auth_srvc:
     build: "./auth_srvc"
     entrypoint: *entrypoint
-    command: [ "sh", "-c", "npx prisma migrate deploy && npm run dev" ]
+    command: [ "sh", "-c", "npx prisma migrate deploy && npm run start" ]
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${AUTH_PORT}" ]

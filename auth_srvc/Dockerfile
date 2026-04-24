@@ -17,5 +17,5 @@ COPY . .
 
 RUN npm run build
 
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
 # npm run build + npm start instead of npm run dev for production
