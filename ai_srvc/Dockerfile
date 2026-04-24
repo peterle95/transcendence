@@ -36,6 +36,7 @@ RUN mkdir -p /app/models /app/logs
 ENV PYTHONUNBUFFERED=1 \
     GAME_SVC_URL=http://game_srvc:4000 \
     MODEL_PATH=/app/models/dqn_latest.pt \
+    LOAD_AI_MODELS=true \
     TRAINING_MODE=false \
     LOG_LEVEL=INFO
 
