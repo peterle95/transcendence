@@ -132,7 +132,7 @@ services:
     build:
       context: "./frontend"
       dockerfile_inline: &next-dockerfile |
-        FROM ${PROJECT_NAME}-next_base
+        FROM next-base
         ARG NEXT_TELEMETRY_DISABLED=1
         ARG NEXT_PUBLIC_AUTH_SERVICE_URL=${AUTH_PATH}
         ARG NEXT_PUBLIC_GAME_SERVICE_URL=${GAME_PATH}
@@ -142,6 +142,8 @@ services:
         RUN npm config set fetch-timeout 120000 && npm config set fetch-retries 10 && npm ci
         COPY . .
         RUN npm run build
+      additional_contexts: &next-contexts
+        next-base: "service:next_base"
     entrypoint: *entrypoint
     command: [ "npm", "run", "dev" ]
     container_name: "frontend_service"
@@ -176,17 +178,21 @@ services:
 
   ai_srvc_slot2:
     build: &ai-dockerfile
-      dockerfile_inline: FROM ${PROJECT_NAME}-ai_srvc
+      dockerfile_inline: FROM ai-base
+      additional_contexts:
+        ai-base: "service:ai_srvc"
     hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
     container_name: "ai_service_slot2"
-    depends_on: [ "ai_srvc" ]
+    depends_on: &ai-slot-depends
+      ai_srvc: {condition: "service_started"}
+      game_srvc: {condition: "service_healthy"}
     <<: *ai-srvc
 
   ai_srvc_slot3:
     build: *ai-dockerfile
     hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
     container_name: "ai_service_slot3"
-    depends_on: [ "ai_srvc" ]
+    depends_on: *ai-slot-depends
     <<: *ai-srvc
 
   # ── Game Service ────────────────────────────────────────────────
@@ -194,6 +200,7 @@ services:
     build:
       context: "./game_srvc"
       dockerfile_inline: *next-dockerfile
+      additional_contexts: *next-contexts
     entrypoint: *entrypoint
     command: [ "/app/docker-start.sh" ]
     container_name: "game_service"
@@ -223,6 +230,7 @@ services:
     build:
       context: "./chat_srvc"
       dockerfile_inline: *next-dockerfile
+      additional_contexts: *next-contexts
     entrypoint: *entrypoint
     command: [ "npm", "start" ]
     container_name: "chat_service"
