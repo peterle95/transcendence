@@ -256,13 +256,25 @@ services:
 
   # ── Auth Service ────────────────────────────────────────────────
   auth_srvc:
-    build: "./auth_srvc"
+    build:
+      context: "./auth_srvc"
+      dockerfile_inline: |
+        FROM ${PROJECT_NAME}-next_base
+        ARG NEXT_TELEMETRY_DISABLED=1
+        COPY package*.json ./
+        COPY prisma ./prisma/
+        RUN npm config set fetch-timeout 120000 && npm config set fetch-retries 10 && npm ci
+        RUN npx prisma generate
+        COPY . .
+        RUN npm run build
     entrypoint: *entrypoint
     command: [ "sh", "-c", "npx prisma migrate deploy && npm run dev" ]
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${AUTH_PORT}" ]
-    depends_on: {postgres:  {condition: "service_healthy"}}
+    depends_on:
+      postgres:  {condition: "service_healthy"}
+      next_base: {condition: "service_started"}
     volumes:
       - "avatar_uploads:/app/uploads/avatars"
       - type: "volume"
