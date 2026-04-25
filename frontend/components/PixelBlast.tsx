@@ -443,6 +443,11 @@ const PixelBlast: React.FC<PixelBlastProps> = ({
         threeRef.current = null;
       }
       const canvas = document.createElement('canvas');
+      if (
+      !canvas.getContext('webgl2') &&
+      !canvas.getContext('webgl') &&
+      !canvas.getContext('experimental-webgl')
+      ) return;
       const renderer = new THREE.WebGLRenderer({
         canvas,
         antialias,
