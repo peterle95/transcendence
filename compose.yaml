@@ -42,8 +42,6 @@ x-depends-on-vault: &depends-on-vault
       restart: "true"
 
 x-ai-srvc:  &ai-srvc
-    build: "./ai_srvc"
-    <<: *depends-on-vault 
     entrypoint: &entrypoint
       - "/entry/point"
     command: [ "python", "main.py" ]
@@ -156,16 +154,19 @@ services:
 
   # ── AI Service (DQN Player Bots) ────────────────────────────────
   ai_srvc:
+    build: "./ai_srvc"
     container_name: "ai_service"
     hostname: "ai-1.${PROJECT_NAME}-${AI_NAMESPACE}"
     <<: *ai-srvc
 
   ai_srvc_slot2:
+    image: "${PROJECT_NAME}-ai_srvc"
     hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
     container_name: "ai_service_slot2"
     <<: *ai-srvc
 
   ai_srvc_slot3:
+    image: "${PROJECT_NAME}-ai_srvc"
     hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
     container_name: "ai_service_slot3"
     <<: *ai-srvc
