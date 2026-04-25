@@ -90,7 +90,25 @@ http {
 	add_header		Strict-Transport-Security	"max-age=31536000; includeSubdomains; preload";
 	${ADD_HEADER}		${ONION_LOCATION}		${ONION_ADDRESS_MAIN_HEADER}${REQUEST_URI}
 
+	upstream frontend	{
+		server frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT};
+	}
 
+	upstream auth		{
+		server auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${AUTH_PORT};
+	}
+
+	upstream chat		{
+		server chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${CHAT_PORT};
+	}
+
+	upstream game_ws	{
+		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${SOCKET_PORT};
+	}
+
+	upstream game		{
+		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_PORT};
+	}
 
 	server	{
 		listen			${NGINX_TCP};
@@ -116,33 +134,34 @@ http {
 
 		client_max_body_size		10M;
 
-		location ~ ^/_next/(webpack-hmr|.*\.js)$	{
-			proxy_pass		${HTTP}frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT};
+		location /	{
+			proxy_pass		${HTTP}frontend;
+			proxy_ssl_name		frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 			coraza			off;
 		}
 
-		location /	{
-			proxy_pass		${HTTP}frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT};
-		}
-
 		location ${AUTH_PATH}	{
-			proxy_pass		${HTTP}auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${AUTH_PORT};
+			proxy_pass		${HTTP}auth;
+			proxy_ssl_name		auth.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 			coraza_rules		'SecRuleRemoveByID 911100';
 		}
 
 		location ~ ^(${CHAT_WS_PATH}|${CHAT_PATH}/_next/.*\.js$) {
-			proxy_pass		${HTTP}chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${CHAT_PORT};
+			proxy_pass		${HTTP}chat;
+			proxy_ssl_name		chat.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 			proxy_read_timeout	86400s;
 			proxy_send_timeout	86400s;
 			coraza			off;
 		}
 
 		location ${CHAT_PATH}	{
-			proxy_pass		${HTTP}chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${CHAT_PORT};
+			proxy_pass		${HTTP}chat;
+			proxy_ssl_name		chat.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 		}
 
 		location ~ ^${GAME_WS_PATH}	{
-			proxy_pass		${HTTP}game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${SOCKET_PORT};
+			proxy_pass		${HTTP}game_ws;
+			proxy_ssl_name		game.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 			proxy_read_timeout	86400s;
 			proxy_send_timeout	86400s;
 			coraza			off;
@@ -150,7 +169,8 @@ http {
 
 		location ~ ^(${GAME_PATH}|/api/auth/me|/assets/)	{
 			rewrite ^/assets/(.*)	${GAME_PATH}/assets/#1 break;
-			proxy_pass		${HTTP}game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_PORT};
+			proxy_pass		${HTTP}game;
+			proxy_ssl_name		game.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 			${ADD_HEADER}		${ONION_LOCATION}	${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
 		}
 	}
@@ -163,9 +183,9 @@ http {
 		ssl_certificate    		${CERT_PATH};
 		ssl_certificate_key		${KEY_PATH};
 
-		coraza			off;
 
 		location = /healthcheck {
+			coraza		off;
 			access_log	off;
 			return		200		'OK';
 		}
