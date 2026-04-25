@@ -13,9 +13,7 @@ The game is hosted online at [http://spacesupremacy.duckdns.org](http://spacesup
 ### Running Locally
 
 1. Copy the `example.env` file into a `.env` file.
-2. Node 16 must be installed.
-3. A good amount of local disc space must be available, given the AI model is quite large.
-4. Run `docker compose up` in the root of the repository.
+4. Run `start.sh` in the root of the repository.
 5. Access `localhost` on port `443`.
 
 ## Technical Stack
@@ -164,6 +162,7 @@ Messages live in MongoDB. Each message belongs to a room, and room IDs are gener
 ### Major (2 pts): Multiplayer game (more than two players)
 - **Peter & Stefano**
 - **Justification**: The more the merrier.
+- **Implementation**: We implemented the multiplayer module to support up tp 4 simultaneous players in the same game session. The server owns the authoritative game state, which keeps movement, scoring, collisions, and outcomes fair for every participant. Clients send actions to the server and receive synchronized state updates, so all players see the same match progression. This design prevents one client from controlling the truth and keeps gameplay consistent across everyone’s screen.
 
 ## Project Management
 
