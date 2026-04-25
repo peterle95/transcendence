@@ -103,6 +103,7 @@ Messages live in MongoDB. Each message belongs to a room, and room IDs are gener
 | Game history and player stats | Stefano & Antoine |
 | Secrets protection (HashiCorp Vault) | Johannes |
 | WAF (Coraza + CRS on NGINX) | Johannes |
+| Hidden Service | Johannes |
 
 ## Modules
 
@@ -143,7 +144,12 @@ Messages live in MongoDB. Each message belongs to a room, and room IDs are gener
 ### Major (2 pts): Implement WAF/ModSecurity (hardened) + HashiCorp Vault for secrets
 - **Johannes**
 - **Justification**: Security is underrated.
-- **Implementation**: Coraza WAF hardened with CRS on NGINX, Vault using client certificates for initial trust, setting up PKI.
+- **Implementation**: Coraza WAF hardened with CRS on NGINX, Vault using client certificates for initial trust, setting up PKI, KV2 and Database endpoints with custom password and username policies. Segmentation of networking and HTTPS everywhere with client verification. Passing POSIX shellscript to each service as entrypoint to automatically retrieve secrets.
+
+### Minor (1 pt): Module of choice: Hidden Service
+- **Johannes**
+- **Justification**: Beeing able to test online features and not having issues with localhost while relying on other services.
+- **Implementation**: Custom Docker image based on alpine, vanity v3 addresses and advertisement via Onion-Location header.
 
 ### Major (2 pts): Implement a complete web-based game
 - **Stefano**
@@ -186,7 +192,7 @@ Weekly meetings to discuss past week results and current week plans, as well as 
 
 ## Individual Contributions
 
-- **Johannes** — Networking (NGINX & WAF) and security (secrets)
+- **Johannes** — Networking and Security
 - **Peter** — ORM and WebSockets
 - **Kyriaki** — Chat feature and WebSockets
 - **Stefano** — Game and AI features (training, game implementation)
@@ -194,7 +200,7 @@ Weekly meetings to discuss past week results and current week plans, as well as 
 
 ## AI Usage
 
-AI was used extensively in this project for generating boilerplate code and fixing bugs (with Claude Code), as well as reviewing commits and pull requests (with Code Rabbit). It was also used throughout to discuss the tech setup, alternative options, and weighing pros and cons of the solutions used.
+AI was used extensively in this project for generating boilerplate code and fixing bugs (with Claude Code), as well as reviewing commits and pull requests (with Code Rabbit). It was also used throughout to discuss the tech setup, alternative options, and weighing pros and cons of the solutions used. AI was not used for security related code.
 
 ## Resources
 
@@ -218,4 +224,11 @@ AI was used extensively in this project for generating boilerplate code and fixi
 - [Next.js file-based routing](https://nextjs.org/docs/pages/building-your-application/routing)
 - [dbdiagram.io](https://dbdiagram.io/)
 - [AI & Machine Learning (Notion)](https://www.notion.so/42wolfsburgberlin/AI-MACHINE-LEARNING-309937251cae80218f37f675b3af3e9d?t=34a937251cae805cb05600a9cdb68bd9)
+- [Docker](https://docs.docker.com)
+- [YAML Advanced Features](https://yaml.cc)
+- [NGINX](https://nginx.org)
+- [OWASP Coraza WAF](https://www.coraza.io)
 - [CoreRuleSet](https://coreruleset.org/)
+- [Hashicorp Vault](https://www.hashicorp.com)
+- [Tor](https://www.torproject.org)
+- [Stack Overflow](https://stackoverflow.com)

@@ -1,10 +1,4 @@
 load_module	"/usr/lib/nginx/modules/ngx_http_coraza_module.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_geoip_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_js_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_xslt_filter_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_http_image_filter_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_stream_geoip_module${NGINX_MODULE}.so";
-load_module	"/usr/lib/nginx/modules/ngx_stream_js_module${NGINX_MODULE}.so";
 
 
 error_log	stderr	${NGINX_LOG_LEVEL};
@@ -40,7 +34,7 @@ http {
 		SecArgumentsLimit 1000
 		SecResponseBodyLimit 524288
 		SecResponseBodyLimitAction ProcessPartial
-		SecAuditEngine On
+		SecAuditEngine RelevantOnly
 		SecAuditLogParts ABIJDEFHZ
 		SecAuditLogType Serial
 		SecAuditLogRelevantStatus "^(?:5|4[0-9][0-35-9])"
@@ -58,9 +52,9 @@ http {
 			ctl:requestBodyProcessor=JSON"
 
 		SecRule &ARGS "@ge 1000" \
-		    "id:\'200007\', phase:2,t:none,log,deny,status:400,msg:\
-		    \'Failed to fully parse request body due to large argument \
-		    count\',severity:2"
+			"id:\'200007\', phase:2,t:none,log,deny,status:400,msg:\
+			\'Failed to fully parse request body due to large argument \
+			count\',severity:2"
 	';
 
 	coraza_rules_file /opt/coraza/config/crs-setup.conf;
@@ -72,94 +66,112 @@ http {
 	access_log	stdout;
 
 	proxy_ssl_server_name		on;
+	proxy_ssl_verify		on;
+	proxy_ssl_verify_depth		2;
 	proxy_ssl_protocols		TLSv1.3;
 	proxy_ssl_certificate    	${CERT_PATH};
 	proxy_ssl_certificate_key	${KEY_PATH};
 	proxy_ssl_trusted_certificate	${ROOTCERT};
 	proxy_ssl_session_reuse		on;
 
-	proxy_set_header	Host			@host;
-	proxy_set_header	X-Real-IP		@remote_addr;
-	proxy_set_header	X-Forwarded-For		@proxy_add_x_forwarded_for;
-	proxy_set_header	X-Forwarded-Proto	@scheme;
-	proxy_set_header	X-Forwarded-Host	@host;
-	proxy_set_header	Cookie			@http_cookie;
-	proxy_set_header        Upgrade                 @http_upgrade;
+	proxy_set_header	Host			#host;
+	proxy_set_header	X-Real-IP		#remote_addr;
+	proxy_set_header	X-Forwarded-For		#proxy_add_x_forwarded_for;
+	proxy_set_header	X-Forwarded-Proto	#scheme;
+	proxy_set_header	X-Forwarded-Host	#host;
+	proxy_set_header	Cookie			#http_cookie;
+	proxy_set_header        Upgrade                 #http_upgrade;
 	proxy_set_header        Connection              "upgrade";
 	proxy_http_version	1.1;
-	proxy_read_timeout	86400s;
-	proxy_send_timeout	86400s;
-	${ADD_HEADER}		${ONION_LOCATION}	${ONION_ADDRESS_MAIN_HEADER}${REQUEST_URI}
 
-	upstream	frontend	{
+	add_header		X-Frame-Options			SAMEORIGIN;
+	add_header		X-Content-Type-Options		nosniff;
+	add_header		X-XSS-Protection		"1; mode=block";
+	add_header		Strict-Transport-Security	"max-age=31536000; includeSubdomains; preload";
+	${ADD_HEADER}		${ONION_LOCATION}		${ONION_ADDRESS_MAIN_HEADER}${REQUEST_URI}
+
+	upstream frontend	{
 		server frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT};
 	}
-	upstream	auth		{
+
+	upstream auth		{
 		server auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${AUTH_PORT};
 	}
-	upstream	chat		{
+
+	upstream chat		{
 		server chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${CHAT_PORT};
 	}
-	upstream	game		{
-		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_PORT};
-	}
-	upstream	game_ws		{
+
+	upstream game_ws	{
 		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${SOCKET_PORT};
 	}
 
+	upstream game		{
+		server game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_PORT};
+	}
 
 	server	{
-		listen		${NGINX_TCP};
-		server_name			${DOMAIN};
-
-		return		301		${HTTP}@host@request_uri;
+		listen			${NGINX_TCP};
+		server_name		${DOMAIN} ${ONION_ADDRESS_MAIN};
+		return	301		${HTTP}#host#request_uri;
 	}
 
 	ssl_client_certificate		${ROOTCERT};
 	ssl_protocols			TLSv1.3;
+	ssl_prefer_server_ciphers	on;
+	ssl_session_cache		shared:SSL:50m;
+	ssl_session_timeout		1d;
+	ssl_session_tickets		off;
+	ssl_ciphers			ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384;
 
 	server {
 		listen		${NGINX_TLS}	ssl;
 		listen		${NGINX_UDP}	quic		reuseport;
 
-		server_name			${DOMAIN};
+		server_name			${DOMAIN} ${ONION_ADDRESS_MAIN};
 		ssl_certificate    		${MAIN_CERT_PATH};
 		ssl_certificate_key		${MAIN_KEY_PATH};
 
 		client_max_body_size		10M;
 
-		location ~ ^/_next/(webpack-hmr|.*\.js)$	{
-			proxy_pass	${HTTP}frontend;
-			coraza		off;
-		}
-
 		location /	{
-			proxy_pass	${HTTP}frontend;
+			proxy_pass		${HTTP}frontend;
+			proxy_ssl_name		frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE};
+			coraza			off;
 		}
 
 		location ${AUTH_PATH}	{
-			proxy_pass	${HTTP}auth;
-			coraza_rules	'SecRuleRemoveByID 911100';
+			proxy_pass		${HTTP}auth;
+			proxy_ssl_name		auth.${PROJECT_NAME}-${SERVICE_NAMESPACE};
+			coraza_rules		'SecRuleRemoveByID 911100';
 		}
 
-		location ~ ^${CHAT_WS_PATH} {
-			proxy_pass	${HTTP}chat;
-			coraza		off;
+		location ~ ^(${CHAT_WS_PATH}|${CHAT_PATH}/_next/.*\.js$) {
+			proxy_pass		${HTTP}chat;
+			proxy_ssl_name		chat.${PROJECT_NAME}-${SERVICE_NAMESPACE};
+			proxy_read_timeout	86400s;
+			proxy_send_timeout	86400s;
+			coraza			off;
 		}
 
 		location ${CHAT_PATH}	{
-			proxy_pass	${HTTP}chat;
+			proxy_pass		${HTTP}chat;
+			proxy_ssl_name		chat.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 		}
 
 		location ~ ^${GAME_WS_PATH}	{
-			proxy_pass	${HTTP}game_ws;
-			coraza		off;
+			proxy_pass		${HTTP}game_ws;
+			proxy_ssl_name		game.${PROJECT_NAME}-${SERVICE_NAMESPACE};
+			proxy_read_timeout	86400s;
+			proxy_send_timeout	86400s;
+			coraza			off;
 		}
 
 		location ~ ^(${GAME_PATH}|/api/auth/me|/assets/)	{
-			rewrite ^/assets/(.*) ${GAME_PATH}/assets/@1 break;
-			proxy_pass ${HTTP}game;
-			${ADD_HEADER} ${ONION_LOCATION} ${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
+			rewrite ^/assets/(.*)	${GAME_PATH}/assets/#1 break;
+			proxy_pass		${HTTP}game;
+			proxy_ssl_name		game.${PROJECT_NAME}-${SERVICE_NAMESPACE};
+			${ADD_HEADER}		${ONION_LOCATION}	${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
 		}
 	}
 
@@ -171,9 +183,9 @@ http {
 		ssl_certificate    		${CERT_PATH};
 		ssl_certificate_key		${KEY_PATH};
 
-		coraza			off;
 
 		location = /healthcheck {
+			coraza		off;
 			access_log	off;
 			return		200		'OK';
 		}
