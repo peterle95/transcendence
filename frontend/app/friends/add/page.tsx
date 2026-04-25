@@ -136,6 +136,7 @@ export default function AddFriendPage() {
 				<div className="mb-2">
 					<Link
 						href={currentUserId ? `/profile/${currentUserId}` : '/profile'}
+						prefetch={false}
 						className="text-blue-400 hover:text-blue-300 inline-flex items-center text-sm font-semibold transition-colors bg-white/5 hover:bg-white/10 px-4 py-2 rounded-lg"
 					>
 						<svg style={{ width: '16px', height: '16px' }} className="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
