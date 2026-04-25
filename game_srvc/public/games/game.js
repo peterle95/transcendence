@@ -392,6 +392,16 @@ class SocketManager {
         message: 'The online room is full right now. Please try again in a moment.',
       };
     });
+
+    this.socket.on('already_in_game', (payload = {}) => {
+      console.warn('[SocketManager] already connected to this game from another session');
+      this.pendingSystemMessage = {
+        title: 'Already In Game',
+        message: typeof payload.message === 'string' && payload.message
+        ? payload.message
+        : 'You are already connected to this game from another session.',
+    };
+    });
   }
 
   /**
@@ -2432,7 +2442,8 @@ for (let i = 0; i < this.players.length; i++) {
       this._gameOverCooldown = 800;
       if (typeof window !== 'undefined' && typeof window.showRankingScreen === 'function') {
         window.showRankingScreen(this.players, this.winner, 'online', () => {
-          this.state = STATE.PLAYING;
+          this.cancelCurrentSession();
+         if (this.mainMenu) this.mainMenu.reset(300); 
         });
       }
     }

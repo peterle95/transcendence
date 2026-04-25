@@ -910,6 +910,18 @@ io.on('connection', async (socket) => {
     return;
   }
 
+  const alreadyConnected = [...humanSockets.values()].some(
+    (m) => m.userId === verifiedIdentity.userId
+  );
+  if (alreadyConnected) {
+    socket.emit('already_in_game', {
+    message: 'You are already connected to this game from another session.',
+  });
+    socket.disconnect(true);
+    console.log('connection rejected – userId already in game:', verifiedIdentity.userId);
+    return;
+  }
+
   const { slot: playerIdx, replacedAI } = findJoinableHumanSlot();
   if (playerIdx === -1) {
     socket.emit('room_full');
