@@ -175,7 +175,6 @@ http {
 			proxy_set_header	Connection		"upgrade";
 			proxy_read_timeout	86400s;
 			proxy_send_timeout	86400s;
-			coraza off;
 		}
 
 		location ${GAME_PATH} {
