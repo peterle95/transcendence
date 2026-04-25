@@ -172,6 +172,7 @@ http {
 			proxy_pass		${HTTP}game;
 			proxy_ssl_name		game.${PROJECT_NAME}-${SERVICE_NAMESPACE};
 			${ADD_HEADER}		${ONION_LOCATION}	${ONION_ADDRESS_VAULT_HEADER}${REQUEST_URI}
+			coraza			off;
 		}
 	}
 
