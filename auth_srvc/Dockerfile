@@ -4,7 +4,14 @@ ARG NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app
 
-RUN apt update && apt install -y --no-install-recommends ca-certificates jq curl
+RUN	apt-get update -qq && \
+	apt-get upgrade -qq && \
+	apt-get install -qq \
+	--no-install-recommends \
+	ca-certificates jq curl && \
+	rm -rf /var/cache/apt/archives \
+	/var/lib/apt/lists/*
+	
 
 COPY package*.json ./
 COPY prisma ./prisma/

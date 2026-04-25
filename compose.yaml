@@ -31,7 +31,7 @@ x-type-ca-cert: &type-ca-cert
 x-health: &health
   start_period:   "${GRACE_PERIOD}m"
   start_interval: "${GRACE_PERIOD}0s"
-  interval:       "${GRACE_PERIOD}m"
+  interval:       "${GRACE_PERIOD}00s"
   timeout:        "${GRACE_PERIOD}0s"
   retries:        "${GRACE_PERIOD}"
 
@@ -42,14 +42,10 @@ x-depends-on-vault: &depends-on-vault
       restart: "true"
 
 x-ai-srvc:  &ai-srvc
-    build: "./ai_srvc"
-    <<: *depends-on-vault 
     entrypoint: &entrypoint
       - "/entry/point"
     command: [ "python", "main.py" ]
-    environment:
-      LOAD_AI_MODELS: "${LOAD_AI_MODELS:-true}"
-    depends_on: [ "game_srvc" ]
+    depends_on: {game_srvc: {condition: "service_healthy"}}
     volumes:
       - "./ai_models:/app/models:ro"
       - "ai_logs:/app/logs"
@@ -70,6 +66,32 @@ x-net: &net
 
 
 services:
+  # ── Tor - Hidden Service ────────────────────────────────────────
+  tor:
+    profiles: [ "hidden_service" ]
+    build:
+      dockerfile_inline: |
+        FROM alpine:3.23.3
+        RUN apk add --no-cache -q tor \
+        jq curl ca-certificates su-exec
+    entrypoint: *entrypoint
+    command: [ "su-exec", "tor", "/usr/bin/tor" ]
+    container_name: "${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
+    hostname: "${TOR_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
+    ports:  [ "${HIDDEN_SERVICE_PORT}" ]
+    depends_on: {nginx: {condition: "service_healthy"}}
+    volumes:
+      - "tor_data:${TOR_DATA_DIR}"
+      - type: "volume"
+        <<: *type-entry
+      - type: "volume"
+        <<: *type-ca-root
+      - type: "volume"
+        <<: *type-ca-cert
+        volume: {subpath: "share/${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"}
+    networks: {proxy_net: {ipv4_address: "${TOR_PROXY_IP}"}}
+    restart: "unless-stopped"
+
   # ── nginx - Reverse Proxy ───────────────────────────────────────
   nginx:
     build:
@@ -87,7 +109,7 @@ services:
       - "${LOCAL:+127.0.0.1:}${NGINX_TCP}"
       - "${LOCAL:+127.0.0.1:}${NGINX_TLS}"
       - "${LOCAL:+127.0.0.1:}${NGINX_UDP}"
-    depends_on: [ "frontend" ]
+    depends_on: {frontend: {condition: "service_healthy"}}
     volumes:
       - "./nginx/nginx.conf.tmp:/nginx.conf.tmp:ro"
       - type: "volume"
@@ -101,19 +123,33 @@ services:
       service_net:  {ipv4_address: "10.133.7.25"}
       proxy_net:  {ipv4_address: "${NGINX_PROXY_IP}"}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
+      test: ["CMD-SHELL", "curl -fsSL ${HTTP}${NGINX_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}:1337/healthcheck"]
       <<: *health
     restart: "unless-stopped"
 
   # ── Frontend ────────────────────────────────────────────────────
   frontend:
-    build:  "./frontend"
+    build:
+      context: "./frontend"
+      dockerfile_inline: &next-dockerfile |
+        FROM ${PROJECT_NAME}-next_base
+        ARG NEXT_TELEMETRY_DISABLED=1
+        ARG NEXT_PUBLIC_AUTH_SERVICE_URL=${AUTH_PATH}
+        ARG NEXT_PUBLIC_GAME_SERVICE_URL=${GAME_PATH}
+        ARG NEXT_PUBLIC_CHAT_SERVICE_URL=${CHAT_PATH}
+        COPY package*.json ./
+        COPY prisma ./prisma
+        RUN npm config set fetch-timeout 120000 && npm config set fetch-retries 10 && npm ci
+        COPY . .
+        RUN npm run build
     entrypoint: *entrypoint
     command: [ "npm", "run", "dev" ]
     container_name: "frontend_service"
     hostname: "frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${FRONTEND_PORT}" ]
-    depends_on: [ "game_srvc", "chat_srvc" ]
+    depends_on:
+      chat_srvc: {condition: "service_healthy"}
+      game_srvc: {condition: "service_healthy"}
     volumes:
       - type: "volume"
         <<: *type-entry
@@ -123,33 +159,49 @@ services:
         <<: *type-ca-cert
         volume: {subpath: "share/frontend"}
     networks: {service_net: {ipv4_address: "10.133.7.20"}}
+    healthcheck:
+      test: ["CMD", "curl", "-fsSL",
+        "${HTTP}frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT}",
+        "${HTTP}frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT}/login",
+        "${HTTP}frontend.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${FRONTEND_PORT}/register"]
+      <<: *health
     restart: "unless-stopped"
 
   # ── AI Service (DQN Player Bots) ────────────────────────────────
   ai_srvc:
+    build: "./ai_srvc"
     container_name: "ai_service"
     hostname: "ai-1.${PROJECT_NAME}-${AI_NAMESPACE}"
     <<: *ai-srvc
 
   ai_srvc_slot2:
+    build: &ai-dockerfile
+      dockerfile_inline: FROM ${PROJECT_NAME}-ai_srvc
     hostname: "ai-2.${PROJECT_NAME}-${AI_NAMESPACE}"
     container_name: "ai_service_slot2"
+    depends_on: [ "ai_srvc" ]
     <<: *ai-srvc
 
   ai_srvc_slot3:
+    build: *ai-dockerfile
     hostname: "ai-3.${PROJECT_NAME}-${AI_NAMESPACE}"
     container_name: "ai_service_slot3"
+    depends_on: [ "ai_srvc" ]
     <<: *ai-srvc
 
   # ── Game Service ────────────────────────────────────────────────
   game_srvc:
-    build: "./game_srvc"
+    build:
+      context: "./game_srvc"
+      dockerfile_inline: *next-dockerfile
     entrypoint: *entrypoint
     command: [ "/app/docker-start.sh" ]
     container_name: "game_service"
     hostname: "game.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${GAME_PORT}", "${SOCKET_PORT}" ]
-    depends_on: [ "auth_srvc" ]
+    depends_on:
+      auth_srvc: {condition: "service_healthy"}
+      next_base:  {condition: "service_started"}
     volumes:
       - type: "volume"
         <<: *type-entry
@@ -161,11 +213,16 @@ services:
     networks:
       service_net: {ipv4_address: "10.133.7.19"}
       ai_net: {ipv4_address: "10.133.7.3"}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL ${HTTP}game.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${GAME_PORT}/${GAME_PATH}"]
+      <<: *health
     restart: "unless-stopped"
 
   # ── Chat Service ────────────────────────────────────────────────
   chat_srvc:
-    build: "./chat_srvc"
+    build:
+      context: "./chat_srvc"
+      dockerfile_inline: *next-dockerfile
     entrypoint: *entrypoint
     command: [ "npm", "start" ]
     container_name: "chat_service"
@@ -173,7 +230,8 @@ services:
     expose: [ "${CHAT_PORT}" ]
     depends_on:
       mongo:  {condition: "service_healthy"}
-      auth_srvc:  {condition: "service_started"}
+      auth_srvc:  {condition: "service_healthy"}
+      next_base:  {condition: "service_started"}
     volumes:
       - type: "volume"
         <<: *type-entry
@@ -183,7 +241,18 @@ services:
         <<: *type-ca-cert
         volume: {subpath: "share/chat_srvc"}
     networks: {service_net: {ipv4_address: "10.133.7.21"}}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSL ${HTTP}chat.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${CHAT_PORT}/${CHAT_PATH}"]
+      <<: *health
     restart: "unless-stopped"
+
+  next_base:
+    build:
+      dockerfile_inline: |
+        FROM node:20-alpine
+        RUN apk add -q --no-cache jq curl ca-certificates openssl
+        WORKDIR /app
+    command: [ "CMD-SHELL", "sh -c exit 0" ]
 
   # ── Auth Service ────────────────────────────────────────────────
   auth_srvc:
@@ -193,8 +262,7 @@ services:
     container_name: "auth_service"
     hostname: "auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}"
     expose: [ "${AUTH_PORT}" ]
-    depends_on:
-      {postgres:  {condition: "service_healthy"}}
+    depends_on: {postgres:  {condition: "service_healthy"}}
     volumes:
       - "avatar_uploads:/app/uploads/avatars"
       - type: "volume"
@@ -205,6 +273,9 @@ services:
         <<: *type-ca-cert
         volume: {subpath: "share/auth_srvc"}
     networks: {service_net: {ipv4_address: "10.133.7.22"}}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs ${HTTP}auth.${PROJECT_NAME}-${SERVICE_NAMESPACE}:${AUTH_PORT}/${AUTH_PATH}"]
+      <<: *health
     restart: "unless-stopped"
 
   # ── PostgreSQL ──────────────────────────────────────────────────
@@ -271,32 +342,6 @@ services:
       <<: *health
     restart: "unless-stopped"
 
-  # ── Tor - Hidden Service ────────────────────────────────────────
-  tor:
-    profiles: [ "hidden_service" ]
-    build:
-      dockerfile_inline: |
-        FROM alpine:3.23.3
-        RUN apk add --no-cache -q tor \
-        jq curl ca-certificates su-exec
-    entrypoint: *entrypoint
-    command: [ "su-exec", "tor", "/usr/bin/tor" ]
-    container_name: "${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"
-    hostname: "${TOR_CODENAME}.${PROJECT_NAME}-${REV_PROXY_NAMESPACE}"
-    ports:  [ "${HIDDEN_SERVICE_PORT}" ]
-    <<: *depends-on-vault
-    volumes:
-      - "tor_data:${TOR_DATA_DIR}"
-      - type: "volume"
-        <<: *type-entry
-      - type: "volume"
-        <<: *type-ca-root
-      - type: "volume"
-        <<: *type-ca-cert
-        volume: {subpath: "share/${TOR_CODENAME}_${REV_PROXY_NAMESPACE}"}
-    networks: {proxy_net: {ipv4_address: "${TOR_PROXY_IP}"}}
-    restart: "unless-stopped"
-
   # ── Vault - Secret Management ──────────────────────────────────
   vault:
     env_file: ".env"
@@ -307,7 +352,7 @@ services:
         COPY --from=hashicorp/vault:1.21.4 / /
         COPY --from=ghcr.io/cathugger/mkp224o:master / /
         COPY --parents --chmod=400 ./*/wants.* /wanted/
-        RUN apk add --no-cache -q gpg ca-certificates jq openssl curl sed
+        RUN apk add --no-cache -q ca-certificates jq openssl curl sed
         ADD ⠀ /
     entrypoint: /⠀
     container_name: "vault_secret_service"
@@ -319,7 +364,7 @@ services:
       proxy_net:  {ipv4_address: "${VAULT_PROXY_IP}"}
       ai_net: {ipv4_address: "10.133.7.2"}
     healthcheck:
-      test: ["CMD-SHELL", "curl -f ${HTTP}${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}:${VAULT_PORT}/v1/sys/health"]
+      test: ["CMD-SHELL", "curl -fsSL ${HTTP}${VAULT_CODENAME}.${PROJECT_NAME}-${VAULT_NAMESPACE}:${VAULT_PORT}/v1/sys/health"]
       <<: *health
     restart: "on-failure:1"
     cap_add: [ "${MLOCK_ENABLED:+IPC_LOCK}" ]
