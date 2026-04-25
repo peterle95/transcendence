@@ -148,7 +148,7 @@ Messages live in MongoDB. Each message belongs to a room, and room IDs are gener
 
 ### Minor (1 pt): Module of choice: Hidden Service
 - **Johannes**
-- **Justification**: Beeing able to test online features and not having issues localhost without relying on other services.
+- **Justification**: Beeing able to test online features and not having issues with localhost while relying on other services.
 - **Implementation**: Custom Docker image based on alpine, vanity v3 addresses and advertisement via Onion-Location header.
 
 ### Major (2 pts): Implement a complete web-based game
