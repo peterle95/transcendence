@@ -58,6 +58,8 @@ We decided to go with **JWT for session management** to avoid having to make DB 
 
 ## Database Schema
 
+![db_schema](./docs/db_schema.png)
+
 This project runs two databases:
 
 - **PostgreSQL** for the auth service and the game service
